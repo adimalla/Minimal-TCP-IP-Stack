@@ -1,8 +1,8 @@
 /**
  ******************************************************************************
- * @file    arp.h
+ * @file    ipv4.h
  * @author  Aditya Mall,
- * @brief   arp protocol header file
+ * @brief   IP version 4 protocol header file
  *
  *  Info
  *
@@ -39,8 +39,8 @@
  ******************************************************************************
  */
 
-#ifndef ARP_H_
-#define ARP_H_
+#ifndef IPV4_H_
+#define IPV4_H_
 
 
 /*
@@ -54,29 +54,12 @@
 
 /******************************************************************************/
 /*                                                                            */
-/*                     ARP Function Prototypes                                */
+/*                     IPV4 Function Prototypes                               */
 /*                                                                            */
 /******************************************************************************/
 
 
-/********************************************************
- * @brief  Function to send arp request
- * @param  *ethernet  : reference to the Ethernet handle
- * @param  *sender_ip : sender ip address
- * @param  *target_ip : target ip address
- * @retval int16_t    : Error = -1, Success = 0
- ********************************************************/
-int16_t ether_send_arp_req(ethernet_handle_t *ethernet, uint8_t *sender_ip, uint8_t *target_ip);
+int16_t get_ether_ip_data(ethernet_handle_t *ethernet);
 
 
-
-/******************************************************************
- * @brief  Function to send arp response
- * @param  *ethernet  : reference to the Ethernet handle
- * @retval int16_t    : Error = -2, -3 = reply ignore, Success = 0
- ******************************************************************/
-int16_t ether_send_arp_resp(ethernet_handle_t *ethernet);
-
-
-
-#endif /* ARP_H_ */
+#endif /* IPV4_H_ */

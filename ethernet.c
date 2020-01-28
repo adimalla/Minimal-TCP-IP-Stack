@@ -180,6 +180,55 @@ uint16_t htons(uint16_t value)
 
 
 
+int8_t ether_sum_words(uint32_t *sum, void *data, uint16_t size_in_bytes)
+{
+    uint8_t  *data_ptr = (uint8_t *)data;
+    uint16_t data_temp;
+
+    uint16_t i    = 0;
+    uint8_t phase = 0;
+
+    for(i = 0; i < size_in_bytes; i++)
+    {
+        if(phase)
+        {
+            data_temp = *data_ptr;
+
+            *sum += data_temp << 8;
+        }
+        else
+        {
+            *sum += *data_ptr;
+        }
+
+        phase = 1 - phase;
+
+        data_ptr++;
+    }
+
+    return 0;
+}
+
+
+
+uint16_t ether_get_checksum(uint32_t sum)
+{
+    uint16_t checksum = 0;
+
+    while ((sum >> 16) > 0)
+    {
+        /* this is based on rfc1071 */
+        sum = (sum & 0xFFFF) + (sum >> 16);
+    }
+
+    checksum = sum & 0xFFFF;
+
+    /* return 1s complement */
+    return ~checksum;
+}
+
+
+
 /********************************************************
  * @brief  function to set ip address
  * @param  *host_ip    : host ip address (integer)

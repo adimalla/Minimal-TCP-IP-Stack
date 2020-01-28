@@ -58,7 +58,7 @@
 
 
 /* ARP protocol structure */
-typedef struct _arp
+typedef struct _net_arp
 {
     uint16_t hardware_type;      /*!< Network hardware type         */
     uint16_t protocol_type;      /*!< Network protocol type         */
@@ -166,11 +166,11 @@ int16_t ether_send_arp_req(ethernet_handle_t *ethernet, uint8_t *sender_ip, uint
 
 
 
-/********************************************************
+/******************************************************************
  * @brief  Function to send arp response
  * @param  *ethernet  : reference to the Ethernet handle
- * @retval int16_t    : Error = -2, Success = 0
- ********************************************************/
+ * @retval int16_t    : Error = -2, -3 = reply ignore, Success = 0
+ ******************************************************************/
 int16_t ether_send_arp_resp(ethernet_handle_t *ethernet)
 {
     int16_t func_retval = 0;
@@ -227,6 +227,11 @@ int16_t ether_send_arp_resp(ethernet_handle_t *ethernet)
             }
 
         }
+        else
+        {
+            func_retval = NET_ARP_RESP_IGNORE;
+        }
+
     }
 
     return func_retval;

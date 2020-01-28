@@ -140,7 +140,8 @@ enc28j60_frame_t *enc28j60;
 
 
 
-
+void etherSumWords(void* data, uint16_t size_in_bytes);
+uint16_t getEtherChecksum();
 
 // ------------------------------------------------------------------------------
 //  Functions                
@@ -161,12 +162,6 @@ void etherSetIpAddress(uint8_t a, uint8_t b,  uint8_t c, uint8_t d);
 
 uint8_t etherIsPingReq(uint8_t data[]);
 void etherSendPingResp(uint8_t data[]);
-
-#define ARP_INVALID 0
-
-
-
-void etherSendArpResp(uint8_t data[]);
 
 
 uint8_t etherIsUdp(uint8_t data[]);

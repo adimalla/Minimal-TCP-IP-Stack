@@ -1,8 +1,8 @@
 /**
  ******************************************************************************
- * @file    arp.h
+ * @file    ipv4.c
  * @author  Aditya Mall,
- * @brief   arp protocol header file
+ * @brief   IP version 4 protocol source file
  *
  *  Info
  *
@@ -39,44 +39,102 @@
  ******************************************************************************
  */
 
-#ifndef ARP_H_
-#define ARP_H_
-
 
 /*
  * Standard header and api header files
  */
-#include <stdint.h>
+#include <string.h>
 
-#include "ethernet.h"
+#include "ipv4.h"
+
 
 
 
 /******************************************************************************/
 /*                                                                            */
-/*                     ARP Function Prototypes                                */
+/*                      Data Structures and Defines                           */
 /*                                                                            */
 /******************************************************************************/
 
 
-/********************************************************
- * @brief  Function to send arp request
- * @param  *ethernet  : reference to the Ethernet handle
- * @param  *sender_ip : sender ip address
- * @param  *target_ip : target ip address
- * @retval int16_t    : Error = -1, Success = 0
- ********************************************************/
-int16_t ether_send_arp_req(ethernet_handle_t *ethernet, uint8_t *sender_ip, uint8_t *target_ip);
+typedef struct _ip_ver_size
+{
+    uint8_t header_length : 4;
+    uint8_t version       : 4;
+
+}ip_ver_size_t;
+
+
+typedef struct _ip_flags_offset
+{
+    uint16_t fragment_offset : 13;
+    uint16_t flags           : 3;
+
+}ip_flags_offset;
+
+
+typedef struct _net_ip
+{
+    ip_ver_size_t   version_length;
+    uint8_t         service_type;
+    uint16_t        total_length;
+    uint16_t        id;
+    ip_flags_offset flags_offset;
+    uint8_t         ttl;
+    uint8_t         protocol;
+    uint16_t        header_checksum;
+    uint8_t         source_ip[4];
+    uint8_t         destination_ip[4];
+
+}net_ip_t;
 
 
 
-/******************************************************************
- * @brief  Function to send arp response
- * @param  *ethernet  : reference to the Ethernet handle
- * @retval int16_t    : Error = -2, -3 = reply ignore, Success = 0
- ******************************************************************/
-int16_t ether_send_arp_resp(ethernet_handle_t *ethernet);
 
 
 
-#endif /* ARP_H_ */
+/******************************************************************************/
+/*                                                                            */
+/*                           IPV4 Functions                                   */
+/*                                                                            */
+/******************************************************************************/
+
+
+
+int16_t get_ether_ip_data(ethernet_handle_t *ethernet)
+{
+    int16_t func_retval = 0;
+
+    net_ip_t *ip;
+
+    uint32_t sum = 0;
+
+    if(ethernet->ether_obj == NULL)
+    {
+        func_retval = NET_IP_GET_ERROR;
+    }
+    else
+    {
+        ip = (void*)&ethernet->ether_obj->data;
+
+        /* Validate IP header checksum */
+        ether_sum_words(&sum, ip, (ip->version_length.header_length) * 4);
+
+        if( (ether_get_checksum(sum) == 0)  )
+        {
+            /* Check if UNICAST */
+            if( strncmp((char*)ip->destination_ip, (char*)ethernet->host_ip, 4) == 0)
+            {
+                func_retval = 1;
+            }
+
+        }
+        else
+        {
+            func_retval = NET_IP_CHECKSUM_ERROR;
+        }
+
+    }
+
+    return func_retval;
+}

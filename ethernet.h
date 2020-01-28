@@ -97,7 +97,7 @@ typedef struct _ethernet_handle
 /* Ethernet type values */
 typedef enum _ether_type
 {
-    ETHER_IPV4 = 0x0808,  /*!< */
+    ETHER_IPV4 = 0x0800,  /*!< */
     ETHER_ARP  = 0x0806,  /*!< */
     ETHER_RARP = 0x8035,  /*!< */
 
@@ -109,8 +109,11 @@ typedef enum _ether_type
 /* Network error codes protocol functions */
 typedef enum _network_error_codes
 {
-    NET_ARP_REQ_ERROR  = -1,  /*!< */
-    NET_ARP_RESP_ERROR = -2,  /*!< */
+    NET_ARP_REQ_ERROR     = -1,  /*!< */
+    NET_ARP_RESP_ERROR    = -2,  /*!< */
+    NET_ARP_RESP_IGNORE   = -3,
+    NET_IP_GET_ERROR      = -4,
+    NET_IP_CHECKSUM_ERROR = -5,
 
 }network_erro_codes_t;
 
@@ -131,6 +134,14 @@ typedef enum _network_error_codes
  * @retval uint16_t : host to network or network to host converted data
  ************************************************************************/
 uint16_t htons(uint16_t value);
+
+
+
+
+int8_t ether_sum_words(uint32_t *sum, void *data, uint16_t size_in_bytes);
+
+
+uint16_t ether_get_checksum(uint32_t sum);
 
 
 

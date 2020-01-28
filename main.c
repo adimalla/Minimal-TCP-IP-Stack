@@ -29,6 +29,7 @@
 
 #include "ethernet.h"
 #include "arp.h"
+#include "ipv4.h"
 
 #define RED_LED      (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 1*4)))
 #define GREEN_LED    (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 3*4)))
@@ -96,6 +97,8 @@ int main(void)
 
     uint8_t loop = 0;
 
+    int16_t retval = 0;
+
     // init controller
     initHw();
 
@@ -160,13 +163,37 @@ int main(void)
 
             case ETHER_ARP:
 
-                ether_send_arp_resp(ethernet);
+                retval = ether_send_arp_resp(ethernet);
 
-                RED_LED = 1;
-                GREEN_LED = 1;
-                waitMicrosecond(50000);
-                RED_LED = 0;
-                GREEN_LED = 0;
+                if(retval == 0)
+                {
+                    RED_LED = 1;
+                    GREEN_LED = 1;
+                    waitMicrosecond(50000);
+                    RED_LED = 0;
+                    GREEN_LED = 0;
+                }
+
+                break;
+
+            case ETHER_IPV4:
+
+                retval = get_ether_ip_data(ethernet);
+
+                if(retval == 1)
+                {
+                    // handle icmp ping request
+                    if (etherIsPingReq(data))
+                    {
+                        etherSendPingResp(data);
+                        RED_LED = 1;
+                        BLUE_LED = 1;
+                        waitMicrosecond(50000);
+                        RED_LED = 0;
+                        BLUE_LED = 0;
+                    }
+
+                }
 
                 break;
 
@@ -176,6 +203,26 @@ int main(void)
 
             }
 
+            if (etherIsIp(data))
+            {
+                if (etherIsIpUnicast(data))
+                {
+
+                    // handle udp datagram
+                    if (etherIsUdp(data))
+                    {
+                        udpData = etherGetUdpData(data);
+                        if (udpData[0] == '1')
+                            GREEN_LED = 1;
+                        if (udpData[0] == '0')
+                            GREEN_LED = 0;
+                        etherSendUdpData(data, (uint8_t*)"Received", 9);
+                        BLUE_LED = 1;
+                        waitMicrosecond(100000);
+                        BLUE_LED = 0;
+                    }
+                }
+            }
 
         }
     }

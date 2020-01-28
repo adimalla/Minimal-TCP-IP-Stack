@@ -48,41 +48,79 @@ uint8_t ipv4Address[4];
 
 struct _ip // minimum 20 bytes
 {
-  uint8_t rev_size;
-  uint8_t typeOfService;
-  uint16_t length;
-  uint16_t id;
-  uint16_t flagsAndOffset;
-  uint8_t ttl;
-  uint8_t protocol;
-  uint16_t headerChecksum;
-  uint8_t sourceIp[4];
-  uint8_t destIp[4];
+    uint8_t rev_size;
+    uint8_t typeOfService;
+    uint16_t length;
+    uint16_t id;
+    uint16_t flagsAndOffset;
+    uint8_t ttl;
+    uint8_t protocol;
+    uint16_t headerChecksum;
+    uint8_t sourceIp[4];
+    uint8_t destIp[4];
 } *ip;
 
 struct _icmp
 {
-  uint8_t type;
-  uint8_t code;
-  uint16_t check;
-  uint16_t id;
-  uint16_t seq_no;
-  uint8_t data;
+    uint8_t type;
+    uint8_t code;
+    uint16_t check;
+    uint16_t id;
+    uint16_t seq_no;
+    uint8_t data;
 } *icmp;
 
 
 struct _udp // 8 bytes
 {
-  uint16_t sourcePort;
-  uint16_t destPort;
-  uint16_t length;
-  uint16_t check;
-  uint8_t  data;
+    uint16_t sourcePort;
+    uint16_t destPort;
+    uint16_t length;
+    uint16_t check;
+    uint8_t  data;
 
 } *udp;
 
 
 
+
+
+// Determines whether packet is IP datagram
+uint8_t etherIsIp(uint8_t data[])
+{
+    ether_frame_t *ether;
+    uint8_t ok;
+    enc28j60 = (void*)data;
+    ether = (void*)&enc28j60->data;
+    ip = (void*)&ether->data;
+    ok = (ether->type == 0x0008);
+    if (ok)
+    {
+        sum = 0;
+        etherSumWords(ip, (ip->rev_size & 0xF) * 4);
+        ok = (getEtherChecksum() == 0);
+    }
+    return ok;
+}
+
+
+// Determines whether packet is unicast to this ip
+// Must be an IP packet
+bool etherIsIpUnicast(uint8_t data[])
+{
+    ether_frame_t *ether;
+    uint8_t i = 0;
+    bool ok = true;
+    enc28j60 = (void*)data;
+    ether = (void*)&enc28j60->data;
+    ip = (void*)&ether->data;
+    while (ok && (i < 4))
+    {
+        ok = (ip->destIp[i] == ipv4Address[i]);
+        i++;
+    }
+    return ok;
+}
 
 
 
@@ -95,8 +133,8 @@ struct _udp // 8 bytes
 
 void spiWrite(uint8_t data)
 {
-	SSI2_DR_R = data;
-	while (SSI2_SR_R & SSI_SR_BSY);
+    SSI2_DR_R = data;
+    while (SSI2_SR_R & SSI_SR_BSY);
 }
 
 uint8_t spiRead()
@@ -107,10 +145,10 @@ uint8_t spiRead()
 void etherCsOn()
 {
     PIN_ETHER_CS = 0;
-	__asm (" NOP");                    // allow line to settle
-	__asm (" NOP");
-	__asm (" NOP");
-	__asm (" NOP");
+    __asm (" NOP");                    // allow line to settle
+    __asm (" NOP");
+    __asm (" NOP");
+    __asm (" NOP");
 }
 
 void etherCsOff()
@@ -242,7 +280,7 @@ void etherInit(uint8_t mode)
     etherWriteReg(ERXSTH, HIBYTE(0x0000));
     etherWriteReg(ERXNDL, LOBYTE(0x1A09));
     etherWriteReg(ERXNDH, HIBYTE(0x1A09));
-   
+
     // initialize receiver write and read ptrs
     // at startup, will write from 0 to 1A08 only and will not overwrite rd ptr
     etherWriteReg(ERXWRPTL, LOBYTE(0x0000));
@@ -259,7 +297,7 @@ void etherInit(uint8_t mode)
     // bring mac out of reset
     etherSetBank(MACON2);
     etherWriteReg(MACON2, 0);
-  
+
     // enable mac rx, enable pause control for full duplex
     etherWriteReg(MACON1, TXPAUS | RXPAUS | MARXEN);
 
@@ -404,7 +442,7 @@ int16_t etherPutPacket(uint8_t data[], uint16_t size)
 
     // stop write
     etherWriteMemStop();
-  
+
     // request transmit
     etherWriteReg(ETXSTL, LOBYTE(0x1A0A));
     etherWriteReg(ETXSTH, HIBYTE(0x1A0A));
@@ -424,7 +462,7 @@ int16_t etherPutPacket(uint8_t data[], uint16_t size)
 // Must use getEtherChecksum to complete 1's compliment addition
 void etherSumWords(void* data, uint16_t size_in_bytes)
 {
-	uint8_t* pData = (uint8_t*)data;
+    uint8_t* pData = (uint8_t*)data;
     uint16_t i;
     uint8_t phase = 0;
     uint16_t data_temp;
@@ -436,7 +474,7 @@ void etherSumWords(void* data, uint16_t size_in_bytes)
             sum += data_temp << 8;
         }
         else
-          sum += *pData;
+            sum += *pData;
         phase = 1 - phase;
         pData++;
     }
@@ -448,48 +486,12 @@ uint16_t getEtherChecksum()
     uint16_t result;
     // this is based on rfc1071
     while ((sum >> 16) > 0)
-      sum = (sum & 0xFFFF) + (sum >> 16);
+        sum = (sum & 0xFFFF) + (sum >> 16);
     result = sum & 0xFFFF;
     return ~result;
 }
 
 
-
-// Determines whether packet is IP datagram
-uint8_t etherIsIp(uint8_t data[])
-{
-    ether_frame_t *ether;
-    uint8_t ok;
-    enc28j60 = (void*)data;
-    ether = (void*)&enc28j60->data;
-    ip = (void*)&ether->data;
-    ok = (ether->type == 0x0008);
-    if (ok)
-    {
-        sum = 0;
-        etherSumWords(&ip->rev_size, (ip->rev_size & 0xF) * 4);
-        ok = (getEtherChecksum() == 0);
-    }
-    return ok;
-}
-
-// Determines whether packet is unicast to this ip
-// Must be an IP packet
-bool etherIsIpUnicast(uint8_t data[])
-{
-    ether_frame_t *ether;
-    uint8_t i = 0;
-    bool ok = true;
-    enc28j60 = (void*)data;
-    ether = (void*)&enc28j60->data;
-    ip = (void*)&ether->data;
-    while (ok && (i < 4))
-    {
-        ok = (ip->destIp[i] == ipv4Address[i]);
-        i++;
-    }
-    return ok;
-}
 
 // Determines whether packet is ping request
 // Must be an IP packet
