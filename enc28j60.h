@@ -14,6 +14,10 @@
 
 #include "ethernet.h"
 
+
+#define IOT_COURSE_TEST 1
+
+
 //-----------------------------------------------------------------------------
 // Subroutines
 //-----------------------------------------------------------------------------
@@ -27,7 +31,14 @@
 // ------------------------------------------------------------------------------
 
 // Pins
+#if IOT_COURSE_TEST
+
+#define PIN_ETHER_CS (*((volatile uint32_t *)(0x42000000 + (0x400043FC-0x40000000)*32 + 3*4)))
+
+#else
 #define PIN_ETHER_CS (*((volatile uint32_t *)(0x42000000 + (0x400053FC-0x40000000)*32 + 5*4)))
+
+#endif
 
 #define ETHER_UNICAST        0x80
 #define ETHER_BROADCAST      0x01
@@ -134,8 +145,6 @@ typedef struct enc28j60Frame // 4-bytes
 }enc28j60_frame_t;
 
 enc28j60_frame_t *enc28j60;
-
-
 
 
 

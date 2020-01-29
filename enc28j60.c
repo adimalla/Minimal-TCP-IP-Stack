@@ -133,13 +133,26 @@ bool etherIsIpUnicast(uint8_t data[])
 
 void spiWrite(uint8_t data)
 {
+#if IOT_COURSE_TEST
+
+    SSI0_DR_R = data;
+    while (SSI0_SR_R & SSI_SR_BSY);
+
+#else
     SSI2_DR_R = data;
     while (SSI2_SR_R & SSI_SR_BSY);
+#endif
 }
 
 uint8_t spiRead()
 {
+#if IOT_COURSE_TEST
+
+    return SSI0_DR_R;
+
+#else
     return SSI2_DR_R;
+#endif
 }
 
 void etherCsOn()

@@ -145,6 +145,18 @@ uint16_t ether_get_checksum(uint32_t sum);
 
 
 
+
+/********************************************************
+ * @brief  Function to set mac address
+ * @param  *device_mac  : device mac address (Hex)
+ * @param  *mac_address : mac address (string)
+ * @retval int8_t       : Error = -1, Success = 0
+ ********************************************************/
+int8_t set_mac_address(char *device_mac, char *mac_address);
+
+
+
+
 /********************************************************
  * @brief  function to set ip address
  * @param  *host_ip    : host ip address (integer)
@@ -152,6 +164,7 @@ uint16_t ether_get_checksum(uint32_t sum);
  * @retval int8_t      : Error = -1, Success = 0
  ********************************************************/
 int8_t set_ip_address(uint8_t *host_ip, char *ip_address);
+
 
 
 
@@ -165,6 +178,11 @@ int8_t set_ip_address(uint8_t *host_ip, char *ip_address);
  * @retval int8_t         : Error = NULL
  **************************************************************************/
 ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_address, char *ip_address, ethernet_operations_t *ether_ops);
+
+
+
+
+int8_t fill_ether_frame(ethernet_handle_t *ethernet, uint8_t *destination_mac_addr, uint8_t *source_mac_addr, ether_type_t frame_type);
 
 
 

@@ -36,6 +36,8 @@
 #define BLUE_LED     (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 2*4)))
 #define PUSH_BUTTON  (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 4*4)))
 
+
+
 //-----------------------------------------------------------------------------
 // Subroutines
 //-----------------------------------------------------------------------------
@@ -51,7 +53,7 @@ void initHw()
     SYSCTL_GPIOHBCTL_R = 0;
 
     // Enable GPIO port B and E peripherals
-    SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOB | SYSCTL_RCGC2_GPIOD | SYSCTL_RCGC2_GPIOF;
+    SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOB | SYSCTL_RCGC2_GPIOD | SYSCTL_RCGC2_GPIOF | SYSCTL_RCGC2_GPIOA;
 
     // Configure LED and pushbutton pins
     GPIO_PORTF_DIR_R = 0x0E;  // bits 1-3 are outputs, other pins are inputs
@@ -61,6 +63,31 @@ void initHw()
 
     GPIO_PORTD_DIR_R = 0x0;  // bits 1-3 are outputs, other pins are inputs
     GPIO_PORTD_DEN_R = 0x0;  // enable LEDs and pushbuttons
+
+
+#if IOT_COURSE_TEST
+
+
+    // Configure ~CS for ENC28J60
+    GPIO_PORTA_DIR_R = (1 << 3);  // make bit 1 an output
+    GPIO_PORTA_DEN_R = (1 << 3);  // enable bits 1 for digital
+
+
+    SYSCTL_RCGCSSI_R   |= SYSCTL_RCGCSSI_R0;
+    GPIO_PORTA_DIR_R   |= ( 1 << 2) | (1 << 3) | (1 << 5);
+    GPIO_PORTA_DR2R_R  |= ( 1 << 2) | (1 << 4) | (1 << 5);
+    GPIO_PORTA_AFSEL_R |= ( 1 << 2) | (1 << 4) | (1 << 5);
+    GPIO_PORTA_PCTL_R   = GPIO_PCTL_PA5_SSI0TX | GPIO_PCTL_PA4_SSI0RX | GPIO_PCTL_PA2_SSI0CLK;
+    GPIO_PORTA_DEN_R   |= ( 1<< 2) | (1 << 4) | (1 << 5);
+
+    SSI0_CR1_R  &= ~SSI_CR1_SSE;
+    SSI0_CR1_R  = 0;                                 // select master mode
+    SSI0_CC_R   = 0;                                 // select system clock as the clock source
+    SSI0_CPSR_R = 40;                                // set bit rate to 1 MHz (if SR=0 in CR0)
+    SSI0_CR0_R  = SSI_CR0_FRF_MOTO | SSI_CR0_DSS_8;  // set SR=0, mode 0 (SPH=0, SPO=0), 8-bit
+    SSI0_CR1_R |= SSI_CR1_SSE;
+
+#else
 
     // Configure ~CS for ENC28J60
     GPIO_PORTB_DIR_R = (1 << 5);  // make bit 1 an output
@@ -82,6 +109,8 @@ void initHw()
     SSI2_CPSR_R = 40;                                // set bit rate to 1 MHz (if SR=0 in CR0)
     SSI2_CR0_R = SSI_CR0_FRF_MOTO | SSI_CR0_DSS_8;   // set SR=0, mode 0 (SPH=0, SPO=0), 8-bit
     SSI2_CR1_R |= SSI_CR1_SSE;                       // turn on SSI2
+#endif
+
 }
 
 //-----------------------------------------------------------------------------

@@ -92,51 +92,6 @@ static char *api_strtok_r (char *s, const char *delim, char **save_ptr)
 
 
 
-/********************************************************
- * @brief  static function to set mac address
- * @param  *device_mac  : device mac address (Hex)
- * @param  *mac_address : mac address (string)
- * @retval int8_t       : Error = -1, Success = 0
- ********************************************************/
-static int8_t set_mac_address(char *device_mac, char *mac_address)
-{
-    int8_t func_retval = 0;
-
-    char mac_address_copy[18] = {0};  /*!< Copy variable    */
-    char *rest_ptr;                   /*!< Tracking pointer */
-    char *token;                      /*!< token            */
-
-
-    /* Copy mac address to copy variable for null termination (required for string function) */
-    strncpy(mac_address_copy, mac_address, 18);  /* Size of mac address entered as string with null at index 18 */
-
-    uint8_t index = 0;
-
-    if(mac_address_copy[17] != 0)
-    {
-        func_retval = -1;
-    }
-    else
-    {
-        rest_ptr = mac_address_copy;
-
-        /* strtok_r function for non glibc compliant code */
-        while( (token = api_strtok_r(rest_ptr, ":", &rest_ptr)) )
-        {
-            /* Convert to hex */
-            device_mac[index] = strtol(token, NULL, 16);
-
-            index++;
-        }
-
-    }
-
-
-    return func_retval;
-}
-
-
-
 
 /******************************************************************************/
 /*                                                                            */
@@ -226,6 +181,52 @@ uint16_t ether_get_checksum(uint32_t sum)
     /* return 1s complement */
     return ~checksum;
 }
+
+
+
+/********************************************************
+ * @brief  Function to set mac address
+ * @param  *device_mac  : device mac address (Hex)
+ * @param  *mac_address : mac address (string)
+ * @retval int8_t       : Error = -1, Success = 0
+ ********************************************************/
+int8_t set_mac_address(char *device_mac, char *mac_address)
+{
+    int8_t func_retval = 0;
+
+    char mac_address_copy[18] = {0};  /*!< Copy variable    */
+    char *rest_ptr;                   /*!< Tracking pointer */
+    char *token;                      /*!< token            */
+
+
+    /* Copy mac address to copy variable for null termination (required for string function) */
+    strncpy(mac_address_copy, mac_address, 18);  /* Size of mac address entered as string with null at index 18 */
+
+    uint8_t index = 0;
+
+    if(mac_address_copy[17] != 0)
+    {
+        func_retval = -1;
+    }
+    else
+    {
+        rest_ptr = mac_address_copy;
+
+        /* strtok_r function for non glibc compliant code */
+        while( (token = api_strtok_r(rest_ptr, ":", &rest_ptr)) )
+        {
+            /* Convert to hex */
+            device_mac[index] = strtol(token, NULL, 16);
+
+            index++;
+        }
+
+    }
+
+
+    return func_retval;
+}
+
 
 
 
@@ -324,4 +325,24 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
     return &ethernet;
 }
 
+
+
+
+int8_t fill_ether_frame(ethernet_handle_t *ethernet, uint8_t *destination_mac_addr, uint8_t *source_mac_addr, ether_type_t frame_type)
+{
+    int8_t func_retval = 0;
+
+    uint8_t index = 0;
+
+    /* Fill MAC address */
+    for(index = 0; index < 6; index++)
+    {
+        ethernet->ether_obj->destination_mac_addr[index] = destination_mac_addr[index];
+        ethernet->ether_obj->source_mac_addr[index]      = source_mac_addr[index];
+    }
+
+    ethernet->ether_obj->type = htons(frame_type);
+
+    return func_retval;
+}
 

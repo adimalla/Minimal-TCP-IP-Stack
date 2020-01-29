@@ -96,6 +96,21 @@ typedef enum _arp_opcodes
 
 
 
+static int8_t set_broadcast_mac_addr(uint8_t *mac_address)
+{
+    int8_t func_retval = 0;
+
+    int8_t index = 0;
+
+    for(index = 0; index < 6; index++ )
+    {
+        mac_address[index] = 0xFF;
+    }
+
+    return func_retval;
+}
+
+
 
 /******************************************************************************/
 /*                                                                            */
@@ -120,6 +135,8 @@ int16_t ether_send_arp_req(ethernet_handle_t *ethernet, uint8_t *sender_ip, uint
 
     uint8_t i = 0;
 
+    uint8_t broadcast_mac_addr[6] = {0};
+
     if(ethernet->ether_obj == NULL)
     {
         func_retval = NET_ARP_REQ_ERROR;
@@ -129,14 +146,14 @@ int16_t ether_send_arp_req(ethernet_handle_t *ethernet, uint8_t *sender_ip, uint
         /* Link network object data */
         arp = (void*)&ethernet->ether_obj->data;
 
-        /* Fill Ethernet frame */
-        for (i = 0; i < 6; i++)
-        {
-            ethernet->ether_obj->destination_mac_addr[i] = 0xFF;                   /* Broadcast MAC */
-            ethernet->ether_obj->source_mac_addr[i]      = ethernet->host_mac[i];
-        }
 
-        ethernet->ether_obj->type = htons(ETHER_ARP);
+        /* Set Broadcast MAC */
+        set_broadcast_mac_addr(broadcast_mac_addr);
+
+
+        /* Fill Ethernet frame */
+        fill_ether_frame(ethernet, broadcast_mac_addr, ethernet->host_mac, ETHER_ARP);
+
 
         /* Fill ARP frame */
         arp->hardware_type = htons(ARP_HRD_ETHERNET);
