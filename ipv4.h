@@ -59,6 +59,13 @@
 /******************************************************************************/
 
 
+
+/******************************************************************
+ * @brief  Function to get IP data for current host device
+ *         (Only handles UNICAST)
+ * @param  *ethernet  : reference to the Ethernet handle
+ * @retval int16_t    : Error = -4, -5, Success = 1 (UNICAST)
+ ******************************************************************/
 int16_t get_ether_ip_data(ethernet_handle_t *ethernet);
 
 

@@ -58,7 +58,6 @@
 /******************************************************************************/
 
 
-#define ntohs htons
 
 
 /* Ethernet Frame structure (14 Bytes) */
@@ -105,7 +104,6 @@ typedef enum _ether_type
 
 
 
-
 /* Network error codes protocol functions */
 typedef enum _network_error_codes
 {
@@ -120,20 +118,13 @@ typedef enum _network_error_codes
 
 
 
+
 /******************************************************************************/
 /*                                                                            */
 /*                     Ethernet Function Prototypes                           */
 /*                                                                            */
 /******************************************************************************/
 
-
-
-/************************************************************************
- * @brief  Function to convert from host to network order and vice versa
- *         (For 16 bit data)
- * @retval uint16_t : host to network or network to host converted data
- ************************************************************************/
-uint16_t htons(uint16_t value);
 
 
 
@@ -146,35 +137,13 @@ uint16_t ether_get_checksum(uint32_t sum);
 
 
 
-/********************************************************
- * @brief  Function to set mac address
- * @param  *device_mac  : device mac address (Hex)
- * @param  *mac_address : mac address (string)
- * @retval int8_t       : Error = -1, Success = 0
- ********************************************************/
-int8_t set_mac_address(char *device_mac, char *mac_address);
-
-
-
-
-/********************************************************
- * @brief  function to set ip address
- * @param  *host_ip    : host ip address (integer)
- * @param  *ip_address : ip address (string)
- * @retval int8_t      : Error = -1, Success = 0
- ********************************************************/
-int8_t set_ip_address(uint8_t *host_ip, char *ip_address);
-
-
-
-
 /*************************************************************************
- * @brief  constructor function to create ethernet handle
+ * @brief  constructor function to create Ethernet handle
  *         (Multiple exit points)
  * @param  *network_data  : reference to the network data buffer
- * @param  *mac_address   : mac address (string)
+ * @param  *mac_address   : MAC address (string)
  * @param  *ip_address    : ip address (string)
- * @param  *ether_ops     : reference to the ethernet operations structure
+ * @param  *ether_ops     : reference to the Ethernet operations structure
  * @retval int8_t         : Error = NULL
  **************************************************************************/
 ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_address, char *ip_address, ethernet_operations_t *ether_ops);
@@ -182,6 +151,14 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
 
 
 
+/*****************************************************************************
+ * @brief  Function to fill the Ethernet frame
+ * @param  *ethernet                : reference to the Ethernet struct handle
+ * @param  *destination_mac_address : destination MAC address
+ * @param  *source_mac_address      : source MAC address
+ * @param  frame type               : Ethernet frame type
+ * @retval int8_t                   : Error = NULL
+ *****************************************************************************/
 int8_t fill_ether_frame(ethernet_handle_t *ethernet, uint8_t *destination_mac_addr, uint8_t *source_mac_addr, ether_type_t frame_type);
 
 

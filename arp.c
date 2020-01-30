@@ -45,8 +45,9 @@
  */
 #include <string.h>
 
-#include "arp.h"
 
+#include "arp.h"
+#include "network_utilities.h"
 
 
 
@@ -96,15 +97,37 @@ typedef enum _arp_opcodes
 
 
 
+
+
+/******************************************************************************/
+/*                                                                            */
+/*                              Private Functions                             */
+/*                                                                            */
+/******************************************************************************/
+
+
+
+/********************************************************
+ * @brief  Static function to set broadcast mac address
+ * @param  *mac address  : mac address to be configured
+ * @retval int16_t    : Error = -1, Success = 0
+ ********************************************************/
 static int8_t set_broadcast_mac_addr(uint8_t *mac_address)
 {
     int8_t func_retval = 0;
 
     int8_t index = 0;
 
-    for(index = 0; index < 6; index++ )
+    if(mac_address == NULL)
     {
-        mac_address[index] = 0xFF;
+        func_retval = -1;
+    }
+    else
+    {
+        for(index = 0; index < 6; index++ )
+        {
+            mac_address[index] = 0xFF;
+        }
     }
 
     return func_retval;
@@ -133,9 +156,8 @@ int16_t ether_send_arp_req(ethernet_handle_t *ethernet, uint8_t *sender_ip, uint
 
     net_arp_t *arp;
 
-    uint8_t i = 0;
-
     uint8_t broadcast_mac_addr[6] = {0};
+    uint8_t i = 0;
 
     if(ethernet->ether_obj == NULL)
     {
@@ -165,7 +187,7 @@ int16_t ether_send_arp_req(ethernet_handle_t *ethernet, uint8_t *sender_ip, uint
         for (i = 0; i < 6; i++)
         {
             arp->sender_hw_addr[i] = ethernet->host_mac[i];
-            arp->target_hw_addr[i] = 0xFF;
+            arp->target_hw_addr[i] = broadcast_mac_addr[i];
         }
 
         for (i = 0; i < 4; i++)
@@ -196,34 +218,36 @@ int16_t ether_send_arp_resp(ethernet_handle_t *ethernet)
 
     uint8_t i = 0;
 
-    if(ethernet->ether_obj == NULL)
+    if(ethernet->ether_obj == NULL || ethernet->ether_obj->type != ntohs(ETHER_ARP))
     {
         func_retval = NET_ARP_RESP_ERROR;
     }
     else
     {
+
         arp = (void*)&ethernet->ether_obj->data;
 
-        if( (strncmp((char*)arp->target_ip, (char*)ethernet->host_ip, 4) == 0) )
+        /* Handle APR request */
+        if(arp->opcode == ntohs(ARP_REQUEST))
         {
-
-            /* Fill ARP frame */
-            arp->hardware_type = htons(ARP_HRD_ETHERNET);
-            arp->protocol_type = htons(ARP_PRO_IPV4);
-            arp->hardware_size = ARP_HLN;
-            arp->protocol_size = ARP_PLN;
-
-            /* Handle APR request */
-            if(arp->opcode == ntohs(ARP_REQUEST))
+            /* Check if ARP request is for host IP */
+            if( (strncmp((char*)arp->target_ip, (char*)ethernet->host_ip, 4) == 0) )
             {
-                arp->opcode = htons(ARP_REPLY);
 
                 /* Swap Ethernet MAC Address */
                 for (i = 0; i < 6; i++)
                 {
                     ethernet->ether_obj->destination_mac_addr[i] = ethernet->ether_obj->source_mac_addr[i];
-                    ethernet->ether_obj->source_mac_addr[i]      = ethernet->host_mac[i];
+                    ethernet->ether_obj->source_mac_addr[i] = ethernet->host_mac[i];
                 }
+
+                /* Fill ARP frame */
+                arp->hardware_type = htons(ARP_HRD_ETHERNET);
+                arp->protocol_type = htons(ARP_PRO_IPV4);
+                arp->hardware_size = ARP_HLN;
+                arp->protocol_size = ARP_PLN;
+
+                arp->opcode = htons(ARP_REPLY);
 
                 /* Swap ARP hardware/MAC address */
                 for (i = 0; i < 6; i++)
@@ -238,6 +262,7 @@ int16_t ether_send_arp_resp(ethernet_handle_t *ethernet)
                     arp->target_ip[i] = arp->sender_ip[i];
                     arp->sender_ip[i] = ethernet->host_ip[i];
                 }
+
 
                 /* Send packet (callback) */
                 ethernet->ether_commands->ether_send_packet((uint8_t*)ethernet->ether_obj, 42);

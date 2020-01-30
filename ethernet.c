@@ -44,51 +44,15 @@
 /*
  * Standard header and api header files
  */
+
 #include <string.h>
 #include <stdlib.h>
+
 #include "ethernet.h"
+#include "network_utilities.h"
 
 
 
-
-/******************************************************************************/
-/*                                                                            */
-/*                              Private Functions                             */
-/*                                                                            */
-/******************************************************************************/
-
-
-/* Implementation of glibc reentrant strtok Copyright (C) 1991-2019 GNU C Library */
-
-static char *api_strtok_r (char *s, const char *delim, char **save_ptr)
-{
-    char *end;
-    if (s == NULL)
-        s = *save_ptr;
-    if (*s == '\0')
-    {
-        *save_ptr = s;
-        return NULL;
-    }
-    /* Scan leading delimiters.  */
-    s += strspn (s, delim);
-    if (*s == '\0')
-    {
-        *save_ptr = s;
-        return NULL;
-    }
-    /* Find the end of the token.  */
-    end = s + strcspn (s, delim);
-    if (*end == '\0')
-    {
-        *save_ptr = end;
-        return s;
-    }
-    /* Terminate the token and make *SAVE_PTR point past it.  */
-    *end = '\0';
-    *save_ptr = end + 1;
-    return s;
-}
 
 
 
@@ -119,50 +83,54 @@ __attribute__((weak))uint16_t ethernet_recv_packet(uint8_t *data, uint16_t lengt
 
 
 
-/* API and supporting functions */
 
-
-
-/************************************************************************
- * @brief  Function to convert from host to network order and vice versa
- *         (For 16 bit data)
- * @retval uint16_t : host to network or network to host converted data
- ************************************************************************/
-uint16_t htons(uint16_t value)
-{
-    return ((value & 0xFF00) >> 8) + ((value & 0x00FF) << 8);
-}
-
-
-
+/******************************************************
+ * @brief  Function to sum the data in network packet
+ * @param[out] *sum          : Total 32 bit sum
+ * @param[in]  *data         : data to be summed
+ * @param      size_in_bytes : size of the data
+ * @retval     uint16_t      : Error = -1, Success = 0
+ ******************************************************/
 int8_t ether_sum_words(uint32_t *sum, void *data, uint16_t size_in_bytes)
 {
+
+    int8_t func_retval = 0;
+
     uint8_t  *data_ptr = (uint8_t *)data;
+
     uint16_t data_temp;
+    uint8_t  phase = 0;
 
-    uint16_t i    = 0;
-    uint8_t phase = 0;
+    uint16_t i     = 0;
 
-    for(i = 0; i < size_in_bytes; i++)
+    if(data == NULL)
     {
-        if(phase)
+        func_retval = -1;
+    }
+    else
+    {
+        for(i = 0; i < size_in_bytes; i++)
         {
-            data_temp = *data_ptr;
+            if(phase)
+            {
+                data_temp = *data_ptr;
 
-            *sum += data_temp << 8;
+                *sum += data_temp << 8;
+            }
+            else
+            {
+                *sum += *data_ptr;
+            }
+
+            phase = 1 - phase;
+
+            data_ptr++;
         }
-        else
-        {
-            *sum += *data_ptr;
-        }
-
-        phase = 1 - phase;
-
-        data_ptr++;
     }
 
-    return 0;
+    return func_retval;
 }
+
 
 
 
@@ -184,106 +152,16 @@ uint16_t ether_get_checksum(uint32_t sum)
 
 
 
-/********************************************************
- * @brief  Function to set mac address
- * @param  *device_mac  : device mac address (Hex)
- * @param  *mac_address : mac address (string)
- * @retval int8_t       : Error = -1, Success = 0
- ********************************************************/
-int8_t set_mac_address(char *device_mac, char *mac_address)
-{
-    int8_t func_retval = 0;
-
-    char mac_address_copy[18] = {0};  /*!< Copy variable    */
-    char *rest_ptr;                   /*!< Tracking pointer */
-    char *token;                      /*!< token            */
-
-
-    /* Copy mac address to copy variable for null termination (required for string function) */
-    strncpy(mac_address_copy, mac_address, 18);  /* Size of mac address entered as string with null at index 18 */
-
-    uint8_t index = 0;
-
-    if(mac_address_copy[17] != 0)
-    {
-        func_retval = -1;
-    }
-    else
-    {
-        rest_ptr = mac_address_copy;
-
-        /* strtok_r function for non glibc compliant code */
-        while( (token = api_strtok_r(rest_ptr, ":", &rest_ptr)) )
-        {
-            /* Convert to hex */
-            device_mac[index] = strtol(token, NULL, 16);
-
-            index++;
-        }
-
-    }
-
-
-    return func_retval;
-}
-
-
-
-
-/********************************************************
- * @brief  function to set ip address
- * @param  *host_ip    : host ip address (integer)
- * @param  *ip_address : ip address (string)
- * @retval int8_t      : Error = -1, Success = 0
- ********************************************************/
-int8_t set_ip_address(uint8_t *host_ip, char *ip_address)
-{
-
-    int8_t func_retval = 0;
-
-    char ip_address_copy[13] = {0};   /*!< Copy variable    */
-    char *rest_ptr;                   /*!< Tracking pointer */
-    char *token;                      /*!< token            */
-
-
-    /* Copy ip address to copy variable for null termination (required for string function) */
-    strncpy(ip_address_copy, ip_address, 13);  /* Size of ip address entered as string with null at index 18 */
-
-    uint8_t index = 0;
-
-    if(ip_address_copy[12] != 0)
-    {
-        func_retval = -1;
-    }
-    else
-    {
-        rest_ptr = ip_address_copy;
-
-        /* strtok_r function for non glibc compliant code */
-        while( (token = api_strtok_r(rest_ptr, ".", &rest_ptr)) )
-        {
-            /* Convert to hex */
-            host_ip[index] = strtol(token, NULL, 10);
-
-            index++;
-        }
-
-    }
-
-    return func_retval;
-
-
-}
 
 
 
 /*************************************************************************
- * @brief  constructor function to create ethernet handle
+ * @brief  constructor function to create Ethernet handle
  *         (Multiple exit points)
  * @param  *network_data  : reference to the network data buffer
- * @param  *mac_address   : mac address (string)
+ * @param  *mac_address   : MAC address (string)
  * @param  *ip_address    : ip address (string)
- * @param  *ether_ops     : reference to the ethernet operations structure
+ * @param  *ether_ops     : reference to the Ethernet operations structure
  * @retval int8_t         : Error = NULL
  **************************************************************************/
 ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_address, char *ip_address, ethernet_operations_t *ether_ops)
@@ -328,6 +206,14 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
 
 
 
+/*****************************************************************************
+ * @brief  Function to fill the Ethernet frame
+ * @param  *ethernet                : reference to the Ethernet struct handle
+ * @param  *destination_mac_address : destination MAC address
+ * @param  *source_mac_address      : source MAC address
+ * @param  frame type               : Ethernet frame type
+ * @retval int8_t                   : Error = NULL
+ *****************************************************************************/
 int8_t fill_ether_frame(ethernet_handle_t *ethernet, uint8_t *destination_mac_addr, uint8_t *source_mac_addr, ether_type_t frame_type)
 {
     int8_t func_retval = 0;

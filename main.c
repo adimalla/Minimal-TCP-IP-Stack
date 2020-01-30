@@ -28,8 +28,10 @@
 #include "wait.h"
 
 #include "ethernet.h"
+#include "network_utilities.h"
 #include "arp.h"
 #include "ipv4.h"
+
 
 #define RED_LED      (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 1*4)))
 #define GREEN_LED    (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 3*4)))

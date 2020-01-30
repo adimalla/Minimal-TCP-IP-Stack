@@ -13,6 +13,7 @@
 
 
 #include "ethernet.h"
+#include "network_utilities.h"
 
 
 #define IOT_COURSE_TEST 1
