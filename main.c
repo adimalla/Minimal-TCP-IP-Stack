@@ -31,7 +31,7 @@
 #include "network_utilities.h"
 #include "arp.h"
 #include "ipv4.h"
-
+#include "icmp.h"
 
 #define RED_LED      (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 1*4)))
 #define GREEN_LED    (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 3*4)))
@@ -69,11 +69,9 @@ void initHw()
 
 #if IOT_COURSE_TEST
 
-
     // Configure ~CS for ENC28J60
     GPIO_PORTA_DIR_R = (1 << 3);  // make bit 1 an output
     GPIO_PORTA_DEN_R = (1 << 3);  // enable bits 1 for digital
-
 
     SYSCTL_RCGCSSI_R   |= SYSCTL_RCGCSSI_R0;
     GPIO_PORTA_DIR_R   |= ( 1 << 2) | (1 << 3) | (1 << 5);
@@ -135,7 +133,6 @@ int main(void)
 
     // init ethernet interface
     etherInit(ETHER_UNICAST | ETHER_BROADCAST | ETHER_HALFDUPLEX);
-    etherSetIpAddress(192,168,10,2);
 
     // flash phy leds
     etherWritePhy(PHLCON, 0x0880);
@@ -188,7 +185,6 @@ int main(void)
             /* Get packet from network */
             ethernet->ether_commands->ether_recv_packet((uint8_t*)network_hardware, 128);
 
-
             switch(ntohs(ethernet->ether_obj->type))
             {
 
@@ -198,10 +194,10 @@ int main(void)
 
                 if(retval == 0)
                 {
-                    RED_LED = 1;
+                    RED_LED   = 1;
                     GREEN_LED = 1;
                     waitMicrosecond(50000);
-                    RED_LED = 0;
+                    RED_LED   = 0;
                     GREEN_LED = 0;
                 }
 
@@ -214,47 +210,60 @@ int main(void)
                 if(retval == 1)
                 {
 
-                    // handle icmp ping request
-                    if (etherIsPingReq(data))
+                    switch(get_ip_protocol_type(ethernet))
                     {
-                        etherSendPingResp(data);
-                        RED_LED = 1;
-                        BLUE_LED = 1;
-                        waitMicrosecond(50000);
-                        RED_LED = 0;
-                        BLUE_LED = 0;
-                    }
 
+                    case IP_ICMP:
+
+                        retval = ether_send_icmp_reply(ethernet);
+
+                        if(retval == 0)
+                        {
+                            RED_LED  = 1;
+                            BLUE_LED = 1;
+                            waitMicrosecond(50000);
+                            RED_LED  = 0;
+                            BLUE_LED = 0;
+                        }
+
+                        break;
+
+                    case IP_TCP:
+
+                        break;
+
+                    case IP_UDP:
+
+                        // handle udp datagram
+                        if (etherIsUdp(data))
+                        {
+                            udpData = etherGetUdpData(data);
+                            if (udpData[0] == '1')
+                                GREEN_LED = 1;
+                            if (udpData[0] == '0')
+                                GREEN_LED = 0;
+                            etherSendUdpData(data, (uint8_t*)"Received", 9);
+                            BLUE_LED = 1;
+                            waitMicrosecond(100000);
+                            BLUE_LED = 0;
+                        }
+
+                        break;
+
+                    default:
+
+                        break;
+
+                    }
                 }
 
                 break;
 
             default:
 
+
                 break;
 
-            }
-
-
-            if (etherIsIp(data))
-            {
-                if (etherIsIpUnicast(data))
-                {
-
-                    // handle udp datagram
-                    if (etherIsUdp(data))
-                    {
-                        udpData = etherGetUdpData(data);
-                        if (udpData[0] == '1')
-                            GREEN_LED = 1;
-                        if (udpData[0] == '0')
-                            GREEN_LED = 0;
-                        etherSendUdpData(data, (uint8_t*)"Received", 9);
-                        BLUE_LED = 1;
-                        waitMicrosecond(100000);
-                        BLUE_LED = 0;
-                    }
-                }
             }
 
         }

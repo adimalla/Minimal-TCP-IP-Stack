@@ -85,46 +85,6 @@ struct _udp // 8 bytes
 
 
 
-// Determines whether packet is IP datagram
-uint8_t etherIsIp(uint8_t data[])
-{
-    ether_frame_t *ether;
-    uint8_t ok;
-    enc28j60 = (void*)data;
-    ether = (void*)&enc28j60->data;
-    ip = (void*)&ether->data;
-    ok = (ether->type == 0x0008);
-    if (ok)
-    {
-        sum = 0;
-        etherSumWords(ip, (ip->rev_size & 0xF) * 4);
-        ok = (getEtherChecksum() == 0);
-    }
-    return ok;
-}
-
-
-// Determines whether packet is unicast to this ip
-// Must be an IP packet
-bool etherIsIpUnicast(uint8_t data[])
-{
-    ether_frame_t *ether;
-    uint8_t i = 0;
-    bool ok = true;
-    enc28j60 = (void*)data;
-    ether = (void*)&enc28j60->data;
-    ip = (void*)&ether->data;
-    while (ok && (i < 4))
-    {
-        ok = (ip->destIp[i] == ipv4Address[i]);
-        i++;
-    }
-    return ok;
-}
-
-
-
-
 
 
 //-----------------------------------------------------------------------------
@@ -506,58 +466,6 @@ uint16_t getEtherChecksum()
 
 
 
-// Determines whether packet is ping request
-// Must be an IP packet
-uint8_t etherIsPingReq(uint8_t data[])
-{
-    ether_frame_t *ether;
-    enc28j60 = (void*)data;
-    ether = (void*)&enc28j60->data;
-    ip = (void*)&ether->data;
-    icmp = (void*)((uint8_t*)ip + ((ip->rev_size & 0xF) * 4));
-    return (ip->protocol == 0x01 && icmp->type == 8);
-}
-
-
-// Sends a ping response given the request data
-void etherSendPingResp(uint8_t data[])
-{
-    ether_frame_t *ether;
-    uint8_t i, tmp;
-    uint16_t icmp_size;
-    enc28j60 = (void*)data;
-    ether = (void*)&enc28j60->data;
-    ip = (void*)&ether->data;
-    icmp = (void*)((uint8_t*)ip + ((ip->rev_size & 0xF) * 4));
-    // swap source and destination fields
-    for (i = 0; i < 6; i++)
-    {
-        tmp = ether->destination_mac_addr[i];
-        ether->destination_mac_addr[i] = ether->source_mac_addr[i];
-        ether->source_mac_addr[i] = tmp;
-    }
-    for (i = 0; i < 4; i++)
-    {
-        tmp = ip->destIp[i];
-        ip->destIp[i] = ip ->sourceIp[i];
-        ip->sourceIp[i] = tmp;
-    }
-    // this is a response
-    icmp->type = 0;
-    // calc icmp checksum
-    sum = 0;
-    etherSumWords(&icmp->type, 2);
-    icmp_size = ntohs(ip->length);
-    icmp_size -= 24; // sub ip header and icmp code, type, and check
-    etherSumWords(&icmp->id, icmp_size);
-    icmp->check = getEtherChecksum();
-    // send packet
-    etherPutPacket((uint8_t*)ether, 14 + ntohs(ip->length));
-}
-
-
-
-
 
 
 
@@ -682,11 +590,4 @@ bool etherIsValidIp()
     return ipv4Address[0] || ipv4Address[1] || ipv4Address[2] || ipv4Address[3];
 }
 
-// Sets IP address
-void etherSetIpAddress(uint8_t a, uint8_t b,  uint8_t c, uint8_t d)
-{
-    ipv4Address[0] = a;
-    ipv4Address[1] = b;
-    ipv4Address[2] = c;
-    ipv4Address[3] = d;
-}
+

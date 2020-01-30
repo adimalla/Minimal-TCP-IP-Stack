@@ -58,6 +58,11 @@
 /******************************************************************************/
 
 
+#define ETHER_MAC_SIZE   6
+#define ETHER_FRAME_SIZE 14
+#define NET_IPV4_SIZE    4
+#define IP_HEADER_SIZE   20
+
 
 
 /* Ethernet Frame structure (14 Bytes) */
@@ -109,9 +114,11 @@ typedef enum _network_error_codes
 {
     NET_ARP_REQ_ERROR     = -1,  /*!< */
     NET_ARP_RESP_ERROR    = -2,  /*!< */
-    NET_ARP_RESP_IGNORE   = -3,
-    NET_IP_GET_ERROR      = -4,
-    NET_IP_CHECKSUM_ERROR = -5,
+    NET_ARP_RESP_IGNORE   = -3,  /*!< */
+    NET_IP_GET_ERROR      = -4,  /*!< */
+    NET_IP_CHECKSUM_ERROR = -5,  /*!< */
+    NET_ICMP_RESP_ERROR   = -6,  /*!< */
+    NET_ICMP_RESP_IGNORE  = -7,  /*!< */
 
 }network_erro_codes_t;
 
@@ -124,7 +131,6 @@ typedef enum _network_error_codes
 /*                     Ethernet Function Prototypes                           */
 /*                                                                            */
 /******************************************************************************/
-
 
 
 

@@ -92,6 +92,15 @@ typedef struct _net_ip
 }net_ip_t;
 
 
+typedef enum _ip_protocol_type
+{
+    IP_ICMP = 1,
+    IP_TCP  = 6,
+    IP_UDP  = 11,
+
+}ip_protocol_type_t;
+
+
 /******************************************************************************/
 /*                                                                            */
 /*                     IPV4 Function Prototypes                               */
@@ -107,6 +116,12 @@ typedef struct _net_ip
  * @retval int16_t    : Error = -4, -5, Success = 1 (UNICAST)
  ******************************************************************/
 int16_t get_ip_communication_type(ethernet_handle_t *ethernet);
+
+
+
+
+ip_protocol_type_t get_ip_protocol_type(ethernet_handle_t *ethernet);
+
 
 
 #endif /* IPV4_H_ */

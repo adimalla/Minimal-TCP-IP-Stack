@@ -96,7 +96,7 @@ static char *api_strtok_r (char *s, const char *delim, char **save_ptr)
 
 /******************************************************************************/
 /*                                                                            */
-/*                  Network Utility Function Prototypes                       */
+/*                       Network Utility Functions                            */
 /*                                                                            */
 /******************************************************************************/
 
@@ -109,7 +109,11 @@ static char *api_strtok_r (char *s, const char *delim, char **save_ptr)
  ************************************************************************/
 uint16_t htons(uint16_t value)
 {
-    return ((value & 0xFF00) >> 8) + ((value & 0x00FF) << 8);
+    /* Ignore byte swap for 8 bit variables */
+    if((value << 8) == 0)
+        return value;
+    else
+        return ((value & 0xFF00) >> 8) + ((value & 0x00FF) << 8);
 }
 
 
@@ -207,6 +211,13 @@ int8_t set_ip_address(uint8_t *host_ip, char *ip_address)
 
 
 
+/***********************************************
+ * @brief  Function to swap network address
+ *         (used in response messages)
+ * @param  *l_address : address value LHS
+ * @param  *r_address : address value RHS
+ * @retval int8_t     : Error = -1, Success = 0
+ ***********************************************/
 int8_t net_swap_address(char* l_address, char *r_address, uint8_t size)
 {
     int8_t func_retval = 0;

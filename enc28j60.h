@@ -14,7 +14,7 @@
 
 #include "ethernet.h"
 #include "network_utilities.h"
-
+#include "ipv4.h"
 
 #define IOT_COURSE_TEST 1
 
@@ -148,8 +148,6 @@ typedef struct enc28j60Frame // 4-bytes
 enc28j60_frame_t *enc28j60;
 
 
-
-
 void etherSumWords(void* data, uint16_t size_in_bytes);
 uint16_t getEtherChecksum();
 
@@ -168,10 +166,6 @@ int16_t etherPutPacket(uint8_t data[], uint16_t size);
 uint8_t etherIsIp(uint8_t data[]);
 bool etherIsIpUnicast(uint8_t data[]);
 bool etherIsValidIp();
-void etherSetIpAddress(uint8_t a, uint8_t b,  uint8_t c, uint8_t d);
-
-uint8_t etherIsPingReq(uint8_t data[]);
-void etherSendPingResp(uint8_t data[]);
 
 
 uint8_t etherIsUdp(uint8_t data[]);

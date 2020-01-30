@@ -103,7 +103,13 @@ int8_t set_ip_address(uint8_t *host_ip, char *ip_address);
 
 
 
-
+/***********************************************
+ * @brief  Function to swap network address
+ *         (used in response messages)
+ * @param  *l_address : address value LHS
+ * @param  *r_address : address value RHS
+ * @retval int8_t     : Error = -1, Success = 0
+ ***********************************************/
 int8_t net_swap_address(char* l_address, char *r_address, uint8_t size);
 
 

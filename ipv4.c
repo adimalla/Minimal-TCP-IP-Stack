@@ -115,3 +115,26 @@ int16_t get_ip_communication_type(ethernet_handle_t *ethernet)
 
     return func_retval;
 }
+
+
+
+
+ip_protocol_type_t get_ip_protocol_type(ethernet_handle_t *ethernet)
+{
+    ip_protocol_type_t protocol;
+
+    net_ip_t *ip;
+
+    ip = (void*)&ethernet->ether_obj->data;
+
+    protocol = (ip_protocol_type_t)ip->protocol;
+
+    return protocol;
+}
+
+
+
+
+
+
+
