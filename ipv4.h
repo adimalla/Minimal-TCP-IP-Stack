@@ -52,6 +52,46 @@
 
 
 
+
+/******************************************************************************/
+/*                                                                            */
+/*                      Data Structures and Defines                           */
+/*                                                                            */
+/******************************************************************************/
+
+
+typedef struct _ip_ver_size
+{
+    uint8_t header_length : 4;
+    uint8_t version       : 4;
+
+}ip_ver_size_t;
+
+
+typedef struct _ip_flags_offset
+{
+    uint16_t fragment_offset : 13;
+    uint16_t flags           : 3;
+
+}ip_flags_offset;
+
+
+typedef struct _net_ip
+{
+    ip_ver_size_t   version_length;
+    uint8_t         service_type;
+    uint16_t        total_length;
+    uint16_t        id;
+    ip_flags_offset flags_offset;
+    uint8_t         ttl;
+    uint8_t         protocol;
+    uint16_t        header_checksum;
+    uint8_t         source_ip[4];
+    uint8_t         destination_ip[4];
+
+}net_ip_t;
+
+
 /******************************************************************************/
 /*                                                                            */
 /*                     IPV4 Function Prototypes                               */
@@ -66,7 +106,7 @@
  * @param  *ethernet  : reference to the Ethernet handle
  * @retval int16_t    : Error = -4, -5, Success = 1 (UNICAST)
  ******************************************************************/
-int16_t get_ether_ip_data(ethernet_handle_t *ethernet);
+int16_t get_ip_communication_type(ethernet_handle_t *ethernet);
 
 
 #endif /* IPV4_H_ */

@@ -209,10 +209,11 @@ int main(void)
 
             case ETHER_IPV4:
 
-                retval = get_ether_ip_data(ethernet);
+                retval = get_ip_communication_type(ethernet);
 
                 if(retval == 1)
                 {
+
                     // handle icmp ping request
                     if (etherIsPingReq(data))
                     {
@@ -233,6 +234,7 @@ int main(void)
                 break;
 
             }
+
 
             if (etherIsIp(data))
             {

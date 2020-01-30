@@ -518,6 +518,7 @@ uint8_t etherIsPingReq(uint8_t data[])
     return (ip->protocol == 0x01 && icmp->type == 8);
 }
 
+
 // Sends a ping response given the request data
 void etherSendPingResp(uint8_t data[])
 {
