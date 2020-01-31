@@ -70,6 +70,17 @@ int16_t ether_send_arp_req(ethernet_handle_t *ethernet, uint8_t *sender_ip, uint
 
 
 
+/**********************************************************
+ * @brief  Function to independently read ARP data
+ *         (Blocking Call)
+ * @param  *ethernet    : reference to the Ethernet handle
+ * @param  *data        : network_data
+ * @param  *data_length : length of data to be read
+ * @retval uint8_t      : Error = 0, Success = 1
+ **********************************************************/
+uint8_t ether_arp_read_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data_length);
+
+
 /******************************************************************
  * @brief  Function to send arp response
  * @param  *ethernet  : reference to the Ethernet handle

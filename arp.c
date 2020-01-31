@@ -43,6 +43,7 @@
 /*
  * Standard header and api header files
  */
+#include <limits.h>
 #include <string.h>
 
 
@@ -206,6 +207,53 @@ int16_t ether_send_arp_req(ethernet_handle_t *ethernet, uint8_t *sender_ip, uint
 
 
 
+
+
+/**********************************************************
+ * @brief  Function to independently read ARP data
+ *         (Blocking Call)
+ * @param  *ethernet    : reference to the Ethernet handle
+ * @param  *data        : network_data
+ * @param  *data_length : length of data to be read
+ * @retval uint8_t      : Error = 0, Success = 1
+ **********************************************************/
+uint8_t ether_arp_read_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data_length)
+{
+    uint8_t func_retval = 0;
+    uint8_t block_loop  = 0;
+
+    if(ethernet->ether_obj == NULL || data == NULL || data_length == 0 || data_length > UINT16_MAX)
+    {
+        func_retval = 0;
+    }
+    else
+    {
+        block_loop = 1;
+        while(block_loop)
+        {
+            if(ether_module_status(ethernet))
+            {
+                /* Get packet from network */
+                ethernet->ether_commands->ether_recv_packet(data, data_length);
+
+                if(ntohs(ethernet->ether_obj->type) == ETHER_ARP)
+                    func_retval = 1;
+                else
+                    func_retval = 0;
+
+                break;
+            }
+        }
+    }
+
+    return func_retval;
+}
+
+
+
+
+
+
 /******************************************************************
  * @brief  Function to send arp response
  * @param  *ethernet  : reference to the Ethernet handle
@@ -279,4 +327,8 @@ int16_t ether_send_arp_resp(ethernet_handle_t *ethernet)
 
     return func_retval;
 }
+
+
+
+
 
