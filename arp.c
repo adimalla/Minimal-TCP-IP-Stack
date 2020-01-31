@@ -208,7 +208,6 @@ int16_t ether_send_arp_req(ethernet_handle_t *ethernet, uint8_t *sender_ip, uint
 
 
 
-
 /**********************************************************
  * @brief  Function to independently read ARP data
  *         (Blocking Call)
@@ -248,8 +247,6 @@ uint8_t ether_arp_read_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t
 
     return func_retval;
 }
-
-
 
 
 
