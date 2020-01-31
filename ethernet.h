@@ -58,11 +58,12 @@
 /******************************************************************************/
 
 
-#define ETHER_MAC_SIZE   6
-#define ETHER_FRAME_SIZE 14
-#define NET_IPV4_SIZE    4
-#define IP_HEADER_SIZE   20
+#define ETHER_MAC_SIZE    6
+#define ETHER_FRAME_SIZE  14
+#define ETHER_IPV4_SIZE   4
+#define IP_HEADER_SIZE    20
 
+#define ARP_TABLE_SIZE    5
 
 
 /* Ethernet Frame structure (14 Bytes) */
@@ -77,25 +78,39 @@ typedef struct _ether_frame
 
 
 
+/* ARP Table */
+typedef struct _arp_table
+{
+    uint8_t ip_address[ETHER_IPV4_SIZE];
+    uint8_t mac_address[ETHER_MAC_SIZE];
+
+}arp_table_t;
+
+
+typedef struct _ethernet_handle ethernet_handle_t;
+
+
 /* Ethernet/Network Operations handle */
 typedef struct _ethernet_operations
 {
-    int16_t (*ether_send_packet)(uint8_t *data, uint16_t length);   /*!< Callback function to send Ethernet packet    */
-    uint16_t (*ether_recv_packet)(uint8_t *data, uint16_t length);  /*!< Callback function to receive Ethernet packet */
+    uint8_t  function_lock;
+    uint8_t  (*network_interface_status)(void);
+    int16_t  (*ether_send_packet)(uint8_t *data, uint16_t length);   /*!< Callback function to send Ethernet packet    */
+    uint16_t (*ether_recv_packet)(uint8_t *data, uint16_t length);   /*!< Callback function to receive Ethernet packet */
 
-}ethernet_operations_t;
+}ether_operations_t;
 
 
 /* Ethernet/Network Handle */
-typedef struct _ethernet_handle
+struct _ethernet_handle
 {
-    ether_frame_t *ether_obj;               /*!< Ethernet frame object */
-    uint8_t        host_mac[6];             /*!< Host MAC address      */
-    uint8_t        host_ip[4];              /*!< Host IP address       */
+    ether_frame_t      *ether_obj;                /*!< Ethernet frame object */
+    uint8_t            host_mac[ETHER_MAC_SIZE];  /*!< Host MAC address      */
+    uint8_t            host_ip[ETHER_IPV4_SIZE];  /*!< Host IP address       */
+    ether_operations_t *ether_commands;           /*!< Network Operations    */
 
-    ethernet_operations_t *ether_commands;  /*!< Network Operations    */
-
-}ethernet_handle_t;
+    arp_table_t        arp_table[ARP_TABLE_SIZE]; /*!< */
+};
 
 
 /* Ethernet type values */
@@ -143,17 +158,47 @@ uint16_t ether_get_checksum(uint32_t sum);
 
 
 
-/*************************************************************************
+/**************************************************************************
  * @brief  constructor function to create Ethernet handle
  *         (Multiple exit points)
  * @param  *network_data  : reference to the network data buffer
  * @param  *mac_address   : MAC address (string)
  * @param  *ip_address    : ip address (string)
  * @param  *ether_ops     : reference to the Ethernet operations structure
- * @retval int8_t         : Error = NULL
+ * @retval int8_t         : Error = NULL, Success = Ethernet object
  **************************************************************************/
-ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_address, char *ip_address, ethernet_operations_t *ether_ops);
+ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_address, char *ip_address, ether_operations_t *ether_ops);
 
+
+
+/**********************************************************
+ * @brief  Function to get the Ethernet device status
+ * @param  *ethernet : reference to the  Ethernet Handle
+ * @retval  uint8_t  : Error = 0, Success =  1
+ *********************************************************/
+uint8_t ether_module_status(ethernet_handle_t *ethernet);
+
+
+
+/***********************************************************
+ * @brief  Function get Ethernet network data
+ * @param  *ethernet    : reference to the Ethernet handle
+ * @param  *data        : destination MAC address
+ * @param  *data_length : source MAC address
+ * @retval  uint8_t     : Error = 0, Success = 1
+ ***********************************************************/
+uint8_t ether_get_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data_length);
+
+
+
+/***********************************************************
+ * @brief  Function send Ethernet network data
+ * @param  *ethernet    : reference to the Ethernet handle
+ * @param  *data        : destination MAC address
+ * @param  *data_length : source MAC address
+ * @retval  uint8_t     : Error = 0, Success = 1
+ ***********************************************************/
+uint8_t ether_send_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data_length);
 
 
 
@@ -166,6 +211,7 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
  * @retval int8_t                   : Error = NULL
  *****************************************************************************/
 int8_t fill_ether_frame(ethernet_handle_t *ethernet, uint8_t *destination_mac_addr, uint8_t *source_mac_addr, ether_type_t frame_type);
+
 
 
 

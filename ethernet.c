@@ -155,16 +155,16 @@ uint16_t ether_get_checksum(uint32_t sum)
 
 
 
-/*************************************************************************
+/**************************************************************************
  * @brief  constructor function to create Ethernet handle
  *         (Multiple exit points)
  * @param  *network_data  : reference to the network data buffer
  * @param  *mac_address   : MAC address (string)
  * @param  *ip_address    : ip address (string)
  * @param  *ether_ops     : reference to the Ethernet operations structure
- * @retval int8_t         : Error = NULL
+ * @retval int8_t         : Error = NULL, Success = Ethernet object
  **************************************************************************/
-ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_address, char *ip_address, ethernet_operations_t *ether_ops)
+ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_address, char *ip_address, ether_operations_t *ether_ops)
 {
 
     static ethernet_handle_t ethernet;
@@ -198,11 +198,112 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
         if(ether_ops->ether_recv_packet == NULL)
             ether_ops->ether_recv_packet = ethernet_recv_packet;
 
+        if(ether_ops->network_interface_status == NULL)
+            return NULL;
+
     }
 
     return &ethernet;
 }
 
+
+
+/**********************************************************
+ * @brief  Function to get the Ethernet device status
+ * @param  *ethernet : reference to the  Ethernet Handle
+ * @retval  uint8_t  : Error = 0, Success =  1
+ *********************************************************/
+uint8_t ether_module_status(ethernet_handle_t *ethernet)
+{
+    uint8_t func_retval = 0;
+
+    if(ethernet->ether_obj == NULL)
+    {
+        func_retval = 0;
+    }
+    else
+    {
+        if(ethernet->ether_commands->function_lock == 0)
+        {
+            ethernet->ether_commands->function_lock = 1;
+
+            func_retval = ethernet->ether_commands->network_interface_status();
+
+            ethernet->ether_commands->function_lock = 0;
+        }
+    }
+
+    return func_retval;
+}
+
+
+
+/***********************************************************
+ * @brief  Function  Ethernet network data
+ * @param  *ethernet    : reference to the Ethernet handle
+ * @param  *data        : destination MAC address
+ * @param  *data_length : source MAC address
+ * @retval  uint8_t     : Error = 0, Success = 1
+ ***********************************************************/
+uint8_t ether_get_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data_length)
+{
+
+    uint8_t func_retval = 0;
+
+    if(ethernet->ether_obj == NULL || data == NULL || data_length == 0 || data_length > UINT16_MAX)
+    {
+        func_retval = 0;
+    }
+    else
+    {
+        if(ether_module_status(ethernet))
+        {
+            ethernet->ether_commands->function_lock = 1;
+
+            ethernet->ether_commands->ether_recv_packet(data, data_length);
+
+            func_retval = 1;
+
+            ethernet->ether_commands->function_lock = 0;
+        }
+
+    }
+
+    return func_retval;
+}
+
+
+
+/***********************************************************
+ * @brief  Function send Ethernet network data
+ * @param  *ethernet    : reference to the Ethernet handle
+ * @param  *data        : destination MAC address
+ * @param  *data_length : source MAC address
+ * @retval  uint8_t     : Error = 0, Success = 1
+ ***********************************************************/
+uint8_t ether_send_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data_length)
+{
+
+    uint8_t func_retval = 0;
+
+    if(ethernet->ether_obj == NULL || data == NULL || data_length == 0 || data_length > UINT16_MAX)
+    {
+        func_retval = 0;
+    }
+    else
+    {
+        ethernet->ether_commands->function_lock = 1;
+
+        ethernet->ether_commands->ether_send_packet(data, data_length);
+
+        func_retval = 1;
+
+        ethernet->ether_commands->function_lock = 0;
+
+    }
+
+    return func_retval;
+}
 
 
 
