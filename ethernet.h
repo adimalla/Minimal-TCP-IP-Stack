@@ -202,14 +202,14 @@ uint8_t ether_send_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t dat
 
 
 
-/*****************************************************************************
+/************************************************************************
  * @brief  Function to fill the Ethernet frame
- * @param  *ethernet                : reference to the Ethernet struct handle
+ * @param  *ethernet                : reference to the Ethernet handle
  * @param  *destination_mac_address : destination MAC address
  * @param  *source_mac_address      : source MAC address
  * @param  frame type               : Ethernet frame type
  * @retval int8_t                   : Error = NULL
- *****************************************************************************/
+ ***********************************************************************/
 int8_t fill_ether_frame(ethernet_handle_t *ethernet, uint8_t *destination_mac_addr, uint8_t *source_mac_addr, ether_type_t frame_type);
 
 
