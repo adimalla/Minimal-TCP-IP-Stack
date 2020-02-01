@@ -60,40 +60,40 @@
 /******************************************************************************/
 
 
-#define IP_VERSION        4       /*!< */
-#define IP_HEADER_LENGTH  5       /*!< */
-#define IP_DF_SET         0x4000  /*!< */
-#define IP_TTL_VALUE      64      /*!< */
-#define IP_HEADER_SIZE    20      /*!< */
+#define IP_VERSION        4       /*!< IP protocol version                      */
+#define IP_HEADER_LENGTH  5       /*!< IP header length value (not header size) */
+#define IP_DF_SET         0x4000  /*!< Don't Fragment set value                 */
+#define IP_TTL_VALUE      64      /*!< Time to Live value                       */
+#define IP_HEADER_SIZE    20      /*!< IP header size                           */
 
 
-/* */
+/* IP version and header length fields */
 typedef struct _ip_ver_size
 {
-    uint8_t header_length : 4;  /*!< */
-    uint8_t version       : 4;  /*!< */
+    uint8_t header_length : 4;  /*!< Header length value */
+    uint8_t version       : 4;  /*!< IP version value    */
 
 }ip_ver_size_t;
 
 
-/* */
+/* IP Frame structure (20 Bytes in current implementation) */
 typedef struct _net_ip
 {
-    ip_ver_size_t   version_length;     /*!< */
-    uint8_t         service_type;       /*!< */
-    uint16_t        total_length;       /*!< */
-    uint16_t        id;                 /*!< */
-    uint16_t        flags_offset;       /*!< */
-    uint8_t         ttl;                /*!< */
-    uint8_t         protocol;           /*!< */
-    uint16_t        header_checksum;    /*!< */
-    uint8_t         source_ip[4];       /*!< */
-    uint8_t         destination_ip[4];  /*!< */
+    ip_ver_size_t   version_length;     /*!< IP version and header length      */
+    uint8_t         service_type;       /*!< IP quality of service type        */
+    uint16_t        total_length;       /*!< IP packet total length            */
+    uint16_t        id;                 /*!< IP packet ID                      */
+    uint16_t        flags_offset;       /*!< IP fragmentation flags and offset */
+    uint8_t         ttl;                /*!< Time to Live value                */
+    uint8_t         protocol;           /*!< IP protocol type                  */
+    uint16_t        header_checksum;    /*!< IP header checksum                */
+    uint8_t         source_ip[4];       /*!< Source IP address                 */
+    uint8_t         destination_ip[4];  /*!< Destination IP address            */
 
 }net_ip_t;
 
 
-/* */
+/* IP protocol type values */
 typedef enum _ip_protocol_type
 {
     IP_ICMP = 1,
