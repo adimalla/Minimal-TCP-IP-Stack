@@ -138,6 +138,13 @@ static int8_t set_broadcast_mac_addr(uint8_t *mac_address)
 
 
 
+/******************************************************************************
+ * @brief  Static Function to update ARP table
+ * @param  *ethernet    : reference to the Ethernet handle
+ * @param  *ip_address  : device ip address
+ * @param  *mac_address : device mac_address
+ * @retval int8_t       : Success = 0 (device added), 1(device already exists)
+ ******************************************************************************/
 static uint8_t update_arp_table(ethernet_handle_t *ethernet, uint8_t *ip_address, uint8_t *mac_address)
 {
 
