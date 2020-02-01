@@ -61,6 +61,10 @@
 /******************************************************************************/
 
 
+#define ICMP_PACKET_SIZE 8
+
+
+
 /* ICMP Frame */
 typedef struct _net_icmp
 {
@@ -85,7 +89,11 @@ typedef struct _net_icmp
 
 
 
-
+/******************************************************************
+ * @brief  Function to send ICMP reply packet
+ * @param  *ethernet  : reference to the Ethernet handle
+ * @retval int16_t    : Error = -6, -7 = reply ignore, Success = 0
+ ******************************************************************/
 int8_t ether_send_icmp_reply(ethernet_handle_t *ethernet)
 {
     int8_t func_retval = 0;
@@ -154,6 +162,16 @@ int8_t ether_send_icmp_reply(ethernet_handle_t *ethernet)
 
 
 
+
+/*****************************************************************
+ * @brief  Function to send ICMP request
+ * @param  *ethernet        : Reference to the Ethernet structure
+ * @param  icmp_type        : ICMP request type
+ * @param  *destination_ip  : Destination IP address
+ * @param  sequence_no      : ICMP packet sequence Number
+ * @param  *destination_mac : Destination mac address
+ * @retval int8_t           : Error = -8, Success = 0.
+ ****************************************************************/
 int8_t ether_send_icmp_req(ethernet_handle_t *ethernet, icmp_type_t icmp_type, uint8_t *destination_ip,
                            uint8_t *sequence_no, uint8_t* destination_mac)
 {
@@ -164,9 +182,11 @@ int8_t ether_send_icmp_req(ethernet_handle_t *ethernet, icmp_type_t icmp_type, u
 
     uint32_t sum = 0;
 
+    uint16_t icmp_packet_size = 0;
+
     if(ethernet->ether_obj == NULL)
     {
-        func_retval = -8;
+        func_retval = NET_ICMP_REQ_ERROR;
     }
     else
     {
@@ -178,6 +198,7 @@ int8_t ether_send_icmp_req(ethernet_handle_t *ethernet, icmp_type_t icmp_type, u
 
         icmp->code = 0;
 
+        /* Get ID from random generator */
         icmp->id = 15625;
 
         icmp->sequence_no = htons(*sequence_no);
@@ -192,11 +213,13 @@ int8_t ether_send_icmp_req(ethernet_handle_t *ethernet, icmp_type_t icmp_type, u
 
         icmp->checksum = ether_get_checksum(sum);
 
+        icmp_packet_size = ICMP_PACKET_SIZE;
+
 
         /* Fill IP frame */
         ip  = (void*)&ethernet->ether_obj->data;
 
-        fill_ip_frame(ip, destination_ip, ethernet->host_ip, IP_ICMP, 9);
+        fill_ip_frame(ip, destination_ip, ethernet->host_ip, IP_ICMP, icmp_packet_size);
 
 
         /* Fill Ethernet frame */
