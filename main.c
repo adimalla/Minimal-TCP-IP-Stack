@@ -116,16 +116,16 @@ void initHw()
 
 }
 
-//-----------------------------------------------------------------------------
-// Main
-//-----------------------------------------------------------------------------
+
+
+#define TEST 1
+
+
 
 int main(void)
 {
     uint8_t* udpData;
     uint8_t data[128] = {0};
-
-    uint8_t test_ip[4] = {0};
 
     uint8_t loop = 0;
 
@@ -145,10 +145,7 @@ int main(void)
     RED_LED = 0;
     waitMicrosecond(500000);
 
-    test_ip[0] = 192;
-    test_ip[1] = 168;
-    test_ip[2] = 10;
-    test_ip[3] = 1;
+
 
     enc28j60_frame_t  *network_hardware;
     ethernet_handle_t *ethernet;
@@ -166,7 +163,18 @@ int main(void)
     /* Create Ethernet handle */
     ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:05:06:07", "192.168.10.2", &ether_ops);
 
-    /* For test only */
+
+#if TEST
+
+    uint8_t test_ip[4] = {0};
+
+    uint8_t sequence_no = 1;
+
+    test_ip[0] = 192;
+    test_ip[1] = 168;
+    test_ip[2] = 10;
+    test_ip[3] = 1;
+
 
     ether_send_arp_req(ethernet, ethernet->host_ip,test_ip);
 
@@ -181,10 +189,9 @@ int main(void)
 
     }
 
-    uint8_t sequence_no = 1;
-
     ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, test_ip, &sequence_no, ethernet->arp_table[0].mac_address);
 
+#endif
 
     /* State machine */
 
