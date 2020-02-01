@@ -58,10 +58,12 @@
 /******************************************************************************/
 
 
-#define ETHER_MAC_SIZE    6    /*!< */
-#define ETHER_FRAME_SIZE  14   /*!< */
-#define ETHER_IPV4_SIZE   4    /*!< */
-#define ARP_TABLE_SIZE    5    /*!< */
+#define ETHER_MAC_SIZE    6    /*!< Size of MAC address        */
+#define ETHER_FRAME_SIZE  14   /*!< Ethernet Frame size        */
+#define ETHER_IPV4_SIZE   4    /*!< IP protocol version 4 size */
+#define ARP_TABLE_SIZE    5    /*!< ARP Table size define      */
+
+
 
 
 /* Ethernet Frame structure (14 Bytes) */
@@ -76,26 +78,28 @@ typedef struct _ether_frame
 
 
 
+
+/* Ethernet Handle type defined */
+typedef struct _ethernet_handle ethernet_handle_t;
+
+
 /* ARP Table */
 typedef struct _arp_table
 {
-    uint8_t ip_address[ETHER_IPV4_SIZE];  /*!< */
-    uint8_t mac_address[ETHER_MAC_SIZE];  /*!< */
+    uint8_t ip_address[ETHER_IPV4_SIZE];  /*!< Device IP address  */
+    uint8_t mac_address[ETHER_MAC_SIZE];  /*!< Device Mac address */
 
 }arp_table_t;
-
-
-typedef struct _ethernet_handle ethernet_handle_t;
 
 
 /* Ethernet/Network Operations handle */
 typedef struct _ethernet_operations
 {
-    uint8_t  function_lock;                                          /*!< */
-    uint8_t  (*network_interface_status)(void);                      /*!< */
-    uint16_t (*random_gen_seed)(void);                               /*!< */
-    int16_t  (*ether_send_packet)(uint8_t *data, uint16_t length);   /*!< Callback function to send Ethernet packet    */
-    uint16_t (*ether_recv_packet)(uint8_t *data, uint16_t length);   /*!< Callback function to receive Ethernet packet */
+    uint8_t  function_lock;                                          /*!< Function Lock for exclusive access of functions (experimental ) */
+    uint8_t  (*network_interface_status)(void);                      /*!< Network / Ethernet module packet receive status / trigger       */
+    uint16_t (*random_gen_seed)(void);                               /*!< Seed value return function for random number generation         */
+    int16_t  (*ether_send_packet)(uint8_t *data, uint16_t length);   /*!< Callback function to send Ethernet packet                       */
+    uint16_t (*ether_recv_packet)(uint8_t *data, uint16_t length);   /*!< Callback function to receive Ethernet packet                    */
 
 }ether_operations_t;
 
@@ -108,16 +112,17 @@ struct _ethernet_handle
     uint8_t            host_ip[ETHER_IPV4_SIZE];  /*!< Host IP address       */
     ether_operations_t *ether_commands;           /*!< Network Operations    */
 
-    arp_table_t        arp_table[ARP_TABLE_SIZE]; /*!< */
+    arp_table_t        arp_table[ARP_TABLE_SIZE]; /*!< ARP Table             */
 };
+
 
 
 /* Ethernet type values */
 typedef enum _ether_type
 {
-    ETHER_IPV4 = 0x0800,  /*!< */
-    ETHER_ARP  = 0x0806,  /*!< */
-    ETHER_RARP = 0x8035,  /*!< */
+    ETHER_IPV4 = 0x0800,  /*!< IP protocol version 4 Ethernet type value */
+    ETHER_ARP  = 0x0806,  /*!< ARP protocol Ethernet type value          */
+    ETHER_RARP = 0x8035,  /*!< RARP protocol Ethernet type value         */
 
 }ether_type_t;
 
@@ -133,6 +138,7 @@ typedef enum _network_error_codes
     NET_IP_CHECKSUM_ERROR = -5,  /*!< */
     NET_ICMP_RESP_ERROR   = -6,  /*!< */
     NET_ICMP_RESP_IGNORE  = -7,  /*!< */
+    NET_ICMP_REQ_ERROR    = -8,  /*!< */
 
 }network_erro_codes_t;
 
