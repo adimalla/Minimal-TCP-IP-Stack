@@ -60,38 +60,40 @@
 /******************************************************************************/
 
 
+#define IP_VERSION        4       /*!< */
+#define IP_HEADER_LENGTH  5       /*!< */
+#define IP_DF_SET         0x4000  /*!< */
+#define IP_TTL_VALUE      64      /*!< */
+#define IP_HEADER_SIZE    20      /*!< */
+
+
+/* */
 typedef struct _ip_ver_size
 {
-    uint8_t header_length : 4;
-    uint8_t version       : 4;
+    uint8_t header_length : 4;  /*!< */
+    uint8_t version       : 4;  /*!< */
 
 }ip_ver_size_t;
 
 
-typedef struct _ip_flags_offset
-{
-    uint16_t fragment_offset : 13;
-    uint16_t flags           : 3;
-
-}ip_flags_offset;
-
-
+/* */
 typedef struct _net_ip
 {
-    ip_ver_size_t   version_length;
-    uint8_t         service_type;
-    uint16_t        total_length;
-    uint16_t        id;
-    ip_flags_offset flags_offset;
-    uint8_t         ttl;
-    uint8_t         protocol;
-    uint16_t        header_checksum;
-    uint8_t         source_ip[4];
-    uint8_t         destination_ip[4];
+    ip_ver_size_t   version_length;     /*!< */
+    uint8_t         service_type;       /*!< */
+    uint16_t        total_length;       /*!< */
+    uint16_t        id;                 /*!< */
+    uint16_t        flags_offset;       /*!< */
+    uint8_t         ttl;                /*!< */
+    uint8_t         protocol;           /*!< */
+    uint16_t        header_checksum;    /*!< */
+    uint8_t         source_ip[4];       /*!< */
+    uint8_t         destination_ip[4];  /*!< */
 
 }net_ip_t;
 
 
+/* */
 typedef enum _ip_protocol_type
 {
     IP_ICMP = 1,
@@ -109,18 +111,38 @@ typedef enum _ip_protocol_type
 
 
 
-/******************************************************************
+/**************************************************************
  * @brief  Function to get IP data for current host device
  *         (Only handles UNICAST)
  * @param  *ethernet  : reference to the Ethernet handle
  * @retval int16_t    : Error = -4, -5, Success = 1 (UNICAST)
- ******************************************************************/
+ **************************************************************/
 int16_t get_ip_communication_type(ethernet_handle_t *ethernet);
 
 
 
 
+/****************************************************************
+ * @brief  Function to get IP protocol type
+ * @param  *ethernet  : reference to the Ethernet handle
+ * @retval int16_t    : Error = -4, -5, Success = protocol type
+ ***************************************************************/
 ip_protocol_type_t get_ip_protocol_type(ethernet_handle_t *ethernet);
+
+
+
+
+/**********************************************************
+ * @brief  Function to fill the IP frame
+ * @param  *ip             : reference to the IP structure
+ * @param  *destination_ip : destination IP address
+ * @param  *source_ip      : source IP address
+ * @param  protocol        : IP protocol type
+ * @param  data_size       : size of payload
+ * @retval int8_t          : Error = NULL
+ **********************************************************/
+int8_t fill_ip_frame(net_ip_t *ip, uint8_t *destination_ip, uint8_t *source_ip, ip_protocol_type_t protocol, uint16_t data_size);
+
 
 
 

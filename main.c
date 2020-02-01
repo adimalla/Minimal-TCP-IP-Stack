@@ -55,7 +55,7 @@ void initHw()
     SYSCTL_GPIOHBCTL_R = 0;
 
     // Enable GPIO port B and E peripherals
-    SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOB | SYSCTL_RCGC2_GPIOD | SYSCTL_RCGC2_GPIOF | SYSCTL_RCGC2_GPIOA;
+    SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOB | SYSCTL_RCGC2_GPIOD | SYSCTL_RCGC2_GPIOF | SYSCTL_RCGC2_GPIOA | SYSCTL_RCGC2_GPIOD;
 
     // Configure LED and pushbutton pins
     GPIO_PORTF_DIR_R = 0x0E;  // bits 1-3 are outputs, other pins are inputs
@@ -72,6 +72,9 @@ void initHw()
     // Configure ~CS for ENC28J60
     GPIO_PORTA_DIR_R = (1 << 3);  // make bit 1 an output
     GPIO_PORTA_DEN_R = (1 << 3);  // enable bits 1 for digital
+
+    //    GPIO_PORTD_DIR_R = (1 << 1);  // make bit 1 an output
+    //    GPIO_PORTD_DEN_R = (1 << 1);  // enable bits 1 for digital
 
     SYSCTL_RCGCSSI_R   |= SYSCTL_RCGCSSI_R0;
     GPIO_PORTA_DIR_R   |= ( 1 << 2) | (1 << 3) | (1 << 5);
@@ -122,7 +125,7 @@ int main(void)
     uint8_t* udpData;
     uint8_t data[128] = {0};
 
-    uint8_t test_ip[4];
+    uint8_t test_ip[4] = {0};
 
     uint8_t loop = 0;
 
@@ -153,17 +156,35 @@ int main(void)
     network_hardware = (void*)data;
 
     /* Link network operation functions */
-    ethernet_operations_t ether_ops =
+    ether_operations_t ether_ops =
     {
-     .ether_send_packet = etherPutPacket,
-     .ether_recv_packet = etherGetPacket,
+     .network_interface_status = etherKbhit,
+     .ether_send_packet        = etherPutPacket,
+     .ether_recv_packet        = etherGetPacket,
     };
 
     /* Create Ethernet handle */
     ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:05:06:07", "192.168.10.2", &ether_ops);
 
-    /* Send test arp request */
+    /* For test only */
+
     ether_send_arp_req(ethernet, ethernet->host_ip,test_ip);
+
+    if(ether_arp_read_data(ethernet, (uint8_t*)network_hardware, 128))
+    {
+
+        ether_handle_arp_resp_req(ethernet);
+
+        GREEN_LED = 1;
+        waitMicrosecond(50000);
+        GREEN_LED = 0;
+
+    }
+
+    uint8_t sequence_no = 1;
+
+    ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, test_ip, &sequence_no, ethernet->arp_table[0].mac_address);
+
 
     /* State machine */
 
@@ -171,9 +192,8 @@ int main(void)
 
     while(loop)
     {
-        memset(data, 0, sizeof(data));
 
-        if (etherKbhit())
+        if (ether_get_data(ethernet, (uint8_t*)network_hardware, 128))
         {
             if (etherIsOverflow())
             {
@@ -182,15 +202,12 @@ int main(void)
                 RED_LED = 0;
             }
 
-            /* Get packet from network */
-            ethernet->ether_commands->ether_recv_packet((uint8_t*)network_hardware, 128);
-
             switch(ntohs(ethernet->ether_obj->type))
             {
 
             case ETHER_ARP:
 
-                retval = ether_send_arp_resp(ethernet);
+                retval = ether_handle_arp_resp_req(ethernet);
 
                 if(retval == 0)
                 {
@@ -259,14 +276,16 @@ int main(void)
 
                 break;
 
-            default:
 
+            default:
 
                 break;
 
             }
 
         }
+
+        memset(data, 0, sizeof(data));
     }
 
     return 0;

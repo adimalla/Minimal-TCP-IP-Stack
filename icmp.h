@@ -54,6 +54,25 @@
 #include "ethernet.h"
 
 
+/******************************************************************************/
+/*                                                                            */
+/*                      Data Structures and Defines                           */
+/*                                                                            */
+/******************************************************************************/
+
+
+/* ICMP message types */
+typedef enum _icmp_type
+{
+    ICMP_UNREACHABLE = 3,  /*!< */
+    ICMP_ECHOREPLY   = 0,  /*!< */
+    ICMP_ECHOREQUEST = 8,  /*!< */
+    ICMP_TRACEROUTE  = 30, /*!< */
+
+}icmp_type_t;
+
+
+
 
 /******************************************************************************/
 /*                                                                            */
@@ -65,7 +84,8 @@
 
 int8_t ether_send_icmp_reply(ethernet_handle_t *ethernet);
 
-
+int8_t ether_send_icmp_req(ethernet_handle_t *ethernet, icmp_type_t icmp_type, uint8_t *destination_ip,
+                           uint8_t *sequence_no, uint8_t* destination_mac);
 
 
 #endif /* ICMP_H_ */

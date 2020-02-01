@@ -81,12 +81,14 @@ int16_t ether_send_arp_req(ethernet_handle_t *ethernet, uint8_t *sender_ip, uint
 uint8_t ether_arp_read_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data_length);
 
 
+
 /******************************************************************
- * @brief  Function to send arp response
+ * @brief  Function to handle ARP request and reply
+ *         sends ARP reply if ARP request received
  * @param  *ethernet  : reference to the Ethernet handle
  * @retval int16_t    : Error = -2, -3 = reply ignore, Success = 0
  ******************************************************************/
-int16_t ether_send_arp_resp(ethernet_handle_t *ethernet);
+int16_t ether_handle_arp_resp_req(ethernet_handle_t *ethernet);
 
 
 

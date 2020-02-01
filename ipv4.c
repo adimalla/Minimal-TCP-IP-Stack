@@ -61,9 +61,6 @@
 
 
 
-
-
-
 /******************************************************************************/
 /*                                                                            */
 /*                           IPV4 Functions                                   */
@@ -72,12 +69,12 @@
 
 
 
-/************************************************************************
- * @brief  Function to get IP communication type for current host device
+/**************************************************************
+ * @brief  Function to get IP data for current host device
  *         (Only handles UNICAST)
  * @param  *ethernet  : reference to the Ethernet handle
  * @retval int16_t    : Error = -4, -5, Success = 1 (UNICAST)
- ************************************************************************/
+ **************************************************************/
 int16_t get_ip_communication_type(ethernet_handle_t *ethernet)
 {
     int16_t func_retval = 0;
@@ -118,7 +115,11 @@ int16_t get_ip_communication_type(ethernet_handle_t *ethernet)
 
 
 
-
+/****************************************************************
+ * @brief  Function to get IP protocol type
+ * @param  *ethernet  : reference to the Ethernet handle
+ * @retval int16_t    : Error = -4, -5, Success = protocol type
+ ***************************************************************/
 ip_protocol_type_t get_ip_protocol_type(ethernet_handle_t *ethernet)
 {
     ip_protocol_type_t protocol;
@@ -130,6 +131,67 @@ ip_protocol_type_t get_ip_protocol_type(ethernet_handle_t *ethernet)
     protocol = (ip_protocol_type_t)ip->protocol;
 
     return protocol;
+}
+
+
+
+/**********************************************************
+ * @brief  Function to fill the IP frame
+ * @param  *ip             : reference to the IP structure
+ * @param  *destination_ip : destination IP address
+ * @param  *source_ip      : source IP address
+ * @param  protocol        : IP protocol type
+ * @param  data_size       : size of payload
+ * @retval int8_t          : Error = NULL
+ **********************************************************/
+int8_t fill_ip_frame(net_ip_t *ip, uint8_t *destination_ip, uint8_t *source_ip, ip_protocol_type_t protocol, uint16_t data_size)
+{
+    int8_t func_retval = 0;
+
+    uint8_t i = 0;
+
+    uint32_t sum = 0;
+
+    if(ip == NULL || destination_ip == NULL || source_ip == NULL || data_size == 0 || data_size > UINT16_MAX)
+    {
+        func_retval = -1;
+    }
+    else
+    {
+
+        ip->version_length.version       = IP_VERSION;
+        ip->version_length.header_length = IP_HEADER_LENGTH;
+
+        ip->service_type = 0;
+
+        ip->id = 0;
+
+        /* Don't Fragment set condition */
+        ip->flags_offset = htons(IP_DF_SET);
+
+        ip->ttl = IP_TTL_VALUE;
+
+        ip->protocol = IP_ICMP;
+
+        ip->total_length = htons(IP_HEADER_SIZE + data_size);
+
+        for(i=0; i < 4; i++)
+        {
+            ip->destination_ip[i] = destination_ip[i];
+            ip->source_ip[i]      = source_ip[i];
+        }
+
+        /* Calculate checksum */
+        sum = 0;
+        ether_sum_words(&sum, &ip->version_length, 10);
+
+        ether_sum_words(&sum, ip->source_ip, 8);
+
+        ip->header_checksum = ether_get_checksum(sum);
+    }
+
+
+    return func_retval;
 }
 
 

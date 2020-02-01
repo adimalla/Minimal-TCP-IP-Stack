@@ -36,6 +36,9 @@
 
 #define PIN_ETHER_CS (*((volatile uint32_t *)(0x42000000 + (0x400043FC-0x40000000)*32 + 3*4)))
 
+//#define PIN_ETHER_CS (*((volatile uint32_t *)(0x42000000 + (0x400073FC-0x40000000)*32 + 1*4)))
+
+
 #else
 #define PIN_ETHER_CS (*((volatile uint32_t *)(0x42000000 + (0x400053FC-0x40000000)*32 + 5*4)))
 

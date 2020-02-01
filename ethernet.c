@@ -54,9 +54,6 @@
 
 
 
-
-
-
 /******************************************************************************/
 /*                                                                            */
 /*                           Ethernet Functions                               */
@@ -80,6 +77,15 @@ __attribute__((weak))uint16_t ethernet_recv_packet(uint8_t *data, uint16_t lengt
 
     return 0;
 }
+
+
+
+__attribute__((weak))uint16_t random_seed(void)
+{
+
+    return 0;
+}
+
 
 
 
@@ -192,14 +198,17 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
         /* Configure network operations and weak linking of default functions */
         ethernet.ether_commands = ether_ops;
 
+        if(ether_ops->network_interface_status == NULL)
+            return NULL;
+
+        if(ether_ops->random_gen_seed == NULL)
+            ether_ops->random_gen_seed = random_seed;
+
         if(ether_ops->ether_send_packet == NULL)
             ether_ops->ether_send_packet = ethernet_send_packet;
 
         if(ether_ops->ether_recv_packet == NULL)
             ether_ops->ether_recv_packet = ethernet_recv_packet;
-
-        if(ether_ops->network_interface_status == NULL)
-            return NULL;
 
     }
 
@@ -307,28 +316,35 @@ uint8_t ether_send_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t dat
 
 
 
-/************************************************************************
+/**********************************************************************
  * @brief  Function to fill the Ethernet frame
  * @param  *ethernet                : reference to the Ethernet handle
  * @param  *destination_mac_address : destination MAC address
  * @param  *source_mac_address      : source MAC address
  * @param  frame type               : Ethernet frame type
- * @retval int8_t                   : Error = NULL
- ***********************************************************************/
+ * @retval int8_t                   : Error = -1, Success = 0
+ **********************************************************************/
 int8_t fill_ether_frame(ethernet_handle_t *ethernet, uint8_t *destination_mac_addr, uint8_t *source_mac_addr, ether_type_t frame_type)
 {
     int8_t func_retval = 0;
 
     uint8_t index = 0;
 
-    /* Fill MAC address */
-    for(index = 0; index < 6; index++)
+    if(ethernet->ether_obj == NULL || destination_mac_addr == NULL || source_mac_addr == NULL)
     {
-        ethernet->ether_obj->destination_mac_addr[index] = destination_mac_addr[index];
-        ethernet->ether_obj->source_mac_addr[index]      = source_mac_addr[index];
+        func_retval = -1;
     }
+    else
+    {
+        /* Fill MAC address */
+        for(index = 0; index < 6; index++)
+        {
+            ethernet->ether_obj->destination_mac_addr[index] = destination_mac_addr[index];
+            ethernet->ether_obj->source_mac_addr[index]      = source_mac_addr[index];
+        }
 
-    ethernet->ether_obj->type = htons(frame_type);
+        ethernet->ether_obj->type = htons(frame_type);
+    }
 
     return func_retval;
 }

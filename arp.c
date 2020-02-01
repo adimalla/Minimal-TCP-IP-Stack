@@ -137,6 +137,52 @@ static int8_t set_broadcast_mac_addr(uint8_t *mac_address)
 
 
 
+
+static uint8_t update_arp_table(ethernet_handle_t *ethernet, uint8_t *ip_address, uint8_t *mac_address)
+{
+
+    uint8_t func_retval = 0;
+
+    uint8_t index = 0;
+
+    uint8_t found = 0;
+
+    if(ethernet->ether_obj == NULL)
+    {
+        func_retval = 0;
+    }
+    else
+    {
+
+        for(index = 0; index < ARP_TABLE_SIZE; index++)
+        {
+            if( (strncmp((char*)ethernet->arp_table[index].ip_address, (char*)ip_address, ETHER_IPV4_SIZE) == 0) )
+            {
+                found = 1;
+
+                break;
+            }
+            else if( (strncmp((char*)ethernet->arp_table[index].ip_address, NULL, ETHER_IPV4_SIZE) == 0) )
+            {
+                found = 0;
+
+                strncpy((char*)ethernet->arp_table[index].ip_address, (char*)ip_address, ETHER_IPV4_SIZE);
+
+                strncpy((char*)ethernet->arp_table[index].mac_address, (char*)mac_address, ETHER_MAC_SIZE);
+
+                break;
+            }
+        }
+
+        func_retval = found;
+    }
+
+    return func_retval;
+}
+
+
+
+
 /******************************************************************************/
 /*                                                                            */
 /*                           ARP Functions                                    */
@@ -198,8 +244,8 @@ int16_t ether_send_arp_req(ethernet_handle_t *ethernet, uint8_t *sender_ip, uint
             arp->target_ip[i] = target_ip[i];
         }
 
-        /* Send packet (callback) */
-        ethernet->ether_commands->ether_send_packet((uint8_t*)ethernet->ether_obj, 42);
+        /* Send packet (uses callback) */
+        ether_send_data(ethernet, (uint8_t*)ethernet->ether_obj, 42);
     }
 
     return func_retval;
@@ -227,22 +273,24 @@ uint8_t ether_arp_read_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t
     }
     else
     {
-        block_loop = 1;
-        while(block_loop)
-        {
-            if(ether_module_status(ethernet))
+            block_loop = 1;
+
+            /* Wait for data */
+            while(block_loop)
             {
-                /* Get packet from network */
-                ethernet->ether_commands->ether_recv_packet(data, data_length);
+                if(ether_get_data(ethernet, data, data_length))
+                {
+                    /* Check if protocol is ARP */
+                    if(ntohs(ethernet->ether_obj->type) == ETHER_ARP)
+                        func_retval = 1;
+                    else
+                        func_retval = 0;
 
-                if(ntohs(ethernet->ether_obj->type) == ETHER_ARP)
-                    func_retval = 1;
-                else
-                    func_retval = 0;
+                    break;
 
-                break;
+                }
             }
-        }
+
     }
 
     return func_retval;
@@ -252,11 +300,12 @@ uint8_t ether_arp_read_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t
 
 
 /******************************************************************
- * @brief  Function to send arp response
+ * @brief  Function to handle ARP request and reply
+ *         sends ARP reply if ARP request received
  * @param  *ethernet  : reference to the Ethernet handle
  * @retval int16_t    : Error = -2, -3 = reply ignore, Success = 0
  ******************************************************************/
-int16_t ether_send_arp_resp(ethernet_handle_t *ethernet)
+int16_t ether_handle_arp_resp_req(ethernet_handle_t *ethernet)
 {
     int16_t func_retval = 0;
 
@@ -273,12 +322,15 @@ int16_t ether_send_arp_resp(ethernet_handle_t *ethernet)
 
         arp = (void*)&ethernet->ether_obj->data;
 
-        /* Handle APR request */
-        if(arp->opcode == ntohs(ARP_REQUEST))
+        /* Check if ARP request is for host IP */
+        if( (strncmp((char*)arp->target_ip, (char*)ethernet->host_ip, 4) == 0) )
         {
-            /* Check if ARP request is for host IP */
-            if( (strncmp((char*)arp->target_ip, (char*)ethernet->host_ip, 4) == 0) )
+            /* Handle APR request */
+            if(arp->opcode == ntohs(ARP_REQUEST))
             {
+
+                /* Get data into ARP Table */
+                update_arp_table(ethernet, arp->sender_ip, arp->sender_hw_addr);
 
                 /* Swap Ethernet MAC Address */
                 for (i = 0; i < 6; i++)
@@ -309,9 +361,14 @@ int16_t ether_send_arp_resp(ethernet_handle_t *ethernet)
                     arp->sender_ip[i] = ethernet->host_ip[i];
                 }
 
+                /* Send packet (uses callback) */
+                ether_send_data(ethernet, (uint8_t*)ethernet->ether_obj, 42);
+            }
 
-                /* Send packet (callback) */
-                ethernet->ether_commands->ether_send_packet((uint8_t*)ethernet->ether_obj, 42);
+            /* Handle APR reply */
+            else if(arp->opcode == ntohs(ARP_REPLY))
+            {
+                update_arp_table(ethernet, arp->sender_ip, arp->sender_hw_addr);
             }
 
         }
@@ -324,6 +381,9 @@ int16_t ether_send_arp_resp(ethernet_handle_t *ethernet)
 
     return func_retval;
 }
+
+
+
 
 
 

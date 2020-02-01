@@ -58,12 +58,10 @@
 /******************************************************************************/
 
 
-#define ETHER_MAC_SIZE    6
-#define ETHER_FRAME_SIZE  14
-#define ETHER_IPV4_SIZE   4
-#define IP_HEADER_SIZE    20
-
-#define ARP_TABLE_SIZE    5
+#define ETHER_MAC_SIZE    6    /*!< */
+#define ETHER_FRAME_SIZE  14   /*!< */
+#define ETHER_IPV4_SIZE   4    /*!< */
+#define ARP_TABLE_SIZE    5    /*!< */
 
 
 /* Ethernet Frame structure (14 Bytes) */
@@ -81,8 +79,8 @@ typedef struct _ether_frame
 /* ARP Table */
 typedef struct _arp_table
 {
-    uint8_t ip_address[ETHER_IPV4_SIZE];
-    uint8_t mac_address[ETHER_MAC_SIZE];
+    uint8_t ip_address[ETHER_IPV4_SIZE];  /*!< */
+    uint8_t mac_address[ETHER_MAC_SIZE];  /*!< */
 
 }arp_table_t;
 
@@ -93,8 +91,9 @@ typedef struct _ethernet_handle ethernet_handle_t;
 /* Ethernet/Network Operations handle */
 typedef struct _ethernet_operations
 {
-    uint8_t  function_lock;
-    uint8_t  (*network_interface_status)(void);
+    uint8_t  function_lock;                                          /*!< */
+    uint8_t  (*network_interface_status)(void);                      /*!< */
+    uint16_t (*random_gen_seed)(void);                               /*!< */
     int16_t  (*ether_send_packet)(uint8_t *data, uint16_t length);   /*!< Callback function to send Ethernet packet    */
     uint16_t (*ether_recv_packet)(uint8_t *data, uint16_t length);   /*!< Callback function to receive Ethernet packet */
 
@@ -202,14 +201,14 @@ uint8_t ether_send_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t dat
 
 
 
-/************************************************************************
+/**********************************************************************
  * @brief  Function to fill the Ethernet frame
  * @param  *ethernet                : reference to the Ethernet handle
  * @param  *destination_mac_address : destination MAC address
  * @param  *source_mac_address      : source MAC address
  * @param  frame type               : Ethernet frame type
- * @retval int8_t                   : Error = NULL
- ***********************************************************************/
+ * @retval int8_t                   : Error = -1, Success = 0
+ **********************************************************************/
 int8_t fill_ether_frame(ethernet_handle_t *ethernet, uint8_t *destination_mac_addr, uint8_t *source_mac_addr, ether_type_t frame_type);
 
 

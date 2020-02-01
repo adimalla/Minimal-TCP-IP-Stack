@@ -46,12 +46,13 @@
  * Standard header and api header files
  */
 #include <string.h>
+#include <stdlib.h>
 
 #include "icmp.h"
 #include "ipv4.h"
 #include "network_utilities.h"
 
-
+#include <time.h>
 
 /******************************************************************************/
 /*                                                                            */
@@ -73,18 +74,6 @@ typedef struct _net_icmp
 } net_icmp_t;
 
 
-/* ICMP message types */
-typedef enum _icmp_type
-{
-    ICMP_UNREACHABLE = 3,  /*!< */
-    ICMP_ECHOREPLY   = 0,  /*!< */
-    ICMP_ECHOREQUEST = 8,  /*!< */
-    ICMP_TRACEROUTE  = 30, /*!< */
-
-}icmp_type_t;
-
-
-
 
 
 /******************************************************************************/
@@ -92,6 +81,7 @@ typedef enum _icmp_type
 /*                               ICMP Functions                               */
 /*                                                                            */
 /******************************************************************************/
+
 
 
 
@@ -104,6 +94,7 @@ int8_t ether_send_icmp_reply(ethernet_handle_t *ethernet)
     net_icmp_t *icmp;
 
     uint32_t sum = 0;
+    uint16_t ip_header_size      = 0;
     uint16_t ip_packet_length    = 0;
     uint16_t icmp_remaining_size = 0;
 
@@ -113,9 +104,11 @@ int8_t ether_send_icmp_reply(ethernet_handle_t *ethernet)
     }
     else
     {
-        ip = (void*)&ethernet->ether_obj->data;
+        ip   = (void*)&ethernet->ether_obj->data;
 
-        icmp = (void*)( (uint8_t*)ip + ((ip->version_length.header_length) * 4) );
+        ip_header_size = ip->version_length.header_length * 4;
+
+        icmp = (void*)( (uint8_t*)ip + ip_header_size);
 
         /* Send ECHO reply */
         if(icmp->type == ICMP_ECHOREQUEST)
@@ -137,15 +130,15 @@ int8_t ether_send_icmp_reply(ethernet_handle_t *ethernet)
             ip_packet_length = ntohs(ip->total_length);
 
             /* ICMP Remaining packet size = IP Length - (ICMP type+code+checksum size) */
-            icmp_remaining_size = ip_packet_length - (IP_HEADER_SIZE + 4);
+            icmp_remaining_size = ip_packet_length - (ip_header_size + 4);
 
             ether_sum_words(&sum, &icmp->id, icmp_remaining_size);
 
             /* Get checksum */
             icmp->checksum = ether_get_checksum(sum);
 
-            /* Send ICMP response packet */
-            ethernet->ether_commands->ether_send_packet((uint8_t*)ethernet->ether_obj, ip_packet_length + ETHER_FRAME_SIZE);
+            /* Send ICMP response packet(uses callback) */
+            ether_send_data(ethernet, (uint8_t*)ethernet->ether_obj, ip_packet_length + ETHER_FRAME_SIZE);
 
         }
         else
@@ -157,4 +150,65 @@ int8_t ether_send_icmp_reply(ethernet_handle_t *ethernet)
 
     return func_retval;
 }
+
+
+
+
+int8_t ether_send_icmp_req(ethernet_handle_t *ethernet, icmp_type_t icmp_type, uint8_t *destination_ip,
+                           uint8_t *sequence_no, uint8_t* destination_mac)
+{
+    int8_t func_retval = 0;
+
+    net_ip_t   *ip;
+    net_icmp_t *icmp;
+
+    uint32_t sum = 0;
+
+    if(ethernet->ether_obj == NULL)
+    {
+        func_retval = -8;
+    }
+    else
+    {
+
+        /* Fill ICMP frame */
+        icmp = (void*)( (uint8_t*)&ethernet->ether_obj->data + IP_HEADER_SIZE );
+
+        icmp->type = ICMP_ECHOREQUEST;
+
+        icmp->code = 0;
+
+        icmp->id = 15625;
+
+        icmp->sequence_no = htons(*sequence_no);
+
+        (*sequence_no)++;
+
+        /* Calculate ICMP checksum */
+        sum = 0;
+        ether_sum_words(&sum, &icmp->type, 2);
+
+        ether_sum_words(&sum, &icmp->id, 5);
+
+        icmp->checksum = ether_get_checksum(sum);
+
+
+        /* Fill IP frame */
+        ip  = (void*)&ethernet->ether_obj->data;
+
+        fill_ip_frame(ip, destination_ip, ethernet->host_ip, IP_ICMP, 9);
+
+
+        /* Fill Ethernet frame */
+        fill_ether_frame(ethernet, destination_mac, ethernet->host_mac, ETHER_IPV4);
+
+        ether_send_data(ethernet, (uint8_t*)ethernet->ether_obj, ETHER_FRAME_SIZE + htons(ip->total_length));
+
+    }
+
+
+    return func_retval;
+}
+
+
 
