@@ -71,7 +71,7 @@
 
 /**************************************************************
  * @brief  Function to get IP data for current host device
- *         (Only handles UNICAST)
+ *         validates IP Checksum, (Only handles UNICAST)
  * @param  *ethernet  : reference to the Ethernet handle
  * @retval int16_t    : Error = -4, -5, Success = 1 (UNICAST)
  **************************************************************/
@@ -171,7 +171,7 @@ int8_t fill_ip_frame(net_ip_t *ip, uint8_t *destination_ip, uint8_t *source_ip, 
 
         ip->ttl = IP_TTL_VALUE;
 
-        ip->protocol = IP_ICMP;
+        ip->protocol = protocol;
 
         ip->total_length = htons(IP_HEADER_SIZE + data_size);
 
