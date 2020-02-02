@@ -61,11 +61,11 @@
 /******************************************************************************/
 
 
-#define ICMP_PACKET_SIZE 8
+#define ICMP_FRAME_SIZE 8
 
 
 
-/* ICMP Frame */
+/* ICMP Frame (8 bytes) */
 typedef struct _net_icmp
 {
     uint8_t  type;         /*!< */
@@ -169,11 +169,12 @@ int8_t ether_send_icmp_reply(ethernet_handle_t *ethernet)
  * @param  icmp_type        : ICMP request type
  * @param  *destination_ip  : Destination IP address
  * @param  sequence_no      : ICMP packet sequence Number
- * @param  *destination_mac : Destination mac address
+ * @param  *destination_mac : Destination MAC address
+ * @param  *source_mac      : Source MAC address
  * @retval int8_t           : Error = -8, Success = 0.
  ****************************************************************/
 int8_t ether_send_icmp_req(ethernet_handle_t *ethernet, icmp_type_t icmp_type, uint8_t *destination_ip,
-                           uint8_t *sequence_no, uint8_t* destination_mac)
+                           uint8_t *sequence_no, uint8_t* destination_mac, uint8_t *source_mac)
 {
     int8_t func_retval = 0;
 
@@ -192,7 +193,9 @@ int8_t ether_send_icmp_req(ethernet_handle_t *ethernet, icmp_type_t icmp_type, u
     {
 
         /* Fill ICMP frame */
-        icmp = (void*)( (uint8_t*)&ethernet->ether_obj->data + IP_HEADER_SIZE );
+        ip  = (void*)&ethernet->ether_obj->data;
+
+        icmp = (void*)( (uint8_t*)ip + IP_HEADER_SIZE );
 
         icmp->type = ICMP_ECHOREQUEST;
 
@@ -213,18 +216,18 @@ int8_t ether_send_icmp_req(ethernet_handle_t *ethernet, icmp_type_t icmp_type, u
 
         icmp->checksum = ether_get_checksum(sum);
 
-        icmp_packet_size = ICMP_PACKET_SIZE;
+        icmp_packet_size = ICMP_FRAME_SIZE;
 
 
         /* Fill IP frame */
-        ip  = (void*)&ethernet->ether_obj->data;
-
         fill_ip_frame(ip, destination_ip, ethernet->host_ip, IP_ICMP, icmp_packet_size);
 
 
         /* Fill Ethernet frame */
-        fill_ether_frame(ethernet, destination_mac, ethernet->host_mac, ETHER_IPV4);
+        fill_ether_frame(ethernet, destination_mac, source_mac, ETHER_IPV4);
 
+
+        /* Send ICMP data */
         ether_send_data(ethernet, (uint8_t*)ethernet->ether_obj, ETHER_FRAME_SIZE + htons(ip->total_length));
 
     }
@@ -232,6 +235,14 @@ int8_t ether_send_icmp_req(ethernet_handle_t *ethernet, icmp_type_t icmp_type, u
 
     return func_retval;
 }
+
+
+
+
+
+
+
+
 
 
 

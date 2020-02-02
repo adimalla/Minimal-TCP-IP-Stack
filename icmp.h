@@ -98,11 +98,12 @@ int8_t ether_send_icmp_reply(ethernet_handle_t *ethernet);
  * @param  icmp_type        : ICMP request type
  * @param  *destination_ip  : Destination IP address
  * @param  sequence_no      : ICMP packet sequence Number
- * @param  *destination_mac : Destination mac address
+ * @param  *destination_mac : Destination MAC address
+ * @param  *source_mac      : Source MAC address
  * @retval int8_t           : Error = -8, Success = 0.
  ****************************************************************/
 int8_t ether_send_icmp_req(ethernet_handle_t *ethernet, icmp_type_t icmp_type, uint8_t *destination_ip,
-                           uint8_t *sequence_no, uint8_t* destination_mac);
+                           uint8_t *sequence_no, uint8_t* destination_mac, uint8_t *source_mac);
 
 
 #endif /* ICMP_H_ */
