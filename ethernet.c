@@ -91,10 +91,10 @@ __attribute__((weak))uint16_t random_seed(void)
 
 /******************************************************
  * @brief  Function to sum the data in network packet
- * @param[out] *sum          : Total 32 bit sum
- * @param[in]  *data         : data to be summed
- * @param      size_in_bytes : size of the data
- * @retval     uint16_t      : Error = -1, Success = 0
+ * @param  *sum          : Total 32 bit sum
+ * @param  *data         : data to be summed
+ * @param  size_in_bytes : size of the data
+ * @retval uint16_t      : Error = -1, Success = 0
  ******************************************************/
 int8_t ether_sum_words(uint32_t *sum, void *data, uint16_t size_in_bytes)
 {
@@ -154,7 +154,6 @@ uint16_t ether_get_checksum(uint32_t sum)
     /* return 1s complement */
     return ~checksum;
 }
-
 
 
 
