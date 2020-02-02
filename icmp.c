@@ -68,12 +68,12 @@
 /* ICMP Frame (8 bytes) */
 typedef struct _net_icmp
 {
-    uint8_t  type;         /*!< */
-    uint8_t  code;         /*!< */
-    uint16_t checksum;     /*!< */
-    uint16_t id;           /*!< */
-    uint16_t sequence_no;  /*!< */
-    uint8_t  data;         /*!< */
+    uint8_t  type;         /*!< ICMP message type              */
+    uint8_t  code;         /*!< ICMP code for subtype messages */
+    uint16_t checksum;     /*!< ICMP message checksum          */
+    uint16_t id;           /*!< ICMP message ID                */
+    uint16_t sequence_no;  /*!< ICMP message sequence number   */
+    uint8_t  data;         /*!< ICMP message data              */
 
 } net_icmp_t;
 
