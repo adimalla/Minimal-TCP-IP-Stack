@@ -89,7 +89,6 @@ __attribute__((weak))uint16_t random_seed(void)
 
 
 
-
 /******************************************************
  * @brief  Function to sum the data in network packet
  * @param[out] *sum          : Total 32 bit sum
@@ -155,7 +154,6 @@ uint16_t ether_get_checksum(uint32_t sum)
     /* return 1s complement */
     return ~checksum;
 }
-
 
 
 

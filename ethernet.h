@@ -129,7 +129,6 @@ typedef struct _ethernet_source_addr
 
 
 
-
 /* Ethernet type values */
 typedef enum _ether_type
 {
