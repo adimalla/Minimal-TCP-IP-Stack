@@ -280,23 +280,23 @@ uint8_t ether_arp_read_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t
     }
     else
     {
-            block_loop = 1;
+        /* Wait for data */
+        block_loop = 1;
 
-            /* Wait for data */
-            while(block_loop)
+        do
+        {
+            if(ether_get_data(ethernet, data, data_length))
             {
-                if(ether_get_data(ethernet, data, data_length))
-                {
-                    /* Check if protocol is ARP */
-                    if(ntohs(ethernet->ether_obj->type) == ETHER_ARP)
-                        func_retval = 1;
-                    else
-                        func_retval = 0;
+                /* Check if protocol is ARP */
+                if(ntohs(ethernet->ether_obj->type) == ETHER_ARP)
+                    func_retval = 1;
+                else
+                    func_retval = 0;
 
-                    break;
-
-                }
+                break;
             }
+
+        }while(block_loop);
 
     }
 
