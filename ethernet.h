@@ -151,6 +151,7 @@ typedef enum _network_error_codes
     NET_ICMP_RESP_ERROR   = -6,  /*!< */
     NET_ICMP_RESP_IGNORE  = -7,  /*!< */
     NET_ICMP_REQ_ERROR    = -8,  /*!< */
+    NET_UDP_SEND_ERROR    = -9
 
 }network_erro_codes_t;
 
@@ -166,10 +167,22 @@ typedef enum _network_error_codes
 
 
 
-
+/******************************************************
+ * @brief  Function to sum the data in network packet
+ * @param  *sum          : Total 32 bit sum
+ * @param  *data         : data to be summed
+ * @param  size_in_bytes : size of the data
+ * @retval uint16_t      : Error = -1, Success = 0
+ ******************************************************/
 int8_t ether_sum_words(uint32_t *sum, void *data, uint16_t size_in_bytes);
 
 
+
+/******************************************************
+ * @brief  Function to get checksum of network packet
+ * @param  *sum          : Total 32 bit sum
+ * @retval uint16_t      : checksum value
+ ******************************************************/
 uint16_t ether_get_checksum(uint32_t sum);
 
 
