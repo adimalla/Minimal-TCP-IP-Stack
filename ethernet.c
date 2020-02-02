@@ -139,6 +139,11 @@ int8_t ether_sum_words(uint32_t *sum, void *data, uint16_t size_in_bytes)
 
 
 
+/******************************************************
+ * @brief  Function to get checksum of network packet
+ * @param  *sum          : Total 32 bit sum
+ * @retval uint16_t      : checksum value
+ ******************************************************/
 uint16_t ether_get_checksum(uint32_t sum)
 {
     uint16_t checksum = 0;
