@@ -116,6 +116,19 @@ struct _ethernet_handle
 };
 
 
+/* */
+typedef struct _ethernet_source_addr
+{
+    uint8_t source_mac[ETHER_MAC_SIZE];
+    uint8_t source_ip[ETHER_IPV4_SIZE];
+    uint16_t source_port;
+
+}ether_source_t;
+
+
+
+
+
 
 /* Ethernet type values */
 typedef enum _ether_type
