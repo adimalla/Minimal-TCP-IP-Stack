@@ -68,7 +68,7 @@
  * @param  *ethernet        : Reference to the Ethernet handle
  * @param  *data            : UDP data
  * @param  data_length      : Length of UDP data
- * @retval int8_t           : Error = 0, Success = 1
+ * @retval uint8_t          : Error = 0, Success = 1
  **************************************************************/
 uint8_t ether_get_udp_data(ethernet_handle_t *ethernet, uint8_t *data, uint8_t data_length);
 
@@ -84,10 +84,10 @@ uint8_t ether_get_udp_data(ethernet_handle_t *ethernet, uint8_t *data, uint8_t d
  * @param  destination_port : UDP destination port
  * @param  *data            : UDP data
  * @param  data_length      : Length of UDP data
- * @retval int8_t           : Error = 0, Success = 0
+ * @retval int8_t           : Error = -9, Success = 0
  *******************************************************************/
-uint8_t ether_send_upd(ethernet_handle_t *ethernet, ether_source_t *source_addr, uint8_t *destination_ip,
-                       uint8_t *destination_mac, uint16_t destination_port, uint8_t *data, uint8_t data_length);
+int8_t ether_send_upd(ethernet_handle_t *ethernet, ether_source_t *source_addr, uint8_t *destination_ip,
+                      uint8_t *destination_mac, uint16_t destination_port, uint8_t *data, uint8_t data_length);
 
 
 
