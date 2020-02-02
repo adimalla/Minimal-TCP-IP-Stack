@@ -32,6 +32,7 @@
 #include "arp.h"
 #include "ipv4.h"
 #include "icmp.h"
+#include "udp.h"
 
 #define RED_LED      (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 1*4)))
 #define GREEN_LED    (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 3*4)))
@@ -86,7 +87,7 @@ void initHw()
     SSI0_CR1_R  &= ~SSI_CR1_SSE;
     SSI0_CR1_R  = 0;                                 // select master mode
     SSI0_CC_R   = 0;                                 // select system clock as the clock source
-    SSI0_CPSR_R = 40;                                // set bit rate to 1 MHz (if SR=0 in CR0)
+    SSI0_CPSR_R = 20;                                // set bit rate to 1 MHz (if SR=0 in CR0)
     SSI0_CR0_R  = SSI_CR0_FRF_MOTO | SSI_CR0_DSS_8;  // set SR=0, mode 0 (SPH=0, SPO=0), 8-bit
     SSI0_CR1_R |= SSI_CR1_SSE;
 
@@ -124,7 +125,7 @@ void initHw()
 
 int main(void)
 {
-    uint8_t* udpData;
+    uint8_t udpData[100] = {0};
     uint8_t data[128] = {0};
 
     uint8_t loop = 0;
@@ -144,7 +145,6 @@ int main(void)
     etherWritePhy(PHLCON, 0x0990);
     RED_LED = 0;
     waitMicrosecond(500000);
-
 
 
     enc28j60_frame_t  *network_hardware;
@@ -170,12 +170,10 @@ int main(void)
 
     uint8_t sequence_no = 1;
 
-    test_ip[0] = 192;
-    test_ip[1] = 168;
-    test_ip[2] = 10;
-    test_ip[3] = 1;
 
+    set_ip_address(test_ip, "192.168.10.1");
 
+    /* test ARP packets */
     ether_send_arp_req(ethernet, ethernet->host_ip,test_ip);
 
     if(ether_arp_read_data(ethernet, (uint8_t*)network_hardware, 128))
@@ -186,10 +184,23 @@ int main(void)
         GREEN_LED = 1;
         waitMicrosecond(50000);
         GREEN_LED = 0;
-
     }
 
-    ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, test_ip, &sequence_no, ethernet->arp_table[0].mac_address);
+    /* test ICMP packets */
+    ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, test_ip, &sequence_no,
+                        ethernet->arp_table[0].mac_address, ethernet->host_mac);
+
+    ether_source_t source_addresses;
+
+    /* test UDP packets */
+    set_mac_address((char*)source_addresses.source_mac, "02:03:04:05:06:07");
+
+    set_ip_address(source_addresses.source_ip, "192.168.10.2");
+
+    source_addresses.source_port = 45;
+
+    ether_send_upd(ethernet, &source_addresses, test_ip, ethernet->arp_table[0].mac_address, 8080, (uint8_t*)"Received", 9);
+
 
 #endif
 
@@ -245,31 +256,22 @@ int main(void)
                         {
                             RED_LED  = 1;
                             BLUE_LED = 1;
-                            waitMicrosecond(50000);
+                            waitMicrosecond(500);
                             RED_LED  = 0;
                             BLUE_LED = 0;
                         }
 
                         break;
 
-                    case IP_TCP:
-
-                        break;
-
                     case IP_UDP:
 
-                        // handle udp datagram
-                        if (etherIsUdp(data))
+                        /* Handle UDP packets */
+                        if (ether_get_udp_data(ethernet, udpData, 100))
                         {
-                            udpData = etherGetUdpData(data);
-                            if (udpData[0] == '1')
-                                GREEN_LED = 1;
-                            if (udpData[0] == '0')
-                                GREEN_LED = 0;
-                            etherSendUdpData(data, (uint8_t*)"Received", 9);
                             BLUE_LED = 1;
                             waitMicrosecond(100000);
                             BLUE_LED = 0;
+                            ether_send_upd(ethernet, &source_addresses, test_ip, ethernet->arp_table[0].mac_address, 8080, (uint8_t*)"Received", 9);
                         }
 
                         break;
