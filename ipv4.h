@@ -96,9 +96,9 @@ typedef struct _net_ip
 /* IP protocol type values */
 typedef enum _ip_protocol_type
 {
-    IP_ICMP = 1,
-    IP_TCP  = 6,
-    IP_UDP  = 11,
+    IP_ICMP = 0x01,
+    IP_TCP  = 0x06,
+    IP_UDP  = 0x11,
 
 }ip_protocol_type_t;
 
@@ -113,7 +113,7 @@ typedef enum _ip_protocol_type
 
 /**************************************************************
  * @brief  Function to get IP data for current host device
- *         (Only handles UNICAST)
+ *         validates IP Checksum, (Only handles UNICAST)
  * @param  *ethernet  : reference to the Ethernet handle
  * @retval int16_t    : Error = -4, -5, Success = 1 (UNICAST)
  **************************************************************/
