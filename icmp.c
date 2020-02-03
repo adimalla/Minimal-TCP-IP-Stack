@@ -201,7 +201,7 @@ int8_t ether_send_icmp_req(ethernet_handle_t *ethernet, icmp_type_t icmp_type, u
 
         icmp->code = 0;
 
-        /* Get ID from random generator */
+        /* Currently fixed */
         icmp->id = 15625;
 
         icmp->sequence_no = htons(*sequence_no);

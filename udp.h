@@ -86,7 +86,7 @@ uint8_t ether_get_udp_data(ethernet_handle_t *ethernet, uint8_t *data, uint8_t d
  * @param  data_length      : Length of UDP data
  * @retval int8_t           : Error = -9, Success = 0
  *******************************************************************/
-int8_t ether_send_upd_raw(ethernet_handle_t *ethernet, ether_source_t *source_addr, uint8_t *destination_ip,
+int8_t ether_send_udp_raw(ethernet_handle_t *ethernet, ether_source_t *source_addr, uint8_t *destination_ip,
                       uint8_t *destination_mac, uint16_t destination_port, uint8_t *data, uint8_t data_length);
 
 
