@@ -78,7 +78,7 @@ int16_t ether_send_arp_req(ethernet_handle_t *ethernet, uint8_t *sender_ip, uint
  * @param  *data_length : length of data to be read
  * @retval uint8_t      : Error = 0, Success = 1
  **********************************************************/
-uint8_t ether_arp_read_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data_length);
+uint8_t ether_is_arp(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data_length);
 
 
 
