@@ -56,7 +56,7 @@ void initHw()
     SYSCTL_GPIOHBCTL_R = 0;
 
     // Enable GPIO port B and E peripherals
-    SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOB | SYSCTL_RCGC2_GPIOD | SYSCTL_RCGC2_GPIOF | SYSCTL_RCGC2_GPIOA | SYSCTL_RCGC2_GPIOD;
+    SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOB | SYSCTL_RCGC2_GPIOD | SYSCTL_RCGC2_GPIOF | SYSCTL_RCGC2_GPIOA | SYSCTL_RCGC2_GPIOE;
 
     // Configure LED and pushbutton pins
     GPIO_PORTF_DIR_R = 0x0E;  // bits 1-3 are outputs, other pins are inputs
@@ -64,8 +64,8 @@ void initHw()
     GPIO_PORTF_DEN_R = 0x1E;  // enable LEDs and pushbuttons
     GPIO_PORTF_PUR_R = 0x1E;  // enable internal pull-up for push button
 
-    GPIO_PORTD_DIR_R = 0x0;  // bits 1-3 are outputs, other pins are inputs
-    GPIO_PORTD_DEN_R = 0x0;  // enable LEDs and pushbuttons
+    /* ether module interrupt */
+
 
 
 #if IOT_COURSE_TEST
@@ -119,6 +119,38 @@ void initHw()
 
 
 
+void init_adc(void)
+{
+
+    // Enable GPIO port B and E peripherals
+
+    // Configure AN0 as an analog input
+    SYSCTL_RCGCADC_R |= SYSCTL_RCGCADC_R0;                           // turn on ADC module 0 clocking
+    GPIO_PORTE_AFSEL_R |= (1 << 3);                      // select alternative functions for AN0 (PE3)
+    GPIO_PORTE_DEN_R &= ~(1 << 3);                       // turn off digital operation on pin PE3
+    GPIO_PORTE_AMSEL_R |= (1 << 3);                      // turn on analog operation on pin PE3
+    ADC0_CC_R = ADC_CC_CS_SYSPLL;                    // select PLL as the time base (not needed, since default value)
+    ADC0_ACTSS_R &= ~ADC_ACTSS_ASEN3;                // disable sample sequencer 3 (SS3) for programming
+    ADC0_EMUX_R = ADC_EMUX_EM3_PROCESSOR;            // select SS3 bit in ADCPSSI as trigger
+    ADC0_SSMUX3_R = 0;                               // set first sample to AN0
+    ADC0_SSCTL3_R = ADC_SSCTL3_END0 | ADC_SSCTL3_TS0;                 // mark first sample as the end
+    ADC0_ACTSS_R |= ADC_ACTSS_ASEN3;                 // enable SS3 for operation
+
+}
+
+
+uint16_t readAdc0Ss3()
+{
+    ADC0_PSSI_R |= ADC_PSSI_SS3;                     // set start bit
+    while (ADC0_ACTSS_R & ADC_ACTSS_BUSY);           // wait until SS3 is not busy
+    return ADC0_SSFIFO3_R;                           // get single result from the FIFO
+}
+
+
+
+
+
+
 #define TEST 1
 
 
@@ -135,6 +167,8 @@ int main(void)
     // init controller
     initHw();
 
+    init_adc();
+
     // init ethernet interface
     etherInit(ETHER_UNICAST | ETHER_BROADCAST | ETHER_HALFDUPLEX);
 
@@ -145,7 +179,6 @@ int main(void)
     etherWritePhy(PHLCON, 0x0990);
     RED_LED = 0;
     waitMicrosecond(500000);
-
 
     enc28j60_frame_t  *network_hardware;
     ethernet_handle_t *ethernet;
@@ -158,25 +191,26 @@ int main(void)
      .network_interface_status = etherKbhit,
      .ether_send_packet        = etherPutPacket,
      .ether_recv_packet        = etherGetPacket,
+     .random_gen_seed          = readAdc0Ss3,
     };
 
     /* Create Ethernet handle */
     ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:05:06:07", "192.168.10.2", &ether_ops);
 
 
+
 #if TEST
 
+    /* Test ARP packets */
     uint8_t test_ip[4] = {0};
 
     uint8_t sequence_no = 1;
 
-
     set_ip_address(test_ip, "192.168.10.1");
 
-    /* test ARP packets */
     ether_send_arp_req(ethernet, ethernet->host_ip,test_ip);
 
-    if(ether_arp_read_data(ethernet, (uint8_t*)network_hardware, 128))
+    if(ether_is_arp(ethernet, (uint8_t*)network_hardware, 128))
     {
 
         ether_handle_arp_resp_req(ethernet);
@@ -186,20 +220,32 @@ int main(void)
         GREEN_LED = 0;
     }
 
-    /* test ICMP packets */
+
+    /* Test ICMP packets */
     ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, test_ip, &sequence_no,
                         ethernet->arp_table[0].mac_address, ethernet->host_mac);
 
+
+    /* Test UDP packets */
     ether_source_t source_addresses;
 
-    /* test UDP packets */
     set_mac_address((char*)source_addresses.source_mac, "02:03:04:05:06:07");
 
     set_ip_address(source_addresses.source_ip, "192.168.10.2");
 
-    source_addresses.source_port = 45;
+    source_addresses.source_port = get_random_port(ethernet, 2000);
 
-    ether_send_upd(ethernet, &source_addresses, test_ip, ethernet->arp_table[0].mac_address, 8080, (uint8_t*)"Received", 9);
+    ether_send_udp_raw(ethernet, &source_addresses, test_ip, ethernet->arp_table[0].mac_address, 8080, (uint8_t*)"Hello", 5);
+
+    if(ether_is_udp(ethernet, (uint8_t*)network_hardware, 128))
+    {
+
+        ether_send_udp_raw(ethernet, &source_addresses, test_ip, ethernet->arp_table[0].mac_address, 8080, (uint8_t*)"Received", 9);
+
+        BLUE_LED = 1;
+        waitMicrosecond(50000);
+        BLUE_LED = 0;
+    }
 
 
 #endif
@@ -216,7 +262,7 @@ int main(void)
             if (etherIsOverflow())
             {
                 RED_LED = 1;
-                waitMicrosecond(100000);
+                waitMicrosecond(50000);
                 RED_LED = 0;
             }
 
@@ -240,23 +286,26 @@ int main(void)
 
             case ETHER_IPV4:
 
+                /* Checks if UNICAST, validates checksum */
                 retval = get_ip_communication_type(ethernet);
 
                 if(retval == 1)
                 {
 
+                    /* Get transport layer protocol type */
                     switch(get_ip_protocol_type(ethernet))
                     {
 
                     case IP_ICMP:
 
+                        /* Handle ICMP packets */
                         retval = ether_send_icmp_reply(ethernet);
 
                         if(retval == 0)
                         {
                             RED_LED  = 1;
                             BLUE_LED = 1;
-                            waitMicrosecond(500);
+                            waitMicrosecond(50000);
                             RED_LED  = 0;
                             BLUE_LED = 0;
                         }
@@ -266,12 +315,11 @@ int main(void)
                     case IP_UDP:
 
                         /* Handle UDP packets */
-                        if (ether_get_udp_data(ethernet, udpData, 100))
+                        if (ether_get_udp_data(ethernet, ethernet->application_data, APP_BUFF_SIZE))
                         {
                             BLUE_LED = 1;
-                            waitMicrosecond(100000);
+                            waitMicrosecond(50000);
                             BLUE_LED = 0;
-                            ether_send_upd(ethernet, &source_addresses, test_ip, ethernet->arp_table[0].mac_address, 8080, (uint8_t*)"Received", 9);
                         }
 
                         break;
