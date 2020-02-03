@@ -47,6 +47,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "ethernet.h"
 #include "network_utilities.h"
@@ -162,6 +163,30 @@ uint16_t ether_get_checksum(uint32_t sum)
 
 
 
+uint16_t get_random_port(ethernet_handle_t *ethernet, uint16_t lower_bound)
+{
+    int16_t func_retval    = 0;
+
+    uint16_t random_number = 0;
+
+    if(ethernet->ether_obj == NULL)
+    {
+        func_retval = 0;
+    }
+    else
+    {
+        srand(ethernet->ether_commands->random_gen_seed());
+
+        random_number  = ( rand() % (UINT16_MAX - lower_bound) ) + lower_bound;
+
+        func_retval = random_number;
+    }
+
+    return func_retval;
+}
+
+
+
 
 /**************************************************************************
  * @brief  constructor function to create Ethernet handle
@@ -176,6 +201,8 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
 {
 
     static ethernet_handle_t ethernet;
+
+    static uint8_t application_buffer[APP_BUFF_SIZE] = {0};
 
     int8_t api_retval = 0;
 
@@ -196,6 +223,9 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
 
         if(api_retval < 0)
             return NULL;
+
+        /* Configure application buffer */
+        ethernet.application_data = application_buffer;
 
         /* Configure network operations and weak linking of default functions */
         ethernet.ether_commands = ether_ops;

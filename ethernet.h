@@ -63,6 +63,7 @@
 #define ETHER_IPV4_SIZE   4    /*!< IP protocol version 4 size */
 #define ARP_TABLE_SIZE    5    /*!< ARP Table size define      */
 
+#define APP_BUFF_SIZE     100  /*!< */
 
 
 
@@ -108,8 +109,12 @@ typedef struct _ethernet_operations
 struct _ethernet_handle
 {
     ether_frame_t      *ether_obj;                /*!< Ethernet frame object */
+
     uint8_t            host_mac[ETHER_MAC_SIZE];  /*!< Host MAC address      */
     uint8_t            host_ip[ETHER_IPV4_SIZE];  /*!< Host IP address       */
+
+    uint8_t            *application_data;
+
     ether_operations_t *ether_commands;           /*!< Network Operations    */
 
     arp_table_t        arp_table[ARP_TABLE_SIZE]; /*!< ARP Table             */
@@ -151,7 +156,7 @@ typedef enum _network_error_codes
     NET_ICMP_RESP_ERROR   = -6,  /*!< */
     NET_ICMP_RESP_IGNORE  = -7,  /*!< */
     NET_ICMP_REQ_ERROR    = -8,  /*!< */
-    NET_UDP_SEND_ERROR    = -9
+    NET_UDP_SEND_ERROR    = -9   /*!< */
 
 }network_erro_codes_t;
 
@@ -186,6 +191,8 @@ int8_t ether_sum_words(uint32_t *sum, void *data, uint16_t size_in_bytes);
 uint16_t ether_get_checksum(uint32_t sum);
 
 
+
+uint16_t get_random_port(ethernet_handle_t *ethernet, uint16_t lower_bound);
 
 
 /**************************************************************************
