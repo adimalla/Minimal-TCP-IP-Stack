@@ -248,7 +248,7 @@ uint8_t ether_get_udp_data(ethernet_handle_t *ethernet, uint8_t *data, uint8_t d
  * @param  data_length      : Length of UDP data
  * @retval int8_t           : Error = -9, Success = 0
  *******************************************************************/
-int8_t ether_send_upd(ethernet_handle_t *ethernet, ether_source_t *source_addr, uint8_t *destination_ip,
+int8_t ether_send_upd_raw(ethernet_handle_t *ethernet, ether_source_t *source_addr, uint8_t *destination_ip,
                       uint8_t *destination_mac, uint16_t destination_port, uint8_t *data, uint8_t data_length)
 {
 
@@ -313,6 +313,58 @@ int8_t ether_send_upd(ethernet_handle_t *ethernet, ether_source_t *source_addr, 
     return func_retval;
 }
 
+
+
+
+uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t network_data_length)
+{
+    uint8_t func_retval = 0;
+    uint8_t block_loop  = 0;
+
+    int16_t comm_type = 0;
+
+    if(ethernet->ether_obj == NULL || network_data == NULL || network_data_length == 0 || network_data_length > UINT16_MAX)
+    {
+        func_retval = 0;
+    }
+    else
+    {
+        /* Wait for data */
+        block_loop = 1;
+
+        do
+        {
+            if(ether_get_data(ethernet, network_data, network_data_length))
+            {
+                /* Check if protocol is IPV4 */
+                if(ntohs(ethernet->ether_obj->type) == ETHER_IPV4)
+                {
+
+                    /* Checks if UNICAST, validates checksum */
+                    comm_type = get_ip_communication_type(ethernet);
+
+                    if(comm_type == 1)
+                    {
+                        /* Check if protocol is UDP */
+                        if(get_ip_protocol_type(ethernet) == IP_UDP)
+                        {
+                            func_retval = 1;
+
+                            break;
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }while(block_loop);
+
+    }
+
+    return func_retval;
+}
 
 
 
