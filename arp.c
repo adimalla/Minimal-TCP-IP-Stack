@@ -289,11 +289,11 @@ uint8_t ether_arp_read_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t
             {
                 /* Check if protocol is ARP */
                 if(ntohs(ethernet->ether_obj->type) == ETHER_ARP)
+                {
                     func_retval = 1;
-                else
-                    func_retval = 0;
 
-                break;
+                    break;
+                }
             }
 
         }while(block_loop);
