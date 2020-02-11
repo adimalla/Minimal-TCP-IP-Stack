@@ -306,8 +306,6 @@ uint8_t ether_get_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data
             /* get data from network including PHY module frame */
             ethernet->ether_commands->ether_recv_packet(data, data_length);
 
-            ethernet->ether_obj = (void*)((uint8_t*)data + ETHER_PHY_DATA_OFFSET);
-
             func_retval = 1;
 
             ethernet->ether_commands->function_lock = 0;

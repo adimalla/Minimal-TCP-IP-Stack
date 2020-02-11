@@ -103,7 +103,17 @@ uint8_t ether_is_arp(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data_l
 int16_t ether_handle_arp_resp_req(ethernet_handle_t *ethernet);
 
 
-int8_t search_arp_table(ethernet_handle_t *ethernet, uint8_t *destination_mac, uint8_t *destination_ip);
+
+
+/***********************************************************************
+ * @brief  Function to get MAC address from destination IP address
+ *         by searching local ARP table
+ * @param  *ethernet    : reference to the Ethernet handle
+ * @param  *mac_address : device mac_address
+ * @param  *ip_address  : device ip address
+ * @retval  int8_t      : Success = 1 device found else 0 for not found
+ ***********************************************************************/
+uint8_t ether_arp_resolve_address(ethernet_handle_t *ethernet, uint8_t *destination_mac, uint8_t *destination_ip);
 
 
 

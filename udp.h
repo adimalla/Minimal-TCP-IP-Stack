@@ -76,7 +76,7 @@ uint8_t ether_get_udp_data(ethernet_handle_t *ethernet, uint8_t *data, uint8_t d
 
 
 /*******************************************************************
- * @brief  Function to send UPD packets
+ * @brief  Raw Function to send UPD packets
  * @param  *ethernet        : Reference to the Ethernet handle
  * @param  *source_addr     : Reference to source address structure
  * @param  *destination_ip  : Destination IP address
@@ -91,16 +91,46 @@ int8_t ether_send_udp_raw(ethernet_handle_t *ethernet, ether_source_t *source_ad
 
 
 
+
+/****************************************************************
+ * @brief  Function detect UDP packet, state machine independent
+ * @param  *ethernet           : Reference to the Ethernet handle
+ * @param  *network_data       : network data from PHY
+ * @param  network_data_length : network data length to be read
+ * @retval uint8_t             : Error = 0, Success = 1
+ ****************************************************************/
 uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t network_data_length);
 
 
 
+
+
+/**************************************************************
+ * @brief  Function to send UPD packets
+ * @param  *ethernet         : Reference to the Ethernet handle
+ * @param  *network_data       : network data from PHY
+ * @param  network_data_length : network data length to be read
+ * @param  *application_data   : UDP data
+ * @param  app_data_length     : Length of UDP data
+ * @retval int8_t              : Error = 0, Success = 1
+ **************************************************************/
 uint8_t ether_read_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t net_data_length,
                        char *application_data, uint16_t app_data_length);
 
 
 
+/**************************************************************
+ * @brief  Function to send UPD packets
+ * @param  *ethernet         : Reference to the Ethernet handle
+ * @param  *destination_ip   : Destination IP address
+ * @param  destination_port  : UDP destination port
+ * @param  *application_data : UDP data
+ * @param  data_length       : Length of UDP data
+ * @retval int8_t            : Error = -10, Success = 0
+ **************************************************************/
 int8_t ether_send_udp(ethernet_handle_t *ethernet, uint8_t *destination_ip, uint16_t destination_port,
                       char *application_data, uint16_t data_length);
+
+
 
 #endif /* UDP_H_ */

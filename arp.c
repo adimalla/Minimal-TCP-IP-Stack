@@ -191,8 +191,15 @@ static uint8_t update_arp_table(ethernet_handle_t *ethernet, uint8_t *ip_address
 
 
 
-
-int8_t search_arp_table(ethernet_handle_t *ethernet, uint8_t *destination_mac, uint8_t *destination_ip)
+/******************************************************************************
+ * @brief  Static Function to search ARP table
+ * @param  *ethernet    : reference to the Ethernet handle
+ * @param  *mac_address : device mac_address
+ * @param  *ip_address  : device ip address
+ * @retval int8_t       : Success = 1 (address found)
+ *                        Error   = 0 (address not found)
+ ******************************************************************************/
+static int8_t search_arp_table(ethernet_handle_t *ethernet, uint8_t *mac_address, uint8_t *ip_address)
 {
 
     int8_t func_retval = 0;
@@ -204,10 +211,10 @@ int8_t search_arp_table(ethernet_handle_t *ethernet, uint8_t *destination_mac, u
     for(index=0; index < ARP_TABLE_SIZE; index++)
     {
 
-        if(strncmp((char*)ethernet->arp_table[index].ip_address, (char*)destination_ip , ETHER_IPV4_SIZE) == 0)
+        if(strncmp((char*)ethernet->arp_table[index].ip_address, (char*)ip_address , ETHER_IPV4_SIZE) == 0)
         {
 
-            strncpy((char*)destination_mac, (char*)ethernet->arp_table[index].mac_address, ETHER_MAC_SIZE);
+            strncpy((char*)mac_address, (char*)ethernet->arp_table[index].mac_address, ETHER_MAC_SIZE);
 
             found = 1;
 
@@ -224,8 +231,6 @@ int8_t search_arp_table(ethernet_handle_t *ethernet, uint8_t *destination_mac, u
 
     return func_retval;
 }
-
-
 
 
 
@@ -426,6 +431,52 @@ int16_t ether_handle_arp_resp_req(ethernet_handle_t *ethernet)
         }
 
     }
+
+    return func_retval;
+}
+
+
+
+
+
+/***********************************************************************
+ * @brief  Function to get MAC address from destination IP address
+ *         by searching local ARP table
+ * @param  *ethernet    : reference to the Ethernet handle
+ * @param  *mac_address : device mac_address
+ * @param  *ip_address  : device ip address
+ * @retval  int8_t      : Success = 1 device found else 0 for not found
+ ***********************************************************************/
+uint8_t ether_arp_resolve_address(ethernet_handle_t *ethernet, uint8_t *destination_mac, uint8_t *destination_ip)
+{
+
+    uint8_t func_retval = 0;
+
+    /* Search arp table to find MAC address of the associated IP */
+    func_retval = search_arp_table(ethernet, destination_mac, destination_ip);
+
+#if 0
+
+    int8_t api_retval = 0;
+
+    /* ARP related variables */
+    uint8_t arp_data[100] = {0};
+
+    /* Send ARP request if not found */
+    if(api_retval == 0)
+    {
+        ether_send_arp_req(ethernet, ethernet->host_ip, destination_ip);
+
+        if(ether_is_arp(ethernet, arp_data, 48))
+        {
+            ether_handle_arp_resp_req(ethernet);
+
+            /* Search table again */
+            search_arp_table(ethernet, destination_mac, destination_ip);
+        }
+
+    }
+#endif
 
     return func_retval;
 }

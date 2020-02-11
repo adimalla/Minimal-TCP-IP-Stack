@@ -239,7 +239,7 @@ uint8_t ether_get_udp_data(ethernet_handle_t *ethernet, uint8_t *data, uint8_t d
 
 
 /*******************************************************************
- * @brief  Function to send UPD packets
+ * @brief  Raw Function to send UPD packets
  * @param  *ethernet        : Reference to the Ethernet handle
  * @param  *source_addr     : Reference to source address structure
  * @param  *destination_ip  : Destination IP address
@@ -317,7 +317,14 @@ int8_t ether_send_udp_raw(ethernet_handle_t *ethernet, ether_source_t *source_ad
 
 
 
-/* outside state machine */
+
+/****************************************************************
+ * @brief  Function detect UDP packet, state machine independent
+ * @param  *ethernet           : Reference to the Ethernet handle
+ * @param  *network_data       : network data from PHY
+ * @param  network_data_length : network data length to be read
+ * @retval uint8_t             : Error = 0, Success = 1
+ ****************************************************************/
 uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t network_data_length)
 {
     uint8_t func_retval = 0;
@@ -372,17 +379,34 @@ uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_
 
 
 
+/**************************************************************
+ * @brief  Function to send UPD packets
+ * @param  *ethernet         : Reference to the Ethernet handle
+ * @param  *network_data       : network data from PHY
+ * @param  network_data_length : network data length to be read
+ * @param  *application_data   : UDP data
+ * @param  app_data_length     : Length of UDP data
+ * @retval int8_t              : Error = 0, Success = 1
+ **************************************************************/
 uint8_t ether_read_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t net_data_length, char *application_data, uint16_t app_data_length)
 {
     uint8_t func_retval = 0;
     uint8_t api_retval  = 0;
 
-    api_retval = ether_is_udp(ethernet, network_data, net_data_length);
 
-    if(api_retval)
+    if(ethernet->ether_obj == NULL || network_data == NULL || net_data_length == 0 || net_data_length > UINT16_MAX)
     {
-        func_retval = ether_get_udp_data(ethernet, (uint8_t*)application_data, app_data_length);
+        func_retval = 0;
+    }
+    else
+    {
+        api_retval = ether_is_udp(ethernet, network_data, net_data_length);
 
+        if(api_retval)
+        {
+            func_retval = ether_get_udp_data(ethernet, (uint8_t*)application_data, app_data_length);
+
+        }
     }
 
     return func_retval;
@@ -391,11 +415,20 @@ uint8_t ether_read_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint1
 
 
 
+
+/**************************************************************
+ * @brief  Function to send UPD packets
+ * @param  *ethernet         : Reference to the Ethernet handle
+ * @param  *destination_ip   : Destination IP address
+ * @param  destination_port  : UDP destination port
+ * @param  *application_data : UDP data
+ * @param  data_length       : Length of UDP data
+ * @retval int8_t            : Error = -10, Success = 0
+ **************************************************************/
 int8_t ether_send_udp(ethernet_handle_t *ethernet, uint8_t *destination_ip, uint16_t destination_port, char *application_data, uint16_t data_length)
 {
 
     int8_t func_retval = 0;
-    int8_t api_retval  = 0;
 
     net_ip_t  *ip;
     net_udp_t *udp;
@@ -408,9 +441,6 @@ int8_t ether_send_udp(ethernet_handle_t *ethernet, uint8_t *destination_ip, uint
     /*IP related variables */
     uint16_t ip_identfier = 0;
 
-    /* ARP related variables */
-    uint8_t arp_data[100] = {0};
-
     /* Ethernet Frame related variables */
     uint8_t  destination_mac[ETHER_MAC_SIZE] = {0};
 
@@ -422,25 +452,6 @@ int8_t ether_send_udp(ethernet_handle_t *ethernet, uint8_t *destination_ip, uint
     }
     else
     {
-
-        /* Search arp table to find MAC address of the associated IP */
-        api_retval = search_arp_table(ethernet, destination_mac, destination_ip);
-
-        /* Send ARP request if not found */
-        if(api_retval == 0)
-        {
-            ether_send_arp_req(ethernet, ethernet->host_ip, destination_ip);
-
-            if(ether_is_arp(ethernet, arp_data, 100))
-            {
-                ether_handle_arp_resp_req(ethernet);
-
-                /* Search table again */
-                search_arp_table(ethernet, destination_mac, destination_ip);
-            }
-
-        }
-
 
         ip  = (void*)&ethernet->ether_obj->data;
 
@@ -474,6 +485,9 @@ int8_t ether_send_udp(ethernet_handle_t *ethernet, uint8_t *destination_ip, uint
         /* get UDP checksum */
         udp->checksum = get_udp_checksum(ip, udp, data_length);
 
+
+        /* Get mac address from ARP table */
+        ether_arp_resolve_address(ethernet, destination_mac, destination_ip);
 
         /* Fill Ethernet frame */
         fill_ether_frame(ethernet, destination_mac, ethernet->host_mac, ETHER_IPV4);

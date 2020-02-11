@@ -208,37 +208,26 @@ int main(void)
 
     set_ip_address(test_ip, "192.168.1.196");
 
-//    ether_send_arp_req(ethernet, ethernet->host_ip, test_ip);
-//
-//    if(ether_is_arp(ethernet, (uint8_t*)network_hardware, 128))
-//    {
-//
-//        ether_handle_arp_resp_req(ethernet);
-//
-//        GREEN_LED = 1;
-//        waitMicrosecond(50000);
-//        GREEN_LED = 0;
-//    }
+    ether_send_arp_req(ethernet, ethernet->host_ip, test_ip);
 
-//
-//    /* Test ICMP packets */
-//    ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, test_ip, &sequence_no,
-//                        ethernet->arp_table[0].mac_address, ethernet->host_mac);
+    if(ether_is_arp(ethernet, (uint8_t*)network_hardware, 128))
+    {
+
+        ether_handle_arp_resp_req(ethernet);
+
+        GREEN_LED = 1;
+        waitMicrosecond(50000);
+        GREEN_LED = 0;
+    }
+
+
+    /* Test ICMP packets */
+    ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, test_ip, &sequence_no,
+                        ethernet->arp_table[0].mac_address, ethernet->host_mac);
 
 
     /* Test UDP packets */
-
     char udp_data[40] = {0};
-
-    ether_source_t source_addresses;
-
-    set_mac_address((char*)source_addresses.source_mac, "02:03:04:05:06:07");
-
-    set_ip_address(source_addresses.source_ip, "192.168.1.197");
-
-    source_addresses.source_port = get_random_port(ethernet, 2000);
-
-    source_addresses.identifier = get_unique_identifier(ethernet, 2000);
 
     ether_send_udp(ethernet, test_ip, 8080, "Hello", 5);
 
