@@ -242,6 +242,8 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
         if(ether_ops->ether_recv_packet == NULL)
             ether_ops->ether_recv_packet = ethernet_recv_packet;
 
+        ethernet.source_port = get_random_port(&ethernet, 2000);
+
     }
 
     return &ethernet;
@@ -282,7 +284,7 @@ uint8_t ether_module_status(ethernet_handle_t *ethernet)
 /***********************************************************
  * @brief  Function  Ethernet network data
  * @param  *ethernet    : reference to the Ethernet handle
- * @param  *data        : destination MAC address
+ * @param  *data        : network data
  * @param  *data_length : source MAC address
  * @retval  uint8_t     : Error = 0, Success = 1
  ***********************************************************/
@@ -301,7 +303,10 @@ uint8_t ether_get_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data
         {
             ethernet->ether_commands->function_lock = 1;
 
+            /* get data from network including PHY module frame */
             ethernet->ether_commands->ether_recv_packet(data, data_length);
+
+            ethernet->ether_obj = (void*)((uint8_t*)data + ETHER_PHY_DATA_OFFSET);
 
             func_retval = 1;
 
@@ -318,7 +323,7 @@ uint8_t ether_get_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data
 /***********************************************************
  * @brief  Function send Ethernet network data
  * @param  *ethernet    : reference to the Ethernet handle
- * @param  *data        : destination MAC address
+ * @param  *data        : network data
  * @param  *data_length : source MAC address
  * @retval  uint8_t     : Error = 0, Success = 1
  ***********************************************************/
@@ -383,37 +388,5 @@ int8_t fill_ether_frame(ethernet_handle_t *ethernet, uint8_t *destination_mac_ad
 
 
 
-int8_t search_arp_table(ethernet_handle_t *ethernet, uint8_t *destination_mac, uint8_t *destination_ip)
-{
-
-    int8_t func_retval = 0;
-
-    uint8_t index = 0;
-    uint8_t found = 0;
-
-
-    for(index=0; index < ARP_TABLE_SIZE; index++)
-    {
-
-        if(strncmp((char*)ethernet->arp_table[index].ip_address, (char*)destination_ip , ETHER_IPV4_SIZE) == 0)
-        {
-
-            strncpy((char*)destination_mac, (char*)ethernet->arp_table[index].mac_address, ETHER_MAC_SIZE);
-
-            found = 1;
-
-            func_retval = found;
-
-            break;
-        }
-        else
-        {
-            index++;
-        }
-
-    }
-
-    return func_retval;
-}
 
 

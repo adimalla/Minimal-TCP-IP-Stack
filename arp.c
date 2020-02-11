@@ -59,6 +59,7 @@
 /******************************************************************************/
 
 
+
 /* ARP protocol structure */
 typedef struct _net_arp
 {
@@ -190,6 +191,46 @@ static uint8_t update_arp_table(ethernet_handle_t *ethernet, uint8_t *ip_address
 
 
 
+
+int8_t search_arp_table(ethernet_handle_t *ethernet, uint8_t *destination_mac, uint8_t *destination_ip)
+{
+
+    int8_t func_retval = 0;
+
+    uint8_t index = 0;
+    uint8_t found = 0;
+
+
+    for(index=0; index < ARP_TABLE_SIZE; index++)
+    {
+
+        if(strncmp((char*)ethernet->arp_table[index].ip_address, (char*)destination_ip , ETHER_IPV4_SIZE) == 0)
+        {
+
+            strncpy((char*)destination_mac, (char*)ethernet->arp_table[index].mac_address, ETHER_MAC_SIZE);
+
+            found = 1;
+
+            func_retval = found;
+
+            break;
+        }
+        else
+        {
+            index++;
+        }
+
+    }
+
+    return func_retval;
+}
+
+
+
+
+
+
+
 /******************************************************************************/
 /*                                                                            */
 /*                           ARP Functions                                    */
@@ -252,7 +293,7 @@ int16_t ether_send_arp_req(ethernet_handle_t *ethernet, uint8_t *sender_ip, uint
         }
 
         /* Send packet (uses callback) */
-        ether_send_data(ethernet, (uint8_t*)ethernet->ether_obj, 42);
+        ether_send_data(ethernet, (uint8_t*)ethernet->ether_obj, ETHER_FRAME_SIZE + ARP_FRAME_SIZE);
     }
 
     return func_retval;
@@ -369,7 +410,7 @@ int16_t ether_handle_arp_resp_req(ethernet_handle_t *ethernet)
                 }
 
                 /* Send packet (uses callback) */
-                ether_send_data(ethernet, (uint8_t*)ethernet->ether_obj, 42);
+                ether_send_data(ethernet, (uint8_t*)ethernet->ether_obj, ETHER_FRAME_SIZE + 28);
             }
 
             /* Handle APR reply */

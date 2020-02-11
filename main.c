@@ -208,22 +208,22 @@ int main(void)
 
     set_ip_address(test_ip, "192.168.1.196");
 
-    ether_send_arp_req(ethernet, ethernet->host_ip, test_ip);
+//    ether_send_arp_req(ethernet, ethernet->host_ip, test_ip);
+//
+//    if(ether_is_arp(ethernet, (uint8_t*)network_hardware, 128))
+//    {
+//
+//        ether_handle_arp_resp_req(ethernet);
+//
+//        GREEN_LED = 1;
+//        waitMicrosecond(50000);
+//        GREEN_LED = 0;
+//    }
 
-    if(ether_is_arp(ethernet, (uint8_t*)network_hardware, 128))
-    {
-
-        ether_handle_arp_resp_req(ethernet);
-
-        GREEN_LED = 1;
-        waitMicrosecond(50000);
-        GREEN_LED = 0;
-    }
-
-
-    /* Test ICMP packets */
-    ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, test_ip, &sequence_no,
-                        ethernet->arp_table[0].mac_address, ethernet->host_mac);
+//
+//    /* Test ICMP packets */
+//    ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, test_ip, &sequence_no,
+//                        ethernet->arp_table[0].mac_address, ethernet->host_mac);
 
 
     /* Test UDP packets */
@@ -245,10 +245,7 @@ int main(void)
     ether_read_udp(ethernet, (uint8_t*)network_hardware, 128, udp_data, 40);
 
     if(strncmp(udp_data, "Hello from server", 18) == 0)
-        ether_send_udp_raw(ethernet, &source_addresses, test_ip, ethernet->arp_table[0].mac_address, 8080, (uint8_t*)"Received", 9);
-
-
-
+        ether_send_udp(ethernet, test_ip, 8080, "Received", 9);
 
 
 #endif

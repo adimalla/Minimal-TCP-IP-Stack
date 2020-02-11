@@ -54,6 +54,18 @@
 
 /******************************************************************************/
 /*                                                                            */
+/*                              Defines                                       */
+/*                                                                            */
+/******************************************************************************/
+
+/* Used by other protocols to resolve address */
+#define ARP_FRAME_SIZE 28
+
+
+
+
+/******************************************************************************/
+/*                                                                            */
 /*                     ARP Function Prototypes                                */
 /*                                                                            */
 /******************************************************************************/
@@ -91,7 +103,7 @@ uint8_t ether_is_arp(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data_l
 int16_t ether_handle_arp_resp_req(ethernet_handle_t *ethernet);
 
 
-
+int8_t search_arp_table(ethernet_handle_t *ethernet, uint8_t *destination_mac, uint8_t *destination_ip);
 
 
 

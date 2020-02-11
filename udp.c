@@ -48,6 +48,7 @@
 
 #include "ipv4.h"
 #include "udp.h"
+#include "arp.h"
 
 #include "network_utilities.h"
 
@@ -394,17 +395,23 @@ int8_t ether_send_udp(ethernet_handle_t *ethernet, uint8_t *destination_ip, uint
 {
 
     int8_t func_retval = 0;
+    int8_t api_retval  = 0;
 
     net_ip_t  *ip;
     net_udp_t *udp;
 
+    /* UDP related variables */
     uint8_t  index = 0;
-
     uint8_t  *data_copy;
-
     uint16_t udp_packet_size = 0;
-    uint16_t ip_identfier    = 0;
 
+    /*IP related variables */
+    uint16_t ip_identfier = 0;
+
+    /* ARP related variables */
+    uint8_t arp_data[100] = {0};
+
+    /* Ethernet Frame related variables */
     uint8_t  destination_mac[ETHER_MAC_SIZE] = {0};
 
 
@@ -415,10 +422,24 @@ int8_t ether_send_udp(ethernet_handle_t *ethernet, uint8_t *destination_ip, uint
     }
     else
     {
+
         /* Search arp table to find MAC address of the associated IP */
-        search_arp_table(ethernet, destination_mac, destination_ip);
+        api_retval = search_arp_table(ethernet, destination_mac, destination_ip);
 
         /* Send ARP request if not found */
+        if(api_retval == 0)
+        {
+            ether_send_arp_req(ethernet, ethernet->host_ip, destination_ip);
+
+            if(ether_is_arp(ethernet, arp_data, 100))
+            {
+                ether_handle_arp_resp_req(ethernet);
+
+                /* Search table again */
+                search_arp_table(ethernet, destination_mac, destination_ip);
+            }
+
+        }
 
 
         ip  = (void*)&ethernet->ether_obj->data;
@@ -427,7 +448,7 @@ int8_t ether_send_udp(ethernet_handle_t *ethernet, uint8_t *destination_ip, uint
 
 
         /* Fill UDP frame */
-        udp->source_port      = htons(get_random_port(ethernet, 2000));
+        udp->source_port      = htons(ethernet->source_port);
         udp->destination_port = htons(destination_port);
 
         udp->length = htons(UDP_FRAME_SIZE + data_length);

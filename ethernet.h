@@ -58,6 +58,8 @@
 /******************************************************************************/
 
 
+#define ETHER_PHY_DATA_OFFSET 4
+
 #define ETHER_MAC_SIZE    6    /*!< Size of MAC address        */
 #define ETHER_FRAME_SIZE  14   /*!< Ethernet Frame size        */
 #define ETHER_IPV4_SIZE   4    /*!< IP protocol version 4 size */
@@ -123,6 +125,9 @@ struct _ethernet_handle
     ether_operations_t *ether_commands;           /*!< Network Operations    */
 
     arp_table_t        arp_table[ARP_TABLE_SIZE]; /*!< ARP Table             */
+
+    uint16_t           source_port;
+
 };
 
 
@@ -227,7 +232,7 @@ uint8_t ether_module_status(ethernet_handle_t *ethernet);
 /***********************************************************
  * @brief  Function get Ethernet network data
  * @param  *ethernet    : reference to the Ethernet handle
- * @param  *data        : destination MAC address
+ * @param  *data        : network data
  * @param  *data_length : source MAC address
  * @retval  uint8_t     : Error = 0, Success = 1
  ***********************************************************/
@@ -238,7 +243,7 @@ uint8_t ether_get_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data
 /***********************************************************
  * @brief  Function send Ethernet network data
  * @param  *ethernet    : reference to the Ethernet handle
- * @param  *data        : destination MAC address
+ * @param  *data        : network data
  * @param  *data_length : source MAC address
  * @retval  uint8_t     : Error = 0, Success = 1
  ***********************************************************/
@@ -255,11 +260,6 @@ uint8_t ether_send_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t dat
  * @retval int8_t                   : Error = -1, Success = 0
  **********************************************************************/
 int8_t fill_ether_frame(ethernet_handle_t *ethernet, uint8_t *destination_mac_addr, uint8_t *source_mac_addr, ether_type_t frame_type);
-
-
-
-
-int8_t search_arp_table(ethernet_handle_t *ethernet, uint8_t *destination_mac, uint8_t *destination_ip);
 
 
 
