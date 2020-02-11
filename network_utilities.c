@@ -186,17 +186,17 @@ int8_t set_ip_address(uint8_t *host_ip, char *ip_address)
 
     int8_t func_retval = 0;
 
-    char ip_address_copy[13] = {0};   /*!< Copy variable    */
+    char ip_address_copy[16] = {0};   /*!< Copy variable    */
     char *rest_ptr;                   /*!< Tracking pointer */
     char *token;                      /*!< token            */
 
 
     /* Copy ip address to copy variable for null termination (required for string function) */
-    strncpy(ip_address_copy, ip_address, 13);  /* Size of ip address entered as string with null at index 18 */
+    strncpy(ip_address_copy, ip_address, 16);  /* Size of ip address entered as string with null at index 18 */
 
     uint8_t index = 0;
 
-    if(ip_address_copy[12] != 0)
+    if(ip_address_copy[15] != 0)
     {
         func_retval = -1;
     }

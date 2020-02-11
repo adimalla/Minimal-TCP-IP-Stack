@@ -138,13 +138,14 @@ ip_protocol_type_t get_ip_protocol_type(ethernet_handle_t *ethernet)
 /**********************************************************
  * @brief  Function to fill the IP frame
  * @param  *ip             : reference to the IP structure
+ * @param  *id             : reference to IP identifier
  * @param  *destination_ip : destination IP address
  * @param  *source_ip      : source IP address
  * @param  protocol        : IP protocol type
  * @param  data_size       : size of payload
  * @retval int8_t          : Error = NULL
  **********************************************************/
-int8_t fill_ip_frame(net_ip_t *ip, uint8_t *destination_ip, uint8_t *source_ip, ip_protocol_type_t protocol, uint16_t data_size)
+int8_t fill_ip_frame(net_ip_t *ip, uint16_t *id, uint8_t *destination_ip, uint8_t *source_ip, ip_protocol_type_t protocol, uint16_t data_size)
 {
     int8_t func_retval = 0;
 
@@ -164,7 +165,10 @@ int8_t fill_ip_frame(net_ip_t *ip, uint8_t *destination_ip, uint8_t *source_ip, 
 
         ip->service_type = 0;
 
-        ip->id = 0;
+        /* Get identifier and increment it for next message */
+        ip->id = htons(*id);
+
+        (*id)++;
 
         /* Don't Fragment set condition */
         ip->flags_offset = htons(IP_DF_SET);

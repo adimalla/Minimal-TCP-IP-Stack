@@ -393,6 +393,3 @@ int16_t ether_handle_arp_resp_req(ethernet_handle_t *ethernet)
 
 
 
-
-
-

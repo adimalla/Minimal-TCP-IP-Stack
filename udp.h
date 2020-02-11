@@ -63,13 +63,13 @@
 
 
 
-/**************************************************************
- * @brief  Function to get UDP data
+/****************************************************************
+ * @brief  Function to get UDP data inside network state machine
  * @param  *ethernet        : Reference to the Ethernet handle
  * @param  *data            : UDP data
  * @param  data_length      : Length of UDP data
  * @retval uint8_t          : Error = 0, Success = 1
- **************************************************************/
+ ****************************************************************/
 uint8_t ether_get_udp_data(ethernet_handle_t *ethernet, uint8_t *data, uint8_t data_length);
 
 
@@ -94,5 +94,11 @@ int8_t ether_send_udp_raw(ethernet_handle_t *ethernet, ether_source_t *source_ad
 
 uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t network_data_length);
 
+
+uint8_t ether_read_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t net_data_length,
+                       char *application_data, uint16_t app_data_length);
+
+int8_t ether_send_udp(ethernet_handle_t *ethernet, uint8_t *destination_ip, uint16_t destination_port,
+                      char *application_data, uint16_t data_length);
 
 #endif /* UDP_H_ */

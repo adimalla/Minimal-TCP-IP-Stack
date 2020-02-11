@@ -181,9 +181,9 @@ int8_t ether_send_icmp_req(ethernet_handle_t *ethernet, icmp_type_t icmp_type, u
     net_ip_t   *ip;
     net_icmp_t *icmp;
 
-    uint32_t sum = 0;
-
+    uint32_t sum              = 0;
     uint16_t icmp_packet_size = 0;
+    uint16_t ip_id            = 0;
 
     if(ethernet->ether_obj == NULL)
     {
@@ -220,7 +220,7 @@ int8_t ether_send_icmp_req(ethernet_handle_t *ethernet, icmp_type_t icmp_type, u
 
 
         /* Fill IP frame */
-        fill_ip_frame(ip, destination_ip, ethernet->host_ip, IP_ICMP, icmp_packet_size);
+        fill_ip_frame(ip, &ip_id, destination_ip, ethernet->host_ip, IP_ICMP, icmp_packet_size);
 
 
         /* Fill Ethernet frame */

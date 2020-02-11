@@ -67,6 +67,11 @@
 
 
 
+
+#define get_unique_identifier get_random_port
+
+
+
 /* Ethernet Frame structure (14 Bytes) */
 typedef struct _ether_frame
 {
@@ -124,9 +129,10 @@ struct _ethernet_handle
 /* */
 typedef struct _ethernet_source_addr
 {
-    uint8_t source_mac[ETHER_MAC_SIZE];
-    uint8_t source_ip[ETHER_IPV4_SIZE];
+    uint8_t  source_mac[ETHER_MAC_SIZE];
+    uint8_t  source_ip[ETHER_IPV4_SIZE];
     uint16_t source_port;
+    uint16_t identifier;
 
 }ether_source_t;
 
@@ -148,15 +154,16 @@ typedef enum _ether_type
 /* Network error codes protocol functions */
 typedef enum _network_error_codes
 {
-    NET_ARP_REQ_ERROR     = -1,  /*!< */
-    NET_ARP_RESP_ERROR    = -2,  /*!< */
-    NET_ARP_RESP_IGNORE   = -3,  /*!< */
-    NET_IP_GET_ERROR      = -4,  /*!< */
-    NET_IP_CHECKSUM_ERROR = -5,  /*!< */
-    NET_ICMP_RESP_ERROR   = -6,  /*!< */
-    NET_ICMP_RESP_IGNORE  = -7,  /*!< */
-    NET_ICMP_REQ_ERROR    = -8,  /*!< */
-    NET_UDP_SEND_ERROR    = -9   /*!< */
+    NET_ARP_REQ_ERROR      = -1,  /*!< */
+    NET_ARP_RESP_ERROR     = -2,  /*!< */
+    NET_ARP_RESP_IGNORE    = -3,  /*!< */
+    NET_IP_GET_ERROR       = -4,  /*!< */
+    NET_IP_CHECKSUM_ERROR  = -5,  /*!< */
+    NET_ICMP_RESP_ERROR    = -6,  /*!< */
+    NET_ICMP_RESP_IGNORE   = -7,  /*!< */
+    NET_ICMP_REQ_ERROR     = -8,  /*!< */
+    NET_UDP_RAW_SEND_ERROR = -9,  /*!< */
+    NET_UDP_SEND_ERROR     = -10,
 
 }network_erro_codes_t;
 
@@ -249,6 +256,10 @@ uint8_t ether_send_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t dat
  **********************************************************************/
 int8_t fill_ether_frame(ethernet_handle_t *ethernet, uint8_t *destination_mac_addr, uint8_t *source_mac_addr, ether_type_t frame_type);
 
+
+
+
+int8_t search_arp_table(ethernet_handle_t *ethernet, uint8_t *destination_mac, uint8_t *destination_ip);
 
 
 

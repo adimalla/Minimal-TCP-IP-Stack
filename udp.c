@@ -181,13 +181,13 @@ static uint16_t get_udp_checksum(net_ip_t *ip, net_udp_t *udp, uint16_t data_len
 
 
 
-/***************************************************************
- * @brief  Function to get UDP data
+/*****************************************************************
+ * @brief  Function to get UDP data inside network state machine
  * @param  *ethernet        : Reference to the Ethernet handle
  * @param  *data            : UDP data
  * @param  data_length      : Length of UDP data
  * @retval uint8_t          : Error = 0, Success = 1
- ***************************************************************/
+ *****************************************************************/
 uint8_t ether_get_udp_data(ethernet_handle_t *ethernet, uint8_t *data, uint8_t data_length)
 {
     uint8_t func_retval = 0;
@@ -249,7 +249,7 @@ uint8_t ether_get_udp_data(ethernet_handle_t *ethernet, uint8_t *data, uint8_t d
  * @retval int8_t           : Error = -9, Success = 0
  *******************************************************************/
 int8_t ether_send_udp_raw(ethernet_handle_t *ethernet, ether_source_t *source_addr, uint8_t *destination_ip,
-                      uint8_t *destination_mac, uint16_t destination_port, uint8_t *data, uint8_t data_length)
+                          uint8_t *destination_mac, uint16_t destination_port, uint8_t *data, uint8_t data_length)
 {
 
     int8_t func_retval = 0;
@@ -295,7 +295,7 @@ int8_t ether_send_udp_raw(ethernet_handle_t *ethernet, ether_source_t *source_ad
         /* Fill IP frame */
         udp_packet_size = UDP_FRAME_SIZE + data_length;
 
-        fill_ip_frame(ip, destination_ip, source_addr->source_ip, IP_UDP, udp_packet_size);
+        fill_ip_frame(ip, &source_addr->identifier, destination_ip, source_addr->source_ip, IP_UDP, udp_packet_size);
 
 
         /* get UDP checksum */
@@ -316,6 +316,7 @@ int8_t ether_send_udp_raw(ethernet_handle_t *ethernet, ether_source_t *source_ad
 
 
 
+/* outside state machine */
 uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t network_data_length)
 {
     uint8_t func_retval = 0;
@@ -366,5 +367,105 @@ uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_
     return func_retval;
 }
 
+
+
+
+
+uint8_t ether_read_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t net_data_length, char *application_data, uint16_t app_data_length)
+{
+    uint8_t func_retval = 0;
+    uint8_t api_retval  = 0;
+
+    api_retval = ether_is_udp(ethernet, network_data, net_data_length);
+
+    if(api_retval)
+    {
+        func_retval = ether_get_udp_data(ethernet, (uint8_t*)application_data, app_data_length);
+
+    }
+
+    return func_retval;
+}
+
+
+
+
+int8_t ether_send_udp(ethernet_handle_t *ethernet, uint8_t *destination_ip, uint16_t destination_port, char *application_data, uint16_t data_length)
+{
+
+    int8_t func_retval = 0;
+
+    net_ip_t  *ip;
+    net_udp_t *udp;
+
+    uint8_t  index = 0;
+
+    uint8_t  *data_copy;
+
+    uint16_t udp_packet_size = 0;
+    uint16_t ip_identfier    = 0;
+
+    uint8_t  destination_mac[ETHER_MAC_SIZE] = {0};
+
+
+    if(ethernet->ether_obj == NULL || destination_ip == NULL || destination_port == 0 \
+            || application_data == NULL || data_length == 0 || data_length > UINT16_MAX)
+    {
+        func_retval = -10;
+    }
+    else
+    {
+        /* Search arp table to find MAC address of the associated IP */
+        search_arp_table(ethernet, destination_mac, destination_ip);
+
+        /* Send ARP request if not found */
+
+
+        ip  = (void*)&ethernet->ether_obj->data;
+
+        udp = (void*)( (uint8_t*)ip + IP_HEADER_SIZE );
+
+
+        /* Fill UDP frame */
+        udp->source_port      = htons(get_random_port(ethernet, 2000));
+        udp->destination_port = htons(destination_port);
+
+        udp->length = htons(UDP_FRAME_SIZE + data_length);
+
+
+        /* Add UDP data */
+        data_copy = &udp->data;
+
+        for(index = 0; index < data_length; index++)
+        {
+            data_copy[index] = application_data[index];
+        }
+
+
+        /* Fill IP frame */
+        ip_identfier = get_unique_identifier(ethernet, 2000);
+
+        udp_packet_size = UDP_FRAME_SIZE + data_length;
+
+        fill_ip_frame(ip, &ip_identfier, destination_ip, ethernet->host_ip, IP_UDP, udp_packet_size);
+
+
+        /* get UDP checksum */
+        udp->checksum = get_udp_checksum(ip, udp, data_length);
+
+
+        /* Fill Ethernet frame */
+        fill_ether_frame(ethernet, destination_mac, ethernet->host_mac, ETHER_IPV4);
+
+
+        /* Send UPD data */
+        ether_send_data(ethernet,(uint8_t*)ethernet->ether_obj, ETHER_FRAME_SIZE + htons(ip->total_length));
+    }
+
+    return func_retval;
+
+
+
+}
 
 

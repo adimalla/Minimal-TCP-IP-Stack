@@ -381,3 +381,39 @@ int8_t fill_ether_frame(ethernet_handle_t *ethernet, uint8_t *destination_mac_ad
     return func_retval;
 }
 
+
+
+int8_t search_arp_table(ethernet_handle_t *ethernet, uint8_t *destination_mac, uint8_t *destination_ip)
+{
+
+    int8_t func_retval = 0;
+
+    uint8_t index = 0;
+    uint8_t found = 0;
+
+
+    for(index=0; index < ARP_TABLE_SIZE; index++)
+    {
+
+        if(strncmp((char*)ethernet->arp_table[index].ip_address, (char*)destination_ip , ETHER_IPV4_SIZE) == 0)
+        {
+
+            strncpy((char*)destination_mac, (char*)ethernet->arp_table[index].mac_address, ETHER_MAC_SIZE);
+
+            found = 1;
+
+            func_retval = found;
+
+            break;
+        }
+        else
+        {
+            index++;
+        }
+
+    }
+
+    return func_retval;
+}
+
+

@@ -157,7 +157,7 @@ uint16_t readAdc0Ss3()
 
 int main(void)
 {
-    uint8_t udpData[100] = {0};
+
     uint8_t data[128] = {0};
 
     uint8_t loop = 0;
@@ -195,7 +195,7 @@ int main(void)
     };
 
     /* Create Ethernet handle */
-    ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:05:06:07", "192.168.10.2", &ether_ops);
+    ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:05:06:07", "192.168.1.197", &ether_ops);
 
 
 
@@ -206,9 +206,9 @@ int main(void)
 
     uint8_t sequence_no = 1;
 
-    set_ip_address(test_ip, "192.168.10.1");
+    set_ip_address(test_ip, "192.168.1.196");
 
-    ether_send_arp_req(ethernet, ethernet->host_ip,test_ip);
+    ether_send_arp_req(ethernet, ethernet->host_ip, test_ip);
 
     if(ether_is_arp(ethernet, (uint8_t*)network_hardware, 128))
     {
@@ -227,25 +227,28 @@ int main(void)
 
 
     /* Test UDP packets */
+
+    char udp_data[40] = {0};
+
     ether_source_t source_addresses;
 
     set_mac_address((char*)source_addresses.source_mac, "02:03:04:05:06:07");
 
-    set_ip_address(source_addresses.source_ip, "192.168.10.2");
+    set_ip_address(source_addresses.source_ip, "192.168.1.197");
 
     source_addresses.source_port = get_random_port(ethernet, 2000);
 
-    ether_send_udp_raw(ethernet, &source_addresses, test_ip, ethernet->arp_table[0].mac_address, 8080, (uint8_t*)"Hello", 5);
+    source_addresses.identifier = get_unique_identifier(ethernet, 2000);
 
-    if(ether_is_udp(ethernet, (uint8_t*)network_hardware, 128))
-    {
+    ether_send_udp(ethernet, test_ip, 8080, "Hello", 5);
 
+    ether_read_udp(ethernet, (uint8_t*)network_hardware, 128, udp_data, 40);
+
+    if(strncmp(udp_data, "Hello from server", 18) == 0)
         ether_send_udp_raw(ethernet, &source_addresses, test_ip, ethernet->arp_table[0].mac_address, 8080, (uint8_t*)"Received", 9);
 
-        BLUE_LED = 1;
-        waitMicrosecond(50000);
-        BLUE_LED = 0;
-    }
+
+
 
 
 #endif
