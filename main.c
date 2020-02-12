@@ -187,7 +187,7 @@ typedef struct _net_dhcp
     uint8_t  server_name[64];
     uint8_t  boot_filename[128];
     uint8_t  magic_cookie[4];
-    uint8_t  options[18];
+    uint8_t  options;
 
 }net_dhcp_t ;
 
@@ -244,19 +244,23 @@ typedef enum _dhcp_boot_message
 
 int8_t ether_dhcp_discover_send(ethernet_handle_t *ethernet, uint32_t transaction_id, uint16_t seconds_elapsed)
 {
-    net_dhcp_t dhcp_discover;
 
-    dhcp_discover_opts_t discover_opts;
+    char data[260] = {0};
 
-    memset(&dhcp_discover, 0, sizeof(net_dhcp_t));
+    net_dhcp_t           *dhcp_discover;
+    dhcp_discover_opts_t *discover_opts;
 
-    dhcp_discover.op_code        = DHCP_BOOT_REQ;
-    dhcp_discover.hw_type        = 1;
-    dhcp_discover.hw_length      = ETHER_MAC_SIZE;
-    dhcp_discover.hops           = 0;
-    dhcp_discover.transaction_id = transaction_id;
-    dhcp_discover.seconds        = seconds_elapsed;
-    dhcp_discover.flags          = htons(0x8000);
+
+    /* Configure DHCP fields */
+    dhcp_discover = (net_dhcp_t*)data;
+
+    dhcp_discover->op_code        = DHCP_BOOT_REQ;
+    dhcp_discover->hw_type        = 1;
+    dhcp_discover->hw_length      = ETHER_MAC_SIZE;
+    dhcp_discover->hops           = 0;
+    dhcp_discover->transaction_id = transaction_id;
+    dhcp_discover->seconds        = seconds_elapsed;
+    dhcp_discover->flags          = htons(0x8000);
 
     /* client  IP address  = 0  */
     /* your    IP address  = 0  */
@@ -264,46 +268,46 @@ int8_t ether_dhcp_discover_send(ethernet_handle_t *ethernet, uint32_t transactio
     /* gateway IP address  = 0  */
 
     /* client hardware address */
-    strncpy((char*)dhcp_discover.client_hw_addr, (char*)ethernet->host_mac, ETHER_MAC_SIZE);
+    strncpy((char*)dhcp_discover->client_hw_addr, (char*)ethernet->host_mac, ETHER_MAC_SIZE);
 
-    /* Client hardware address padding (zero padding) */
+    /* Client hardware address padding = 0 */
+    /* Client Server host name         = 0 */
+    /* Client file name                = 0 */
 
-    /* Client Server host name = 0 */
+    /* Configure magic cookie value */
+    dhcp_discover->magic_cookie[0] = 0x63;
+    dhcp_discover->magic_cookie[1] = 0x82;
+    dhcp_discover->magic_cookie[2] = 0x53;
+    dhcp_discover->magic_cookie[3] = 0x63;
 
-    /* Client file name = 0 */
-
-    /* Put magic cookie value */
-    dhcp_discover.magic_cookie[0] = 0x63;
-    dhcp_discover.magic_cookie[1] = 0x82;
-    dhcp_discover.magic_cookie[2] = 0x53;
-    dhcp_discover.magic_cookie[3] = 0x63;
 
     /* Configure DHCP options */
+    discover_opts = (void*)&dhcp_discover->options;
 
     /* option (53) */
-    discover_opts.message_type.option_number = 53;
-    discover_opts.message_type.length        = 1;
-    discover_opts.message_type.dhcp          = 1;
+    discover_opts->message_type.option_number = 53;
+    discover_opts->message_type.length        = 1;
+    discover_opts->message_type.dhcp          = 1;
 
     /* option (55) */
-    discover_opts.param_request_list.option_number = 55;
-    discover_opts.param_request_list.length        = 3;
-    discover_opts.param_request_list.req_item[0]   = 1;  /* SUBNET Mask option value */
-    discover_opts.param_request_list.req_item[1]   = 3;  /* Router                   */
-    discover_opts.param_request_list.req_item[2]   = 51; /* IP address lease time    */
+    discover_opts->param_request_list.option_number = 55;
+    discover_opts->param_request_list.length        = 3;
+    discover_opts->param_request_list.req_item[0]   = 1;  /* SUBNET Mask option value */
+    discover_opts->param_request_list.req_item[1]   = 3;  /* Router                   */
+    discover_opts->param_request_list.req_item[2]   = 51; /* IP address lease time    */
 
     /* option (61) */
-    discover_opts.client_identifier.option_number = 61;
-    discover_opts.client_identifier.length        = 7;
-    discover_opts.client_identifier.hw_type       = 1;
+    discover_opts->client_identifier.option_number = 61;
+    discover_opts->client_identifier.length        = 7;
+    discover_opts->client_identifier.hw_type       = 1;
 
-    strncpy((char*)discover_opts.client_identifier.client_mac, (char*)ethernet->host_mac, ETHER_MAC_SIZE);
+    strncpy((char*)discover_opts->client_identifier.client_mac, (char*)ethernet->host_mac, ETHER_MAC_SIZE);
 
     /* option end */
-    discover_opts.options_end = 0xFF;
+    discover_opts->options_end = 0xFF;
 
-    strncpy((char*)dhcp_discover.options,(char*)&discover_opts, 18);
 
+    /* Configure sources */
     ether_source_t host;
 
     memset(&host, 0, sizeof(ether_source_t));
@@ -318,7 +322,7 @@ int8_t ether_dhcp_discover_send(ethernet_handle_t *ethernet, uint32_t transactio
     set_ip_address(destination_ip, "255.255.255.255");
     set_mac_address((char*)destination_mac, "FF:FF:FF:FF:FF:FF");
 
-    ether_send_udp_raw(ethernet, &host, destination_ip, destination_mac, 67, (uint8_t*)&dhcp_discover, 258);
+    ether_send_udp_raw(ethernet, &host, destination_ip, destination_mac, 67, (uint8_t*)dhcp_discover, 258);
 
     return 0;
 }
