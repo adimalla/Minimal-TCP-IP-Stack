@@ -196,7 +196,7 @@ int main(void)
     };
 
     /* Create Ethernet handle */
-    ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:05:06:48", "192.168.2.69", &ether_ops);
+    ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:05:60:48", "192.168.2.48", &ether_ops);
 
 
     // flash phy leds
