@@ -148,6 +148,17 @@ uint16_t readAdc0Ss3()
 
 
 
+/* wrapper function */
+
+uint8_t ether_open(uint8_t *mac_address)
+{
+
+    // init ethernet interface
+    etherInit(ETHER_UNICAST | ETHER_BROADCAST | ETHER_HALFDUPLEX, mac_address);
+
+    return 0;
+}
+
 
 
 
@@ -169,17 +180,6 @@ int main(void)
 
     init_adc();
 
-    // init ethernet interface
-    etherInit(ETHER_UNICAST | ETHER_BROADCAST | ETHER_HALFDUPLEX);
-
-    // flash phy leds
-    etherWritePhy(PHLCON, 0x0880);
-    RED_LED = 1;
-    waitMicrosecond(500000);
-    etherWritePhy(PHLCON, 0x0990);
-    RED_LED = 0;
-    waitMicrosecond(500000);
-
     enc28j60_frame_t  *network_hardware;
     ethernet_handle_t *ethernet;
 
@@ -188,6 +188,7 @@ int main(void)
     /* Link network operation functions */
     ether_operations_t ether_ops =
     {
+     .open                     = ether_open,
      .network_interface_status = etherKbhit,
      .ether_send_packet        = etherPutPacket,
      .ether_recv_packet        = etherGetPacket,
@@ -195,7 +196,16 @@ int main(void)
     };
 
     /* Create Ethernet handle */
-    ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:05:06:07", "192.168.1.197", &ether_ops);
+    ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:05:06:48", "192.168.2.69", &ether_ops);
+
+
+    // flash phy leds
+    etherWritePhy(PHLCON, 0x0880);
+    RED_LED = 1;
+    waitMicrosecond(500000);
+    etherWritePhy(PHLCON, 0x0990);
+    RED_LED = 0;
+    waitMicrosecond(500000);
 
 
 
@@ -206,7 +216,7 @@ int main(void)
 
     uint8_t sequence_no = 1;
 
-    set_ip_address(test_ip, "192.168.1.196");
+    set_ip_address(test_ip, "192.168.2.196");
 
     ether_send_arp_req(ethernet, ethernet->host_ip, test_ip);
 

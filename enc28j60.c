@@ -31,7 +31,6 @@ uint8_t nextPacketLsb = 0x00;
 uint8_t nextPacketMsb = 0x00;
 uint8_t sequenceId = 1;
 uint32_t sum;
-uint8_t macAddress[6] = {2,3,4,5,6,7};
 uint8_t ipv4Address[4];
 
 // ------------------------------------------------------------------------------
@@ -198,7 +197,7 @@ void etherReadMemStop()
 
 // Initializes ethernet device
 // Uses order suggested in Chapter 6 of datasheet except 6.4 OST which is first here
-void etherInit(uint8_t mode)
+void etherInit(uint8_t mode, uint8_t *macAddress)
 {
     // make sure that oscillator start-up timer has expired
     while ((etherReadReg(ESTAT) & CLKRDY) == 0) {}

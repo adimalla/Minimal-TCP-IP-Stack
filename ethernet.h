@@ -104,6 +104,7 @@ typedef struct _arp_table
 typedef struct _ethernet_operations
 {
     uint8_t  function_lock;                                          /*!< Function Lock for exclusive access of functions (experimental ) */
+    uint8_t  (*open)(uint8_t *mac_address);
     uint8_t  (*network_interface_status)(void);                      /*!< Network / Ethernet module packet receive status / trigger       */
     uint16_t (*random_gen_seed)(void);                               /*!< Seed value return function for random number generation         */
     int16_t  (*ether_send_packet)(uint8_t *data, uint16_t length);   /*!< Callback function to send Ethernet packet                       */

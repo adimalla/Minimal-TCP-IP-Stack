@@ -230,19 +230,27 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
         /* Configure network operations and weak linking of default functions */
         ethernet.ether_commands = ether_ops;
 
-        if(ether_ops->network_interface_status == NULL)
+        if(ethernet.ether_commands->open == NULL)
             return NULL;
 
-        if(ether_ops->random_gen_seed == NULL)
-            ether_ops->random_gen_seed = random_seed;
+        if(ethernet.ether_commands->network_interface_status == NULL)
+            return NULL;
 
-        if(ether_ops->ether_send_packet == NULL)
-            ether_ops->ether_send_packet = ethernet_send_packet;
+        if(ethernet.ether_commands->random_gen_seed == NULL)
+            ethernet.ether_commands->random_gen_seed = random_seed;
 
-        if(ether_ops->ether_recv_packet == NULL)
-            ether_ops->ether_recv_packet = ethernet_recv_packet;
+        if(ethernet.ether_commands->ether_send_packet == NULL)
+            ethernet.ether_commands->ether_send_packet = ethernet_send_packet;
+
+        if(ethernet.ether_commands->ether_recv_packet == NULL)
+            ethernet.ether_commands->ether_recv_packet = ethernet_recv_packet;
 
         ethernet.source_port = get_random_port(&ethernet, 2000);
+
+
+        /* Initialize Ethernet */
+        ethernet.ether_commands->open(ethernet.host_mac);
+
 
     }
 
