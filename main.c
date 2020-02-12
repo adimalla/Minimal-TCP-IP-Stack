@@ -166,10 +166,173 @@ uint8_t ether_open(uint8_t *mac_address)
 
 
 
+#pragma pack(1)
+
+
+typedef struct _net_dhcp
+{
+    uint8_t  op_code;
+    uint8_t  hw_type;
+    uint8_t  hw_length;
+    uint8_t  hops;
+    uint32_t transaction_id;
+    uint16_t seconds;
+    uint16_t flags;
+    uint8_t  client_ip[4];
+    uint8_t  your_ip[4];
+    uint8_t  server_ip[4];
+    uint8_t  gateway_ip[4];
+    uint8_t  client_hw_addr[6];
+    uint8_t  client_hw_addr_pad[10];
+    uint8_t  server_name[64];
+    uint8_t  boot_filename[128];
+    uint8_t  magic_cookie[4];
+    uint8_t  options[18];
+
+}net_dhcp_t ;
+
+
+/* DHCP options structures */
+typedef struct _opts_53
+{
+    uint8_t option_number;
+    uint8_t length;
+    uint8_t dhcp;
+
+}dhcp_option_53_t;
+
+
+typedef struct _opts_55
+{
+    uint8_t option_number;
+    uint8_t length;
+    uint8_t req_item[3];
+
+}dhcp_option_55_t;
+
+
+typedef struct _opts_61
+{
+    uint8_t option_number;
+    uint8_t length;
+    uint8_t hw_type;
+    uint8_t client_mac[ETHER_MAC_SIZE];
+
+}dhcp_option_61_t;
+
+
+typedef struct _dhcp_discover_options
+{
+    dhcp_option_53_t message_type;
+    dhcp_option_55_t param_request_list;
+    dhcp_option_61_t client_identifier;
+    uint8_t          options_end;
+
+}dhcp_discover_opts_t;
+
+
+
+typedef enum _dhcp_boot_message
+{
+    DHCP_BOOT_REQ   = 1,
+    DHCP_BOOT_REPLY = 2,
+
+}dhcp_boot_msg_t;
+
+
+
+
+int8_t ether_dhcp_discover_send(ethernet_handle_t *ethernet, uint32_t transaction_id, uint16_t seconds_elapsed)
+{
+    net_dhcp_t dhcp_discover;
+
+    dhcp_discover_opts_t discover_opts;
+
+    memset(&dhcp_discover, 0, sizeof(net_dhcp_t));
+
+    dhcp_discover.op_code        = DHCP_BOOT_REQ;
+    dhcp_discover.hw_type        = 1;
+    dhcp_discover.hw_length      = ETHER_MAC_SIZE;
+    dhcp_discover.hops           = 0;
+    dhcp_discover.transaction_id = transaction_id;
+    dhcp_discover.seconds        = seconds_elapsed;
+    dhcp_discover.flags          = htons(0x8000);
+
+    /* client  IP address  = 0  */
+    /* your    IP address  = 0  */
+    /* server  IP address  = 0  */
+    /* gateway IP address  = 0  */
+
+    /* client hardware address */
+    strncpy((char*)dhcp_discover.client_hw_addr, (char*)ethernet->host_mac, ETHER_MAC_SIZE);
+
+    /* Client hardware address padding (zero padding) */
+
+    /* Client Server host name = 0 */
+
+    /* Client file name = 0 */
+
+    /* Put magic cookie value */
+    dhcp_discover.magic_cookie[0] = 0x63;
+    dhcp_discover.magic_cookie[1] = 0x82;
+    dhcp_discover.magic_cookie[2] = 0x53;
+    dhcp_discover.magic_cookie[3] = 0x63;
+
+    /* Configure DHCP options */
+
+    /* option (53) */
+    discover_opts.message_type.option_number = 53;
+    discover_opts.message_type.length        = 1;
+    discover_opts.message_type.dhcp          = 1;
+
+    /* option (55) */
+    discover_opts.param_request_list.option_number = 55;
+    discover_opts.param_request_list.length        = 3;
+    discover_opts.param_request_list.req_item[0]   = 1;  /* SUBNET Mask option value */
+    discover_opts.param_request_list.req_item[1]   = 3;  /* Router                   */
+    discover_opts.param_request_list.req_item[2]   = 51; /* IP address lease time    */
+
+    /* option (61) */
+    discover_opts.client_identifier.option_number = 61;
+    discover_opts.client_identifier.length        = 7;
+    discover_opts.client_identifier.hw_type       = 1;
+
+    strncpy((char*)discover_opts.client_identifier.client_mac, (char*)ethernet->host_mac, ETHER_MAC_SIZE);
+
+    /* option end */
+    discover_opts.options_end = 0xFF;
+
+    strncpy((char*)dhcp_discover.options,(char*)&discover_opts, 18);
+
+    ether_source_t host;
+
+    memset(&host, 0, sizeof(ether_source_t));
+
+    host.identifier  = 1;
+    host.source_port = 68;
+    strncpy((char*)host.source_mac, (char*)ethernet->host_mac, ETHER_MAC_SIZE);
+
+    uint8_t destination_ip[4] = {0};
+    uint8_t destination_mac[6] = {0};
+
+    set_ip_address(destination_ip, "255.255.255.255");
+    set_mac_address((char*)destination_mac, "FF:FF:FF:FF:FF:FF");
+
+    ether_send_udp_raw(ethernet, &host, destination_ip, destination_mac, 67, (uint8_t*)&dhcp_discover, 258);
+
+    return 0;
+}
+
+
+
+
+
+
+
 int main(void)
 {
 
-    uint8_t data[128] = {0};
+    uint8_t data[1500] = {0};
 
     uint8_t loop = 0;
 
@@ -216,7 +379,7 @@ int main(void)
 
     uint8_t sequence_no = 1;
 
-    set_ip_address(test_ip, "192.168.2.196");
+    set_ip_address(test_ip, "192.168.2.1");
 
     ether_send_arp_req(ethernet, ethernet->host_ip, test_ip);
 
@@ -245,6 +408,9 @@ int main(void)
 
     if(strncmp(udp_data, "Hello from server", 18) == 0)
         ether_send_udp(ethernet, test_ip, 8080, "Received", 9);
+
+
+    ether_dhcp_discover_send(ethernet, 156256, 0);
 
 
 #endif
