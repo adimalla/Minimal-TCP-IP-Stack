@@ -77,6 +77,8 @@ uint8_t ether_get_udp_data(ethernet_handle_t *ethernet, uint8_t *data, uint8_t d
 
 /*******************************************************************
  * @brief  Raw Function to send UPD packets
+ *         UDP data dependent upon total data allocated to
+ *         ethernet object
  * @param  *ethernet        : Reference to the Ethernet handle
  * @param  *source_addr     : Reference to source address structure
  * @param  *destination_ip  : Destination IP address
@@ -87,7 +89,7 @@ uint8_t ether_get_udp_data(ethernet_handle_t *ethernet, uint8_t *data, uint8_t d
  * @retval int8_t           : Error = -9, Success = 0
  *******************************************************************/
 int8_t ether_send_udp_raw(ethernet_handle_t *ethernet, ether_source_t *source_addr, uint8_t *destination_ip,
-                      uint8_t *destination_mac, uint16_t destination_port, uint8_t *data, uint8_t data_length);
+                      uint8_t *destination_mac, uint16_t destination_port, uint8_t *data, uint16_t data_length);
 
 
 
@@ -121,6 +123,8 @@ uint8_t ether_read_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint1
 
 /**************************************************************
  * @brief  Function to send UPD packets
+ *         UDP data dependent upon total data allocated to
+ *         ethernet object
  * @param  *ethernet         : Reference to the Ethernet handle
  * @param  *destination_ip   : Destination IP address
  * @param  destination_port  : UDP destination port
