@@ -195,7 +195,7 @@ int main(void)
     };
 
     /* Create Ethernet handle */
-    ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:05:06:07", "192.168.1.197", &ether_ops);
+    ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:05:06:07", "192.168.1.194", &ether_ops);
 
 
 

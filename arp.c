@@ -329,7 +329,7 @@ uint8_t ether_is_arp(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data_l
         /* Wait for data */
         block_loop = 1;
 
-        do
+        while(block_loop)
         {
             if(ether_get_data(ethernet, data, data_length))
             {
@@ -342,7 +342,7 @@ uint8_t ether_is_arp(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data_l
                 }
             }
 
-        }while(block_loop);
+        }
 
     }
 
