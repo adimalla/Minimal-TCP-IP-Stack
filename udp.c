@@ -2,7 +2,7 @@
  ******************************************************************************
  * @file    udp.c
  * @author  Aditya Mall,
- * @brief   ethernet layer header file
+ * @brief   UDP protocol source file
  *
  *  Info
  *
@@ -189,7 +189,7 @@ static uint16_t get_udp_checksum(net_ip_t *ip, net_udp_t *udp, uint16_t data_len
  * @param  data_length      : Length of UDP data
  * @retval uint8_t          : Error = 0, Success = 1
  *****************************************************************/
-uint8_t ether_get_udp_data(ethernet_handle_t *ethernet, uint8_t *data, uint8_t data_length)
+uint8_t ether_get_udp_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data_length)
 {
     uint8_t func_retval = 0;
 
@@ -269,7 +269,7 @@ int8_t ether_send_udp_raw(ethernet_handle_t *ethernet, ether_source_t *source_ad
     if(ethernet->ether_obj == NULL || source_addr == NULL || destination_ip == NULL || destination_mac == NULL \
             || destination_port == 0 || data == NULL || data_length == 0 || data_length > UINT16_MAX)
     {
-        func_retval = -9;
+        func_retval = NET_UDP_RAW_SEND_ERROR;
     }
     else
     {
@@ -343,7 +343,7 @@ uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_
         /* Wait for data */
         block_loop = 1;
 
-        do
+        while(block_loop)
         {
             if(ether_get_data(ethernet, network_data, network_data_length))
             {
@@ -370,7 +370,7 @@ uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_
 
             }
 
-        }while(block_loop);
+        }
 
     }
 
@@ -452,7 +452,7 @@ int8_t ether_send_udp(ethernet_handle_t *ethernet, uint8_t *destination_ip, uint
     if(ethernet->ether_obj == NULL || destination_ip == NULL || destination_port == 0 \
             || application_data == NULL || data_length == 0 || data_length > UINT16_MAX)
     {
-        func_retval = -10;
+        func_retval = NET_UDP_SEND_ERROR;
     }
     else
     {

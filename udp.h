@@ -2,7 +2,7 @@
  ******************************************************************************
  * @file    udp.h
  * @author  Aditya Mall,
- * @brief   ethernet layer header file
+ * @brief   UDP protocol header file
  *
  *  Info
  *
@@ -70,7 +70,7 @@
  * @param  data_length      : Length of UDP data
  * @retval uint8_t          : Error = 0, Success = 1
  ****************************************************************/
-uint8_t ether_get_udp_data(ethernet_handle_t *ethernet, uint8_t *data, uint8_t data_length);
+uint8_t ether_get_udp_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data_length);
 
 
 
