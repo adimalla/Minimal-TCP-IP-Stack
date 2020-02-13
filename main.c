@@ -168,11 +168,11 @@ uint8_t ether_open(uint8_t *mac_address)
 
 typedef enum _dhcp_state_values
 {
-    DHCP_DISCOVER = 1,
-    DHCP_OFFER    = 2,
-    DHCP_REQUEST  = 3,
-    DHCP_ACK      = 4,
-    DHCP_EXIT     = 5,
+    DHCP_DISCOVER_STATE = 1,
+    DHCP_OFFER_STATE    = 2,
+    DHCP_REQUEST_STATE  = 3,
+    DHCP_ACK_STATE      = 4,
+    DHCP_EXIT_STATE     = 5,
 
 }dhcp_states;
 
@@ -224,13 +224,13 @@ int main(void)
 #if TEST
 
     /* Test ARP packets */
-    uint8_t test_ip[4] = {0};
+    uint8_t gateway_ip[4] = {0};
 
     uint8_t sequence_no = 1;
 
-    set_ip_address(test_ip, "192.168.1.196");
+    set_ip_address(gateway_ip, "192.168.1.196");
 
-    ether_send_arp_req(ethernet, ethernet->host_ip, test_ip);
+    ether_send_arp_req(ethernet, ethernet->host_ip, gateway_ip);
 
     if(ether_is_arp(ethernet, (uint8_t*)network_hardware, 128))
     {
@@ -244,74 +244,83 @@ int main(void)
 
 
     /* Test ICMP packets */
-    ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, test_ip, &sequence_no, \
+    ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, gateway_ip, &sequence_no, \
                         ethernet->arp_table[0].mac_address, ethernet->host_mac);
 
 
-    /* Test UDP packets */
-    char udp_data[APP_BUFF_SIZE] = {0};
 
 
-#if 1
-    ether_send_udp(ethernet, test_ip, 8080, "Hello", 5);
-
-    ether_read_udp(ethernet, (uint8_t*)network_hardware, udp_data, APP_BUFF_SIZE);
-
-    if(strncmp(udp_data, "Hello from server", 18) == 0)
-        ether_send_udp(ethernet, test_ip, 8080, "Hello again", 11);
-
-#endif
-
-
+    /* test DHCP */
     uint8_t your_ip[4];
     uint8_t server_ip[4];
     uint8_t subnet[4];
+    uint8_t lease_time[4];
 
     dhcp_states dhcp_state;
 
     uint8_t dhcp_loop  = 1;
 
 
-    dhcp_state = DHCP_DISCOVER;
+    dhcp_state = DHCP_DISCOVER_STATE;
 
     while(dhcp_loop)
     {
         switch(dhcp_state)
         {
 
-        case DHCP_DISCOVER:
+        case DHCP_DISCOVER_STATE:
 
             ether_dhcp_send_discover(ethernet, 156256, 0);
 
-            dhcp_state = DHCP_OFFER;
+            ethernet->status.mode_dynamic_req = 1;
+
+            dhcp_state = DHCP_OFFER_STATE;
 
             break;
 
 
-        case DHCP_OFFER:
+        case DHCP_OFFER_STATE:
 
-            retval = ether_dhcp_read_offer(ethernet, (uint8_t*)network_hardware, your_ip, server_ip, subnet);
+            retval = ether_dhcp_read_offer(ethernet, (uint8_t*)network_hardware, your_ip, server_ip, subnet, lease_time);
 
             if(retval == 1)
-                dhcp_state = DHCP_REQUEST;
+                dhcp_state = DHCP_REQUEST_STATE;
 
             break;
 
 
-        case DHCP_REQUEST:
+        case DHCP_REQUEST_STATE:
 
-            dhcp_state = DHCP_ACK;
+            lease_time[0] = 0;
+            lease_time[1] = 0;
+            lease_time[2] = 0x0E;
+            lease_time[3] = 0x10;
+
+            ether_dhcp_send_request(ethernet, 156256, 1, server_ip, your_ip, lease_time);
+
+            dhcp_state = DHCP_ACK_STATE;
 
             break;
 
 
-        case DHCP_ACK:
+        case DHCP_ACK_STATE:
 
-            dhcp_state = DHCP_EXIT;
+
+            /* Must read data here */
+
+            memcpy((char*)ethernet->host_ip, (char*)your_ip, 4);
+
+            memcpy((char*)ethernet->gateway_ip, (char*)server_ip, 4);
+
+            memcpy((char*)ethernet->subnet_mask, (char*)subnet, 4);
+
+            ethernet->status.mode_dynamic_req = 0;
+
+            dhcp_state = DHCP_EXIT_STATE;
 
             break;
 
-        case DHCP_EXIT:
+        case DHCP_EXIT_STATE:
 
             dhcp_loop =  0;
 
@@ -320,6 +329,21 @@ int main(void)
         }
 
     }
+
+
+#if 1
+
+    /* Test UDP packets */
+    char udp_data[APP_BUFF_SIZE] = {0};
+
+    ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "Hello", 5);
+
+    ether_read_udp(ethernet, (uint8_t*)network_hardware, udp_data, APP_BUFF_SIZE);
+
+    if(strncmp(udp_data, "Hello from server", 18) == 0)
+        ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "Hello again", 11);
+
+#endif
 
 
 #endif
@@ -397,7 +421,7 @@ int main(void)
 
                             /* test only */
                             if(strncmp(udp_data, "on", 2) == 0)
-                                ether_send_udp(ethernet, test_ip, 8080, "switched on", 11);
+                                ether_send_udp(ethernet, gateway_ip, 8080, "switched on", 11);
 
                         }
 

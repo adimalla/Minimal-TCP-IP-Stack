@@ -421,7 +421,7 @@ uint8_t ether_read_udp(ethernet_handle_t *ethernet, uint8_t *network_data, char 
     {
         api_retval = ether_is_udp(ethernet, network_data, ETHER_MTU_SIZE);
 
-        if(api_retval == 1)
+        if(api_retval)
         {
             func_retval = ether_get_udp_data(ethernet, (uint8_t*)application_data, app_data_length);
 
