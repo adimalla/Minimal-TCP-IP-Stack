@@ -249,7 +249,6 @@ int main(void)
     if(strncmp(udp_data, "Hello from server", 18) == 0)
         ether_send_udp(ethernet, test_ip, 8080, "Received", 9);
 
-    char dhcp_data[350] = {0};
 #endif
 
 
