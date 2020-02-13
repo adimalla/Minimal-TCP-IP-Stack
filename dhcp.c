@@ -142,9 +142,10 @@ int8_t ether_dhcp_discover_send(ethernet_handle_t *ethernet, uint32_t transactio
     dhcp_client.source_port = 68;
     strncpy((char*)dhcp_client.source_mac, (char*)ethernet->host_mac, ETHER_MAC_SIZE);
 
-    set_broadcast_address(destination_ip, ETHER_IPV4_SIZE);
+    /* Configure restination address */
+    strncpy((char*)destination_ip, (char*)ethernet->broadcast_ip, ETHER_IPV4_SIZE);
 
-    set_broadcast_address(destination_mac, ETHER_MAC_SIZE);
+    strncpy((char*)destination_mac, (char*)ethernet->broadcast_mac, ETHER_MAC_SIZE);
 
 
     /* Send DHCP packet as UPD message */
