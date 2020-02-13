@@ -130,6 +130,9 @@ typedef struct _dhcp_discover_options
 }dhcp_discover_opts_t;
 
 
+
+
+
 /* */
 typedef enum _dhcp_boot_message
 {
@@ -163,6 +166,10 @@ typedef enum _dhcp_option_types
 
 
 int8_t ether_dhcp_send_discover(ethernet_handle_t *ethernet, uint32_t transaction_id, uint16_t seconds_elapsed);
+
+
+int8_t ether_dhcp_read_offer(ethernet_handle_t *ethernet, uint8_t *network_data, uint8_t *your_ip, uint8_t *server_ip,
+                             uint8_t *subnet_mask);
 
 
 #endif /* DHCP_H_ */

@@ -401,11 +401,11 @@ uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_
 
 /*****************************************************************
  * @brief  Function to read UPD packets
- * @param  *ethernet           : Reference to the Ethernet handle
- * @param  *network_data       : network data from PHY
- * @param  *application_data   : UDP data
- * @param  app_data_length     : Length of UDP data
- * @retval int8_t              : Error = 0, Success = 1
+ * @param  *ethernet         : Reference to the Ethernet handle
+ * @param  *network_data     : network data from PHY
+ * @param  *application_data : UDP data
+ * @param  app_data_length   : Length of UDP data
+ * @retval int8_t            : Error = 0, Success = 1
  *****************************************************************/
 uint8_t ether_read_udp(ethernet_handle_t *ethernet, uint8_t *network_data, char *application_data, uint16_t app_data_length)
 {

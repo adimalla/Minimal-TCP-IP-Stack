@@ -166,6 +166,16 @@ uint8_t ether_open(uint8_t *mac_address)
 #define TEST 1
 
 
+typedef enum _dhcp_state_values
+{
+    DHCP_DISCOVER = 1,
+    DHCP_OFFER    = 2,
+    DHCP_REQUEST  = 3,
+    DHCP_ACK      = 4,
+    DHCP_EXIT     = 5,
+
+}dhcp_states;
+
 
 
 int main(void)
@@ -234,7 +244,7 @@ int main(void)
 
 
     /* Test ICMP packets */
-    //ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, test_ip, &sequence_no, \
+    ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, test_ip, &sequence_no, \
                         ethernet->arp_table[0].mac_address, ethernet->host_mac);
 
 
@@ -242,33 +252,75 @@ int main(void)
     char udp_data[APP_BUFF_SIZE] = {0};
 
 
-
 #if 1
     ether_send_udp(ethernet, test_ip, 8080, "Hello", 5);
 
-    ether_read_udp(ethernet, (uint8_t*)network_hardware, ETHER_MTU_SIZE, udp_data, APP_BUFF_SIZE);
+    ether_read_udp(ethernet, (uint8_t*)network_hardware, udp_data, APP_BUFF_SIZE);
 
     if(strncmp(udp_data, "Hello from server", 18) == 0)
-        ether_send_udp(ethernet, test_ip, 8080, "Received", 9);
+        ether_send_udp(ethernet, test_ip, 8080, "Hello again", 11);
 
 #endif
 
-    net_dhcp_t *offer;
 
-    ether_dhcp_send_discover(ethernet, 156256, 0);
+    uint8_t your_ip[4];
+    uint8_t server_ip[4];
+    uint8_t subnet[4];
 
-    uint16_t udp_src_port;
-    uint16_t udp_dest_port;
+    dhcp_states dhcp_state;
 
-    while(1)
+    uint8_t dhcp_loop  = 1;
+
+
+    dhcp_state = DHCP_DISCOVER;
+
+    while(dhcp_loop)
     {
-        ether_read_udp_raw(ethernet, (uint8_t*)network_hardware, ETHER_MTU_SIZE, &udp_src_port, &udp_dest_port, udp_data, APP_BUFF_SIZE);
+        switch(dhcp_state)
+        {
 
-        if(udp_src_port == 67)
+        case DHCP_DISCOVER:
+
+            ether_dhcp_send_discover(ethernet, 156256, 0);
+
+            dhcp_state = DHCP_OFFER;
+
             break;
 
+
+        case DHCP_OFFER:
+
+            retval = ether_dhcp_read_offer(ethernet, (uint8_t*)network_hardware, your_ip, server_ip, subnet);
+
+            if(retval == 1)
+                dhcp_state = DHCP_REQUEST;
+
+            break;
+
+
+        case DHCP_REQUEST:
+
+            dhcp_state = DHCP_ACK;
+
+            break;
+
+
+        case DHCP_ACK:
+
+            dhcp_state = DHCP_EXIT;
+
+            break;
+
+        case DHCP_EXIT:
+
+            dhcp_loop =  0;
+
+            break;
+
+        }
+
     }
-    offer = (void*)udp_data;
+
 
 #endif
 

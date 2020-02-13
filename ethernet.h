@@ -125,25 +125,34 @@ typedef struct _ethernet_operations
 }ether_operations_t;
 
 
+/**/
+typedef struct _network_status
+{
+    uint8_t mode_static  : 1;
+    uint8_t mode_dynamic : 1;
+    uint8_t reserved     : 6;
+
+}net_status_t;
+
+
 
 /* Ethernet/Network Handle */
 struct _ethernet_handle
 {
-    ether_frame_t      *ether_obj;                    /*!< Ethernet frame object */
+    ether_frame_t *ether_obj;                 /*!< Ethernet frame object */
+    net_status_t  status;                     /*!< */
+    arp_table_t   arp_table[ARP_TABLE_SIZE];  /*!< ARP Table             */
 
-    uint8_t            host_mac[ETHER_MAC_SIZE];      /*!< Host MAC address      */
-    uint8_t            host_ip[ETHER_IPV4_SIZE];      /*!< Host IP address       */
-    uint8_t            broadcast_mac[ETHER_MAC_SIZE]; /*!< */
-    uint8_t            broadcast_ip[ETHER_IPV4_SIZE]; /*!< */
-    uint8_t            subnet_mask[ETHER_IPV4_SIZE];  /*!< */
-    uint8_t            gateway_ip[ETHER_IPV4_SIZE];   /*!< */
+    uint16_t source_port;                    /*!< */
+    uint8_t  *application_data;              /*!< */
+    uint8_t  host_mac[ETHER_MAC_SIZE];       /*!< Host MAC address */
+    uint8_t  host_ip[ETHER_IPV4_SIZE];       /*!< Host IP address  */
+    uint8_t  broadcast_mac[ETHER_MAC_SIZE];  /*!< */
+    uint8_t  broadcast_ip[ETHER_IPV4_SIZE];  /*!< */
+    uint8_t  subnet_mask[ETHER_IPV4_SIZE];   /*!< */
+    uint8_t  gateway_ip[ETHER_IPV4_SIZE];    /*!< */
 
-    uint16_t           source_port;                   /*!< */
-    uint8_t            *application_data;             /*!< */
-
-    ether_operations_t *ether_commands;               /*!< Network Operations    */
-
-    arp_table_t        arp_table[ARP_TABLE_SIZE];     /*!< ARP Table             */
+    ether_operations_t *ether_commands;  /*!< Network Operations    */
 
 };
 

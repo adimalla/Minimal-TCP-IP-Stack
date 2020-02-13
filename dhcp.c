@@ -65,8 +65,6 @@
 
 
 
-
-
 int8_t ether_dhcp_send_discover(ethernet_handle_t *ethernet, uint32_t transaction_id, uint16_t seconds_elapsed)
 {
 
@@ -159,8 +157,50 @@ int8_t ether_dhcp_send_discover(ethernet_handle_t *ethernet, uint32_t transactio
 
 
 
+int8_t ether_dhcp_read_offer(ethernet_handle_t *ethernet, uint8_t *network_data, uint8_t *your_ip, uint8_t *server_ip, uint8_t *subnet_mask)
+{
+    int8_t func_retval = 0;
+    uint8_t api_retval = 0;
+
+    net_dhcp_t *dhcp_offer;
+
+    uint16_t udp_src_port  = 0;
+    uint16_t udp_dest_port = 0;
+
+    char    dhcp_data[350] = {0};
+
+    if(ethernet == NULL || network_data == NULL)
+    {
+        func_retval = 0;
+    }
+    else
+    {
+        /* read UDP packet */
+        api_retval = ether_read_udp_raw(ethernet, network_data, ETHER_MTU_SIZE, &udp_src_port, &udp_dest_port, dhcp_data, 350);
 
 
+        /* Check if UDP source ports = DHCP destination port */
+        if(udp_src_port == DHCP_DESTINATION_PORT && udp_dest_port == DHCP_SOURCE_PORT && api_retval)
+        {
+            dhcp_offer = (void*)dhcp_data;
+
+            /* Get your_ip from DHCP standard header*/
+            strncpy((char*)your_ip, (char*)dhcp_offer->your_ip, 4);
+
+
+            /* Get server_ip and subnet mask from DHCP offer options */
+
+            strncpy((char*)server_ip, (char*)dhcp_offer->server_ip, 4);
+
+            /* Get sub*/
+
+            func_retval = 1;
+        }
+
+    }
+
+    return func_retval;
+}
 
 
 

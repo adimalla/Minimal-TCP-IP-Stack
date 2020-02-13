@@ -195,6 +195,21 @@ void etherReadMemStop()
     etherCsOff();
 }
 
+
+void setPhyMacAddr(uint8_t *macAddr)
+{
+    // setup mac address
+    etherSetBank(MAADR0);
+    etherWriteReg(MAADR5, macAddr[0]);
+    etherWriteReg(MAADR4, macAddr[1]);
+    etherWriteReg(MAADR3, macAddr[2]);
+    etherWriteReg(MAADR2, macAddr[3]);
+    etherWriteReg(MAADR1, macAddr[4]);
+    etherWriteReg(MAADR0, macAddr[5]);
+
+}
+
+
 // Initializes ethernet device
 // Uses order suggested in Chapter 6 of datasheet except 6.4 OST which is first here
 void etherInit(uint8_t mode, uint8_t *macAddress)
@@ -258,14 +273,7 @@ void etherInit(uint8_t mode, uint8_t *macAddress)
 
     // leave collision window MACLCON2 as reset
 
-    // setup mac address
-    etherSetBank(MAADR0);
-    etherWriteReg(MAADR5, macAddress[0]);
-    etherWriteReg(MAADR4, macAddress[1]);
-    etherWriteReg(MAADR3, macAddress[2]);
-    etherWriteReg(MAADR2, macAddress[3]);
-    etherWriteReg(MAADR1, macAddress[4]);
-    etherWriteReg(MAADR0, macAddress[5]);
+    setPhyMacAddr(macAddress);
 
     // initialize phy duplex
     if ((mode & ETHER_FULLDUPLEX) != 0)

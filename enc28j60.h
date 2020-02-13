@@ -158,6 +158,9 @@ enc28j60_frame_t *enc28j60;
 // ------------------------------------------------------------------------------
 
 void etherInit(uint8_t mode, uint8_t *macAddress);
+
+void setPhyMacAddr(uint8_t *macAddr);
+
 void etherWritePhy(uint8_t reg, uint16_t data);
 uint16_t etherReadPhy(uint8_t reg);
 uint8_t etherKbhit();
