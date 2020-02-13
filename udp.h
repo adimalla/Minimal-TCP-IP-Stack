@@ -99,7 +99,9 @@ int8_t ether_send_udp_raw(ethernet_handle_t *ethernet, ether_source_t *source_ad
  * @param  *ethernet           : Reference to the Ethernet handle
  * @param  *network_data       : network data from PHY
  * @param  network_data_length : network data length to be read
- * @retval uint8_t             : Error = 0, Success = 1
+ * @retval uint8_t             : Error   = 0,
+ *                               Success = 1 (UNICAST)
+ *                                       = 2 (BROADCAST)
  ****************************************************************/
 uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t network_data_length);
 

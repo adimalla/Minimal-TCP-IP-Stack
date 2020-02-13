@@ -157,8 +157,10 @@ uint16_t ether_get_checksum(uint32_t sum)
 
     checksum = sum & 0xFFFF;
 
+    checksum = ~checksum;
+
     /* return 1s complement */
-    return ~checksum;
+    return checksum;
 }
 
 

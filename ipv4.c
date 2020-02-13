@@ -73,7 +73,9 @@
  * @brief  Function to get IP data for current host device
  *         validates IP Checksum, (Only handles UNICAST)
  * @param  *ethernet  : reference to the Ethernet handle
- * @retval int16_t    : Error = -4, -5, Success = 1 (UNICAST)
+ * @retval int16_t    : Error   = -4, -5,
+ *                      Success = 1 (UNICAST),
+ *                              = 2 (BROADCAST)
  **************************************************************/
 int16_t get_ip_communication_type(ethernet_handle_t *ethernet)
 {
@@ -97,12 +99,15 @@ int16_t get_ip_communication_type(ethernet_handle_t *ethernet)
         if( (ether_get_checksum(sum) == 0)  )
         {
             /* Check if UNICAST */
-            if( strncmp((char*)ip->destination_ip, (char*)ethernet->host_ip, 4) == 0)
+            if( strncmp((char*)ip->destination_ip, (char*)ethernet->host_ip, 4) == 0 )
             {
                 func_retval = 1;
             }
-
-
+            /* Check if BROADCAST */
+            else if( strncmp((char*)ip->destination_ip, (char*)ethernet->broadcast_ip, 4) == 0 )
+            {
+                func_retval = 2;
+            }
 
         }
         else

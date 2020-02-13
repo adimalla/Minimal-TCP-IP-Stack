@@ -171,7 +171,7 @@ uint8_t ether_open(uint8_t *mac_address)
 int main(void)
 {
 
-    uint8_t data[1500] = {0};
+    uint8_t data[ETHER_MTU_SIZE] = {0};
 
     uint8_t loop = 0;
 
@@ -234,26 +234,32 @@ int main(void)
 
 
     /* Test ICMP packets */
-    ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, test_ip, &sequence_no,
+    //ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, test_ip, &sequence_no, \
                         ethernet->arp_table[0].mac_address, ethernet->host_mac);
 
 
     /* Test UDP packets */
-    char udp_data[40] = {0};
+    char udp_data[APP_BUFF_SIZE] = {0};
 
-    ether_send_udp(ethernet, test_ip, 8080, "Hello", 5);
+
 
 #if 0
-    ether_read_udp(ethernet, (uint8_t*)network_hardware, 1500, udp_data, 40);
+    ether_send_udp(ethernet, test_ip, 8080, "Hello", 5);
+
+    ether_read_udp(ethernet, (uint8_t*)network_hardware, ETHER_MTU_SIZE, udp_data, APP_BUFF_SIZE);
 
     if(strncmp(udp_data, "Hello from server", 18) == 0)
         ether_send_udp(ethernet, test_ip, 8080, "Received", 9);
 
 #endif
 
+    net_dhcp_t *offer;
 
     ether_dhcp_discover_send(ethernet, 156256, 0);
 
+    ether_read_udp(ethernet, (uint8_t*)network_hardware, ETHER_MTU_SIZE, udp_data, APP_BUFF_SIZE);
+
+    offer = (void*)udp_data;
 
 #endif
 
@@ -264,7 +270,7 @@ int main(void)
     while(loop)
     {
 
-        if (ether_get_data(ethernet, (uint8_t*)network_hardware, 128))
+        if (ether_get_data(ethernet, (uint8_t*)network_hardware, ETHER_MTU_SIZE))
         {
             if (etherIsOverflow())
             {
@@ -322,7 +328,7 @@ int main(void)
                     case IP_UDP:
 
                         /* Handle UDP packets */
-                        if (ether_get_udp_data(ethernet, (uint8_t*)udp_data, 100))
+                        if (ether_get_udp_data(ethernet, (uint8_t*)udp_data, APP_BUFF_SIZE))
                         {
                             BLUE_LED = 1;
                             waitMicrosecond(50000);
@@ -341,6 +347,33 @@ int main(void)
                         break;
 
                     }
+                }
+                if(retval == 2)
+                {
+                    /* Get transport layer protocol type */
+                    switch(get_ip_protocol_type(ethernet))
+                    {
+
+                    case IP_UDP:
+
+                        /* Handle UDP packets */
+                        if (ether_get_udp_data(ethernet, (uint8_t*)udp_data, APP_BUFF_SIZE))
+                        {
+                            RED_LED = 1;
+                            waitMicrosecond(50000);
+                            RED_LED = 0;
+
+                        }
+
+                        break;
+
+
+                    default:
+
+                        break;
+
+                    }
+
                 }
 
                 break;

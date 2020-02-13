@@ -64,6 +64,7 @@
 
 #define UDP_FRAME_SIZE 8
 
+#pragma pack(1)
 
 /* UDP Frame (8 Bytes) */
 typedef struct _net_udp
@@ -225,7 +226,7 @@ uint8_t ether_get_udp_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t 
         /* Get UDP data */
         if(validate)
         {
-            strncpy((char*)data, (char*)&udp->data, udp_data_length);
+            memcpy((char*)data, (char*)&udp->data, udp_data_length);
         }
 
         func_retval = validate;
@@ -325,7 +326,9 @@ int8_t ether_send_udp_raw(ethernet_handle_t *ethernet, ether_source_t *source_ad
  * @param  *ethernet           : Reference to the Ethernet handle
  * @param  *network_data       : network data from PHY
  * @param  network_data_length : network data length to be read
- * @retval uint8_t             : Error = 0, Success = 1
+ * @retval uint8_t             : Error   = 0,
+ *                               Success = 1 (UNICAST)
+ *                                       = 2 (BROADCAST)
  ****************************************************************/
 uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t network_data_length)
 {
@@ -363,6 +366,18 @@ uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_
 
                             break;
                         }
+
+                    }
+                    else if(comm_type == 2)
+                    {
+                        /* Check if protocol is UDP */
+                        if(get_ip_protocol_type(ethernet) == IP_UDP)
+                        {
+                            func_retval = 1;
+
+                            break;
+                        }
+
 
                     }
 
