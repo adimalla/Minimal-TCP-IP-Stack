@@ -216,7 +216,7 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
         ethernet.ether_obj = (void*)network_data;
 
         /* Set mac address */
-        api_retval = set_mac_address((char*)ethernet.host_mac, mac_address);
+        api_retval = set_mac_address(ethernet.host_mac, mac_address);
 
         /* Set ip address */
         api_retval = set_ip_address(ethernet.host_ip, ip_address);
@@ -391,6 +391,11 @@ int8_t fill_ether_frame(ethernet_handle_t *ethernet, uint8_t *destination_mac_ad
 
     return func_retval;
 }
+
+
+
+
+
 
 
 
