@@ -206,7 +206,16 @@ uint16_t ether_get_checksum(uint32_t sum);
 
 
 
-uint16_t get_random_port(ethernet_handle_t *ethernet, uint16_t lower_bound);
+
+/******************************************************
+ * @brief  Function to get random number above a bound
+ * @param  *ethernet   : reference to Ethernet handle
+ * @param  lower_bound : lower bound value
+ * @retval uint16_t    : Error = -1, Success = 0
+ ******************************************************/
+int16_t get_random_port(ethernet_handle_t *ethernet, uint16_t lower_bound);
+
+
 
 
 /**************************************************************************
