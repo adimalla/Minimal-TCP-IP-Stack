@@ -122,10 +122,10 @@ int8_t ether_send_icmp_reply(ethernet_handle_t *ethernet)
         if(icmp->type == ICMP_ECHOREQUEST)
         {
             /* Swap MAC address in Ethernet Frame */
-            net_swap_address((char*)ethernet->ether_obj->destination_mac_addr, (char*)ethernet->ether_obj->source_mac_addr, 6);
+            net_swap_address(ethernet->ether_obj->destination_mac_addr, ethernet->ether_obj->source_mac_addr, 6);
 
             /* Swap IP address in IP Frame */
-            net_swap_address((char*)ip->destination_ip, (char*)ip->source_ip, 4);
+            net_swap_address(ip->destination_ip, ip->source_ip, 4);
 
             /* Fill ICMP frame */
             icmp->type = ICMP_ECHOREPLY;

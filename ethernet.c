@@ -163,7 +163,14 @@ uint16_t ether_get_checksum(uint32_t sum)
 
 
 
-uint16_t get_random_port(ethernet_handle_t *ethernet, uint16_t lower_bound)
+
+/******************************************************
+ * @brief  Function to get random number above a bound
+ * @param  *ethernet   : reference to Ethernet handle
+ * @param  lower_bound : lower bound value
+ * @retval uint16_t    : Error = -1, Success = 0
+ ******************************************************/
+int16_t get_random_port(ethernet_handle_t *ethernet, uint16_t lower_bound)
 {
     int16_t func_retval    = 0;
 
@@ -171,7 +178,7 @@ uint16_t get_random_port(ethernet_handle_t *ethernet, uint16_t lower_bound)
 
     if(ethernet->ether_obj == NULL)
     {
-        func_retval = 0;
+        func_retval = -1;
     }
     else
     {
@@ -215,14 +222,21 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
         /* Give starting address of network data to*/
         ethernet.ether_obj = (void*)network_data;
 
-        /* Set mac address */
-        api_retval = set_mac_address((char*)ethernet.host_mac, mac_address);
+        /* Set source addresses */
+        api_retval = set_mac_address(ethernet.host_mac, mac_address);
 
-        /* Set ip address */
         api_retval = set_ip_address(ethernet.host_ip, ip_address);
+
+
+        /* Configure broadcast addresses */
+        set_broadcast_address(ethernet.broadcast_mac, ETHER_MAC_SIZE);
+
+        set_broadcast_address(ethernet.broadcast_ip, ETHER_IPV4_SIZE);
+
 
         if(api_retval < 0)
             return NULL;
+
 
         /* Configure application buffer */
         ethernet.application_data = application_buffer;
@@ -245,6 +259,10 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
         if(ethernet.ether_commands->ether_recv_packet == NULL)
             ethernet.ether_commands->ether_recv_packet = ethernet_recv_packet;
 
+
+        /* Functions called after linking  */
+
+        /* configure source port */
         ethernet.source_port = get_random_port(&ethernet, 2000);
 
 
@@ -391,6 +409,11 @@ int8_t fill_ether_frame(ethernet_handle_t *ethernet, uint8_t *destination_mac_ad
 
     return func_retval;
 }
+
+
+
+
+
 
 
 

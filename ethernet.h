@@ -57,6 +57,9 @@
 /*                                                                            */
 /******************************************************************************/
 
+/* structure padding */
+#define pragma pack(1)
+
 
 #define ETHER_PHY_DATA_OFFSET 4
 
@@ -65,8 +68,7 @@
 #define ETHER_IPV4_SIZE   4    /*!< IP protocol version 4 size */
 #define ARP_TABLE_SIZE    5    /*!< ARP Table size define      */
 
-#define APP_BUFF_SIZE     100  /*!< */
-
+#define APP_BUFF_SIZE     350  /*!< */
 
 
 
@@ -116,18 +118,17 @@ typedef struct _ethernet_operations
 /* Ethernet/Network Handle */
 struct _ethernet_handle
 {
-    ether_frame_t      *ether_obj;                /*!< Ethernet frame object */
+    ether_frame_t      *ether_obj;                    /*!< Ethernet frame object */
+    uint8_t            host_mac[ETHER_MAC_SIZE];      /*!< Host MAC address      */
+    uint8_t            host_ip[ETHER_IPV4_SIZE];      /*!< Host IP address       */
+    uint8_t            broadcast_mac[ETHER_MAC_SIZE]; /*!< */
+    uint8_t            broadcast_ip[ETHER_IPV4_SIZE]; /*!< */
+    uint16_t           source_port;                   /*!< */
+    uint8_t            *application_data;             /*!< */
 
-    uint8_t            host_mac[ETHER_MAC_SIZE];  /*!< Host MAC address      */
-    uint8_t            host_ip[ETHER_IPV4_SIZE];  /*!< Host IP address       */
+    ether_operations_t *ether_commands;               /*!< Network Operations    */
 
-    uint8_t            *application_data;
-
-    ether_operations_t *ether_commands;           /*!< Network Operations    */
-
-    arp_table_t        arp_table[ARP_TABLE_SIZE]; /*!< ARP Table             */
-
-    uint16_t           source_port;
+    arp_table_t        arp_table[ARP_TABLE_SIZE];     /*!< ARP Table             */
 
 };
 
@@ -169,7 +170,7 @@ typedef enum _network_error_codes
     NET_ICMP_RESP_IGNORE   = -7,  /*!< */
     NET_ICMP_REQ_ERROR     = -8,  /*!< */
     NET_UDP_RAW_SEND_ERROR = -9,  /*!< */
-    NET_UDP_SEND_ERROR     = -10,
+    NET_UDP_SEND_ERROR     = -10, /*!< */
 
 }network_erro_codes_t;
 
@@ -205,7 +206,16 @@ uint16_t ether_get_checksum(uint32_t sum);
 
 
 
-uint16_t get_random_port(ethernet_handle_t *ethernet, uint16_t lower_bound);
+
+/******************************************************
+ * @brief  Function to get random number above a bound
+ * @param  *ethernet   : reference to Ethernet handle
+ * @param  lower_bound : lower bound value
+ * @retval uint16_t    : Error = -1, Success = 0
+ ******************************************************/
+int16_t get_random_port(ethernet_handle_t *ethernet, uint16_t lower_bound);
+
+
 
 
 /**************************************************************************

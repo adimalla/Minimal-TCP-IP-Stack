@@ -33,6 +33,7 @@
 #include "ipv4.h"
 #include "icmp.h"
 #include "udp.h"
+#include "dhcp.h"
 
 #define RED_LED      (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 1*4)))
 #define GREEN_LED    (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 3*4)))
@@ -166,10 +167,11 @@ uint8_t ether_open(uint8_t *mac_address)
 
 
 
+
 int main(void)
 {
 
-    uint8_t data[128] = {0};
+    uint8_t data[1500] = {0};
 
     uint8_t loop = 0;
 
@@ -196,7 +198,7 @@ int main(void)
     };
 
     /* Create Ethernet handle */
-    ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:05:60:48", "192.168.2.48", &ether_ops);
+    ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:05:60:48", "192.168.1.197", &ether_ops);
 
 
     // flash phy leds
@@ -216,7 +218,7 @@ int main(void)
 
     uint8_t sequence_no = 1;
 
-    set_ip_address(test_ip, "192.168.2.196");
+    set_ip_address(test_ip, "192.168.1.196");
 
     ether_send_arp_req(ethernet, ethernet->host_ip, test_ip);
 
@@ -241,10 +243,16 @@ int main(void)
 
     ether_send_udp(ethernet, test_ip, 8080, "Hello", 5);
 
-    ether_read_udp(ethernet, (uint8_t*)network_hardware, 128, udp_data, 40);
+#if 0
+    ether_read_udp(ethernet, (uint8_t*)network_hardware, 1500, udp_data, 40);
 
     if(strncmp(udp_data, "Hello from server", 18) == 0)
         ether_send_udp(ethernet, test_ip, 8080, "Received", 9);
+
+#endif
+
+
+    ether_dhcp_discover_send(ethernet, 156256, 0);
 
 
 #endif
@@ -314,11 +322,16 @@ int main(void)
                     case IP_UDP:
 
                         /* Handle UDP packets */
-                        if (ether_get_udp_data(ethernet, ethernet->application_data, APP_BUFF_SIZE))
+                        if (ether_get_udp_data(ethernet, (uint8_t*)udp_data, 100))
                         {
                             BLUE_LED = 1;
                             waitMicrosecond(50000);
                             BLUE_LED = 0;
+
+                            /* test only */
+                            if(strncmp(udp_data, "on", 2) == 0)
+                                ether_send_udp(ethernet, test_ip, 8080, "switched on", 11);
+
                         }
 
                         break;
