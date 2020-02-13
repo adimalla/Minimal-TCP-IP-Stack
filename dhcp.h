@@ -137,6 +137,18 @@ typedef enum _dhcp_boot_message
 }dhcp_boot_msg_t;
 
 
+/* */
+typedef enum _dhcp_option_types
+{
+    DHCP_SUBNET_MASK       = 1,
+    DHCP_ROUTER            = 3,
+    DHCP_ADDR_LEASE_TIME   = 51,
+    DHCP_MESSAGE_TYPE      = 53,
+    DHCP_PARAM_REQ_LIST    = 55,
+    DHCP_CLIENT_IDENTIFIER = 61,
+    DHCP_OPTION_END        = 255,
+
+}dhcp_options_types_t;
 
 
 

@@ -65,6 +65,8 @@
 
 
 
+
+
 int8_t ether_dhcp_discover_send(ethernet_handle_t *ethernet, uint32_t transaction_id, uint16_t seconds_elapsed)
 {
 
@@ -111,26 +113,26 @@ int8_t ether_dhcp_discover_send(ethernet_handle_t *ethernet, uint32_t transactio
     discover_opts = (void*)&dhcp_discover->options;
 
     /* option (53) */
-    discover_opts->message_type.option_number = 53;
+    discover_opts->message_type.option_number = DHCP_MESSAGE_TYPE;
     discover_opts->message_type.length        = 1;
     discover_opts->message_type.dhcp          = 1;
 
     /* option (55) */
-    discover_opts->param_request_list.option_number = 55;
+    discover_opts->param_request_list.option_number = DHCP_PARAM_REQ_LIST;
     discover_opts->param_request_list.length        = 3;
-    discover_opts->param_request_list.req_item[0]   = 1;  /* SUBNET Mask option value */
-    discover_opts->param_request_list.req_item[1]   = 3;  /* Router                   */
-    discover_opts->param_request_list.req_item[2]   = 51; /* IP address lease time    */
+    discover_opts->param_request_list.req_item[0]   = DHCP_SUBNET_MASK;
+    discover_opts->param_request_list.req_item[1]   = DHCP_ROUTER;
+    discover_opts->param_request_list.req_item[2]   = DHCP_ADDR_LEASE_TIME;
 
     /* option (61) */
-    discover_opts->client_identifier.option_number = 61;
+    discover_opts->client_identifier.option_number = DHCP_CLIENT_IDENTIFIER;
     discover_opts->client_identifier.length        = 7;
     discover_opts->client_identifier.hw_type       = 1;
 
     strncpy((char*)discover_opts->client_identifier.client_mac, (char*)ethernet->host_mac, ETHER_MAC_SIZE);
 
     /* option end */
-    discover_opts->options_end = 0xFF;
+    discover_opts->options_end = DHCP_OPTION_END;
 
 
     /* Configure sources */
