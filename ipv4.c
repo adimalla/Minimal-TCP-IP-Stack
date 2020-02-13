@@ -102,6 +102,8 @@ int16_t get_ip_communication_type(ethernet_handle_t *ethernet)
                 func_retval = 1;
             }
 
+
+
         }
         else
         {
