@@ -243,7 +243,7 @@ int main(void)
 
 
 
-#if 0
+#if 1
     ether_send_udp(ethernet, test_ip, 8080, "Hello", 5);
 
     ether_read_udp(ethernet, (uint8_t*)network_hardware, ETHER_MTU_SIZE, udp_data, APP_BUFF_SIZE);
@@ -255,16 +255,19 @@ int main(void)
 
     net_dhcp_t *offer;
 
-    ether_dhcp_discover_send(ethernet, 156256, 0);
+    ether_dhcp_send_discover(ethernet, 156256, 0);
 
     uint16_t udp_src_port;
     uint16_t udp_dest_port;
 
+    while(1)
+    {
+        ether_read_udp_raw(ethernet, (uint8_t*)network_hardware, ETHER_MTU_SIZE, &udp_src_port, &udp_dest_port, udp_data, APP_BUFF_SIZE);
 
-    //ether_read_udp(ethernet, (uint8_t*)network_hardware, ETHER_MTU_SIZE, udp_data, APP_BUFF_SIZE);
+        if(udp_src_port == 67)
+            break;
 
-    ether_read_udp_raw(ethernet, (uint8_t*)network_hardware, ETHER_MTU_SIZE, &udp_src_port, &udp_dest_port, udp_data, APP_BUFF_SIZE);
-
+    }
     offer = (void*)udp_data;
 
 #endif

@@ -86,6 +86,8 @@ typedef struct _net_dhcp
 }net_dhcp_t ;
 
 
+
+
 /************* DHCP options structures **************/
 
 /* */
@@ -160,7 +162,7 @@ typedef enum _dhcp_option_types
 
 
 
-int8_t ether_dhcp_discover_send(ethernet_handle_t *ethernet, uint32_t transaction_id, uint16_t seconds_elapsed);
+int8_t ether_dhcp_send_discover(ethernet_handle_t *ethernet, uint32_t transaction_id, uint16_t seconds_elapsed);
 
 
 #endif /* DHCP_H_ */

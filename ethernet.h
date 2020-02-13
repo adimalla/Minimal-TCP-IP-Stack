@@ -130,10 +130,14 @@ typedef struct _ethernet_operations
 struct _ethernet_handle
 {
     ether_frame_t      *ether_obj;                    /*!< Ethernet frame object */
+
     uint8_t            host_mac[ETHER_MAC_SIZE];      /*!< Host MAC address      */
     uint8_t            host_ip[ETHER_IPV4_SIZE];      /*!< Host IP address       */
     uint8_t            broadcast_mac[ETHER_MAC_SIZE]; /*!< */
     uint8_t            broadcast_ip[ETHER_IPV4_SIZE]; /*!< */
+    uint8_t            subnet_mask[ETHER_IPV4_SIZE];  /*!< */
+    uint8_t            gateway_ip[ETHER_IPV4_SIZE];   /*!< */
+
     uint16_t           source_port;                   /*!< */
     uint8_t            *application_data;             /*!< */
 
@@ -164,6 +168,15 @@ typedef enum _ether_type
     ETHER_RARP = 0x8035,  /*!< RARP protocol Ethernet type value         */
 
 }ether_type_t;
+
+
+/* Network ephemeral port list */
+typedef enum _network_ports
+{
+    DHCP_DESTINATION_PORT = 67,
+    DHCP_SOURCE_PORT      = 68,
+
+}network_ports_t;
 
 
 

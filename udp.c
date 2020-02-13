@@ -522,7 +522,6 @@ int8_t ether_send_udp(ethernet_handle_t *ethernet, uint8_t *destination_ip, uint
     return func_retval;
 
 
-
 }
 
 

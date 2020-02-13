@@ -67,7 +67,7 @@
 
 
 
-int8_t ether_dhcp_discover_send(ethernet_handle_t *ethernet, uint32_t transaction_id, uint16_t seconds_elapsed)
+int8_t ether_dhcp_send_discover(ethernet_handle_t *ethernet, uint32_t transaction_id, uint16_t seconds_elapsed)
 {
 
     char data[260] = {0};
@@ -139,22 +139,21 @@ int8_t ether_dhcp_discover_send(ethernet_handle_t *ethernet, uint32_t transactio
     memset(&dhcp_client, 0, sizeof(ether_source_t));
 
     dhcp_client.identifier  = 1;
-    dhcp_client.source_port = 68;
+    dhcp_client.source_port = DHCP_SOURCE_PORT;
+
     strncpy((char*)dhcp_client.source_mac, (char*)ethernet->host_mac, ETHER_MAC_SIZE);
 
-    /* Configure restination address */
+    /* Configure destination address */
     strncpy((char*)destination_ip, (char*)ethernet->broadcast_ip, ETHER_IPV4_SIZE);
-
     strncpy((char*)destination_mac, (char*)ethernet->broadcast_mac, ETHER_MAC_SIZE);
 
 
     /* Send DHCP packet as UPD message */
-    ether_send_udp_raw(ethernet, &dhcp_client, destination_ip, destination_mac, 67, (uint8_t*)dhcp_discover, 258);
+    ether_send_udp_raw(ethernet, &dhcp_client, destination_ip, destination_mac, DHCP_DESTINATION_PORT, (uint8_t*)dhcp_discover, 258);
 
 
     return 0;
 }
-
 
 
 
