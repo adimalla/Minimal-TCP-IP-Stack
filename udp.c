@@ -403,24 +403,23 @@ uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_
  * @brief  Function to read UPD packets
  * @param  *ethernet           : Reference to the Ethernet handle
  * @param  *network_data       : network data from PHY
- * @param  network_data_length : network data length to be read
  * @param  *application_data   : UDP data
  * @param  app_data_length     : Length of UDP data
  * @retval int8_t              : Error = 0, Success = 1
  *****************************************************************/
-uint8_t ether_read_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t net_data_length, char *application_data, uint16_t app_data_length)
+uint8_t ether_read_udp(ethernet_handle_t *ethernet, uint8_t *network_data, char *application_data, uint16_t app_data_length)
 {
     uint8_t func_retval = 0;
     uint8_t api_retval  = 0;
 
 
-    if(ethernet->ether_obj == NULL || network_data == NULL || net_data_length == 0 || net_data_length > UINT16_MAX)
+    if(ethernet->ether_obj == NULL || network_data == NULL || app_data_length == 0 || app_data_length > UINT16_MAX)
     {
         func_retval = 0;
     }
     else
     {
-        api_retval = ether_is_udp(ethernet, network_data, net_data_length);
+        api_retval = ether_is_udp(ethernet, network_data, ETHER_MTU_SIZE);
 
         if(api_retval == 1)
         {
@@ -517,6 +516,7 @@ int8_t ether_send_udp(ethernet_handle_t *ethernet, uint8_t *destination_ip, uint
 
         /* Send UPD data */
         ether_send_data(ethernet,(uint8_t*)ethernet->ether_obj, ETHER_FRAME_SIZE + htons(ip->total_length));
+
     }
 
     return func_retval;
