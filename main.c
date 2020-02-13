@@ -257,7 +257,13 @@ int main(void)
 
     ether_dhcp_discover_send(ethernet, 156256, 0);
 
-    ether_read_udp(ethernet, (uint8_t*)network_hardware, ETHER_MTU_SIZE, udp_data, APP_BUFF_SIZE);
+    uint16_t udp_src_port;
+    uint16_t udp_dest_port;
+
+
+    //ether_read_udp(ethernet, (uint8_t*)network_hardware, ETHER_MTU_SIZE, udp_data, APP_BUFF_SIZE);
+
+    ether_read_udp_raw(ethernet, (uint8_t*)network_hardware, ETHER_MTU_SIZE, &udp_src_port, &udp_dest_port, udp_data, APP_BUFF_SIZE);
 
     offer = (void*)udp_data;
 
