@@ -53,7 +53,7 @@
 
 /******************************************************************************/
 /*                                                                            */
-/*                      Data Structures and Defines                           */
+/*                         Macros and Defines                                 */
 /*                                                                            */
 /******************************************************************************/
 
@@ -63,17 +63,26 @@
 
 #define ETHER_PHY_DATA_OFFSET 4
 
-#define ETHER_MAC_SIZE    6    /*!< Size of MAC address        */
-#define ETHER_FRAME_SIZE  14   /*!< Ethernet Frame size        */
-#define ETHER_IPV4_SIZE   4    /*!< IP protocol version 4 size */
-#define ARP_TABLE_SIZE    5    /*!< ARP Table size define      */
+#define ETHER_MAC_SIZE    6     /*!< Size of MAC address        */
+#define ETHER_FRAME_SIZE  14    /*!< Ethernet Frame size        */
+#define ETHER_IPV4_SIZE   4     /*!< IP protocol version 4 size */
+#define ARP_TABLE_SIZE    5     /*!< ARP Table size define      */
 
-#define ETHER_MTU_SIZE    1500
-#define APP_BUFF_SIZE     350  /*!< */
+#define ETHER_MTU_SIZE    1500  /*!< */
+#define APP_BUFF_SIZE     350   /*!< */
 
 
-
+/* Function define */
 #define get_unique_identifier get_random_port
+
+
+
+
+/******************************************************************************/
+/*                                                                            */
+/*                           Data Structures                                  */
+/*                                                                            */
+/******************************************************************************/
 
 
 
@@ -107,13 +116,14 @@ typedef struct _arp_table
 typedef struct _ethernet_operations
 {
     uint8_t  function_lock;                                          /*!< Function Lock for exclusive access of functions (experimental ) */
-    uint8_t  (*open)(uint8_t *mac_address);
+    uint8_t  (*open)(uint8_t *mac_address);                          /*!< */
     uint8_t  (*network_interface_status)(void);                      /*!< Network / Ethernet module packet receive status / trigger       */
     uint16_t (*random_gen_seed)(void);                               /*!< Seed value return function for random number generation         */
     int16_t  (*ether_send_packet)(uint8_t *data, uint16_t length);   /*!< Callback function to send Ethernet packet                       */
     uint16_t (*ether_recv_packet)(uint8_t *data, uint16_t length);   /*!< Callback function to receive Ethernet packet                    */
 
 }ether_operations_t;
+
 
 
 /* Ethernet/Network Handle */
@@ -137,14 +147,12 @@ struct _ethernet_handle
 /* */
 typedef struct _ethernet_source_addr
 {
-    uint8_t  source_mac[ETHER_MAC_SIZE];
-    uint8_t  source_ip[ETHER_IPV4_SIZE];
-    uint16_t source_port;
-    uint16_t identifier;
+    uint8_t  source_mac[ETHER_MAC_SIZE];  /*!< */
+    uint8_t  source_ip[ETHER_IPV4_SIZE];  /*!< */
+    uint16_t source_port;                 /*!< */
+    uint16_t identifier;                  /*!< */
 
 }ether_source_t;
-
-
 
 
 

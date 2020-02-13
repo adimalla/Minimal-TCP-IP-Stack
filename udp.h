@@ -109,15 +109,15 @@ uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_
 
 
 
-/**************************************************************
- * @brief  Function to send UPD packets
- * @param  *ethernet         : Reference to the Ethernet handle
+/*****************************************************************
+ * @brief  Function to read UPD packets
+ * @param  *ethernet           : Reference to the Ethernet handle
  * @param  *network_data       : network data from PHY
  * @param  network_data_length : network data length to be read
  * @param  *application_data   : UDP data
  * @param  app_data_length     : Length of UDP data
  * @retval int8_t              : Error = 0, Success = 1
- **************************************************************/
+ *****************************************************************/
 uint8_t ether_read_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t net_data_length,
                        char *application_data, uint16_t app_data_length);
 
@@ -136,6 +136,25 @@ uint8_t ether_read_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint1
  **************************************************************/
 int8_t ether_send_udp(ethernet_handle_t *ethernet, uint8_t *destination_ip, uint16_t destination_port,
                       char *application_data, uint16_t data_length);
+
+
+
+
+
+/***************************************************************
+ * @brief  Function to read UDP packet
+ * @param  *ethernet         : reference to the Ethernet handle
+ * @param  *network_data     : network data from the ether PHY
+ * @param  net_data_length   : network data length
+ * @param  *source_port      : UDP source port
+ * @param  *destination_port : UDP destination port
+ * @param  *application_data : UDP data
+ * @param  data_length       : Length of UDP data
+ * @retval app_data_length   : Error = 0, Success = 1
+ **************************************************************/
+uint8_t ether_read_udp_raw(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t net_data_length,
+                           uint16_t *source_port, uint16_t *destination_port, char *application_data, uint16_t app_data_length);
+
 
 
 

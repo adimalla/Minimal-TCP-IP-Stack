@@ -183,6 +183,8 @@ static uint16_t get_udp_checksum(net_ip_t *ip, net_udp_t *udp, uint16_t data_len
 
 
 
+
+
 /*****************************************************************
  * @brief  Function to get UDP data inside network state machine
  * @param  *ethernet        : Reference to the Ethernet handle
@@ -217,8 +219,8 @@ uint8_t ether_get_udp_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t 
         udp_data_length   = udp_packet_length - UDP_FRAME_SIZE;
 
         /* Check and Truncate UDP data length */
-        if(udp_data_length > data_length)
-            udp_data_length = data_length;
+        if(data_length > udp_data_length)
+            data_length = udp_data_length;
 
         /* validate UDP checksum */
         validate = validate_udp_checksum(ip, udp);
@@ -226,7 +228,7 @@ uint8_t ether_get_udp_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t 
         /* Get UDP data */
         if(validate)
         {
-            memcpy((char*)data, (char*)&udp->data, udp_data_length);
+            memcpy((char*)data, (char*)&udp->data, data_length);
         }
 
         func_retval = validate;
@@ -235,6 +237,7 @@ uint8_t ether_get_udp_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t 
 
     return func_retval;
 }
+
 
 
 
@@ -373,7 +376,7 @@ uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_
                         /* Check if protocol is UDP */
                         if(get_ip_protocol_type(ethernet) == IP_UDP)
                         {
-                            func_retval = 1;
+                            func_retval = 2;
 
                             break;
                         }
@@ -396,15 +399,15 @@ uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_
 
 
 
-/**************************************************************
- * @brief  Function to send UPD packets
- * @param  *ethernet         : Reference to the Ethernet handle
+/*****************************************************************
+ * @brief  Function to read UPD packets
+ * @param  *ethernet           : Reference to the Ethernet handle
  * @param  *network_data       : network data from PHY
  * @param  network_data_length : network data length to be read
  * @param  *application_data   : UDP data
  * @param  app_data_length     : Length of UDP data
  * @retval int8_t              : Error = 0, Success = 1
- **************************************************************/
+ *****************************************************************/
 uint8_t ether_read_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t net_data_length, char *application_data, uint16_t app_data_length)
 {
     uint8_t func_retval = 0;
@@ -419,7 +422,7 @@ uint8_t ether_read_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint1
     {
         api_retval = ether_is_udp(ethernet, network_data, net_data_length);
 
-        if(api_retval)
+        if(api_retval == 1)
         {
             func_retval = ether_get_udp_data(ethernet, (uint8_t*)application_data, app_data_length);
 
@@ -521,5 +524,84 @@ int8_t ether_send_udp(ethernet_handle_t *ethernet, uint8_t *destination_ip, uint
 
 
 }
+
+
+
+
+
+/***************************************************************
+ * @brief  Function to read UDP packet
+ * @param  *ethernet         : reference to the Ethernet handle
+ * @param  *network_data     : network data from the ether PHY
+ * @param  net_data_length   : network data length
+ * @param  *source_port      : UDP source port
+ * @param  *destination_port : UDP destination port
+ * @param  *application_data : UDP data
+ * @param  data_length       : Length of UDP data
+ * @retval app_data_length   : Error = 0, Success = 1
+ **************************************************************/
+uint8_t ether_read_udp_raw(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t net_data_length,
+                           uint16_t *source_port, uint16_t *destination_port, char *application_data, uint16_t app_data_length)
+{
+    uint8_t func_retval = 0;
+
+    net_ip_t  *ip;
+    net_udp_t *udp;
+
+    uint8_t api_retval = 0;
+    uint8_t validate   = 0;
+
+    uint16_t  udp_packet_length = 0;
+    uint16_t  udp_data_length   = 0;
+
+
+    if(ethernet->ether_obj == NULL || network_data == NULL || net_data_length == 0 || net_data_length > UINT16_MAX)
+    {
+        func_retval = 0;
+    }
+    else
+    {
+        api_retval = ether_is_udp(ethernet, network_data, net_data_length);
+
+        if(api_retval)
+        {
+            ip  = (void*)&ethernet->ether_obj->data;
+
+            udp = (void*)( (uint8_t*)ip + IP_HEADER_SIZE );
+
+            /* get source and destination port */
+            *source_port      = ntohs(udp->source_port);
+            *destination_port = ntohs(udp->destination_port);
+
+            /* Get UDP packet length and data length from header */
+            udp_packet_length = ntohs(udp->length);
+            udp_data_length   = udp_packet_length - UDP_FRAME_SIZE;
+
+            /* Check and Truncate UDP data length */
+            if(app_data_length > udp_data_length)
+                app_data_length = udp_data_length;
+
+            /* validate UDP checksum */
+            validate = validate_udp_checksum(ip, udp);
+
+            /* Get UDP header */
+            if(validate)
+            {
+                memcpy((char*)application_data, (char*)&udp->data, app_data_length);
+            }
+
+            func_retval = validate;
+
+        }
+    }
+
+    return func_retval;
+}
+
+
+
+
+
+
 
 
