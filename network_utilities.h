@@ -89,7 +89,7 @@ uint16_t htons(uint16_t value);
  * @param  *mac_address : mac address (string)
  * @retval int8_t       : Error = -1, Success = 0
  ********************************************************/
-int8_t set_mac_address(char *device_mac, char *mac_address);
+int8_t set_mac_address(uint8_t *device_mac, char *mac_address);
 
 
 
@@ -103,14 +103,27 @@ int8_t set_ip_address(uint8_t *host_ip, char *ip_address);
 
 
 
+
 /***********************************************
  * @brief  Function to swap network address
  *         (used in response messages)
  * @param  *l_address : address value LHS
  * @param  *r_address : address value RHS
+ * @param   size      : size of address
  * @retval int8_t     : Error = -1, Success = 0
  ***********************************************/
-int8_t net_swap_address(char* l_address, char *r_address, uint8_t size);
+int8_t net_swap_address(uint8_t* l_address, uint8_t *r_address, uint8_t size);
+
+
+
+
+/*********************************************************
+ * @brief  Function to set broadcast address
+ * @param  *destination_address : destination address
+ * @param  size                 : size of address
+ * @retval int8_t               : Error = -1, Success = 0
+ *********************************************************/
+int8_t set_broadcast_address(uint8_t *destination_address, uint8_t size);
 
 
 
