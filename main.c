@@ -166,15 +166,6 @@ uint8_t ether_open(uint8_t *mac_address)
 #define TEST 1
 
 
-typedef enum _dhcp_state_values
-{
-    DHCP_DISCOVER_STATE = 1,
-    DHCP_OFFER_STATE    = 2,
-    DHCP_REQUEST_STATE  = 3,
-    DHCP_ACK_STATE      = 4,
-    DHCP_EXIT_STATE     = 5,
-
-}dhcp_states;
 
 
 
@@ -248,87 +239,10 @@ int main(void)
                         ethernet->arp_table[0].mac_address, ethernet->host_mac);
 
 
-
-
     /* test DHCP */
-    uint8_t your_ip[4];
-    uint8_t server_ip[4];
-    uint8_t subnet[4];
-    uint8_t lease_time[4];
-
-    dhcp_states dhcp_state;
-
-    uint8_t dhcp_loop  = 1;
+    ether_dhcp_enable(ethernet, (uint8_t*)network_hardware);
 
 
-    dhcp_state = DHCP_DISCOVER_STATE;
-
-    while(dhcp_loop)
-    {
-        switch(dhcp_state)
-        {
-
-        case DHCP_DISCOVER_STATE:
-
-            ether_dhcp_send_discover(ethernet, 156256, 0);
-
-            ethernet->status.mode_dynamic_req = 1;
-
-            dhcp_state = DHCP_OFFER_STATE;
-
-            break;
-
-
-        case DHCP_OFFER_STATE:
-
-            retval = ether_dhcp_read_offer(ethernet, (uint8_t*)network_hardware, your_ip, server_ip, subnet, lease_time);
-
-            if(retval == 1)
-                dhcp_state = DHCP_REQUEST_STATE;
-
-            break;
-
-
-        case DHCP_REQUEST_STATE:
-
-            lease_time[0] = 0;
-            lease_time[1] = 0;
-            lease_time[2] = 0x0E;
-            lease_time[3] = 0x10;
-
-            ether_dhcp_send_request(ethernet, 156256, 1, server_ip, your_ip, lease_time);
-
-            dhcp_state = DHCP_ACK_STATE;
-
-            break;
-
-
-        case DHCP_ACK_STATE:
-
-
-            /* Must read data here */
-
-            memcpy((char*)ethernet->host_ip, (char*)your_ip, 4);
-
-            memcpy((char*)ethernet->gateway_ip, (char*)server_ip, 4);
-
-            memcpy((char*)ethernet->subnet_mask, (char*)subnet, 4);
-
-            ethernet->status.mode_dynamic_req = 0;
-
-            dhcp_state = DHCP_EXIT_STATE;
-
-            break;
-
-        case DHCP_EXIT_STATE:
-
-            dhcp_loop =  0;
-
-            break;
-
-        }
-
-    }
 
 
 #if 1

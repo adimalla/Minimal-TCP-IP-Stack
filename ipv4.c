@@ -100,7 +100,7 @@ int16_t get_ip_communication_type(ethernet_handle_t *ethernet)
         {
             /* Check if UNICAST (temporarily make UNICAST unaccessible when requesting IP through DHCP, dynamic IP) */
             /* mode_dynamic_req bit is cleared by DHCP state machine, done for better throughput during requesting. */
-            if( (strncmp((char*)ip->destination_ip, (char*)ethernet->host_ip, 4) == 0) && ethernet->status.mode_dynamic_req != 1 )
+            if( (strncmp((char*)ip->destination_ip, (char*)ethernet->host_ip, 4) == 0) && ethernet->status.mode_dhcp_req != 1 )
             {
                 func_retval = 1;
             }

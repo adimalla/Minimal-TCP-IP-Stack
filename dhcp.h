@@ -200,20 +200,19 @@ typedef struct _opts_50
 }dhcp_option_50_t;
 
 
+
 /* DHCP Request options */
 typedef struct _dhcp_request_options
 {
+    dhcp_option_51_t lease_time;
     dhcp_option_53_t message_type;
     dhcp_option_55_t param_request_list;
     dhcp_option_61_t client_identifier;
     dhcp_option_50_t requested_ip;
     dhcp_option_54_t server_identifier;
-    dhcp_option_51_t lease_time;
-
     uint8_t          options_end;
 
 }dhcp_request_opts_t;
-
 
 
 
@@ -228,6 +227,7 @@ typedef enum _dhcp_boot_message
     DHCP_REQUEST    = 3,
 
 }dhcp_boot_msg_t;
+
 
 
 /* */
@@ -255,14 +255,27 @@ typedef enum _dhcp_option_types
 
 
 
-/***************************************************************
+/**************************************************************
  * @brief   Function Send DHCP Discover
  * @param   *ethernet       : reference to the Ethernet handle
  * @param   transaction_id  : random transaction ID
  * @param   seconds_elapsed : number of seconds elapsed
  * @retval  uint8_t         : Error = -1, Success = 0
- ***************************************************************/
+ **************************************************************/
 int8_t ether_dhcp_send_discover(ethernet_handle_t *ethernet, uint32_t transaction_id, uint16_t seconds_elapsed);
+
+
+
+
+/************************************************************
+ * @brief   Function read DHCP offer
+ * @param   *ethernet     : reference to the Ethernet handle
+ * @param   *network_data : network_data from PHY
+ * @param   *your_ip      : 'your IP' address
+ * @param   *dhcp_options : DHCP options data
+ * @retval  uint8_t       : Error = 0, Success = DHCP type
+ ************************************************************/
+int8_t ether_dhcp_read(ethernet_handle_t *ethernet, uint8_t *network_data, uint8_t *your_ip, uint8_t *dhcp_options);
 
 
 
@@ -274,7 +287,7 @@ int8_t ether_dhcp_send_discover(ethernet_handle_t *ethernet, uint32_t transactio
  * @param   *your_ip      : 'your IP' address
  * @param   *server_ip    : server IP address
  * @param   *subnet_mask  : SUBNET mask
- *
+ * @param   *lease_time   : IP address lease time
  * @retval  uint8_t       : Error = 0, Success = 1
  ************************************************************/
 int8_t ether_dhcp_read_offer(ethernet_handle_t *ethernet, uint8_t *network_data, uint8_t *your_ip, uint8_t *server_ip,
@@ -283,18 +296,25 @@ int8_t ether_dhcp_read_offer(ethernet_handle_t *ethernet, uint8_t *network_data,
 
 
 
-/***************************************************************
+/*************************************************************
  * @brief   Function Send DHCP Request
  * @param   *ethernet       : reference to the Ethernet handle
  * @param   transaction_id  : random transaction ID
  * @param   seconds_elapsed : number of seconds elapsed
- *
- *
- *
+ * @param   *server_ip      : DHCP server IP
+ * @param   *requested_ip   : IP request to the server
+ * @param   *lease_time     : Lease time
  * @retval  uint8_t         : Error = -1, Success = 0
- ***************************************************************/
+ *************************************************************/
 int8_t ether_dhcp_send_request(ethernet_handle_t *ethernet, uint32_t transaction_id, uint16_t seconds_elapsed,
                                uint8_t *server_ip, uint8_t *requested_ip, uint8_t *lease_time);
+
+
+
+
+
+int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data);
+
 
 
 

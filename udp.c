@@ -528,7 +528,7 @@ int8_t ether_send_udp(ethernet_handle_t *ethernet, uint8_t *destination_ip, uint
 
 
 
-/***************************************************************
+/**************************************************************
  * @brief  Function to read UDP packet
  * @param  *ethernet         : reference to the Ethernet handle
  * @param  *network_data     : network data from the ether PHY
@@ -537,12 +537,13 @@ int8_t ether_send_udp(ethernet_handle_t *ethernet, uint8_t *destination_ip, uint
  * @param  *destination_port : UDP destination port
  * @param  *application_data : UDP data
  * @param  data_length       : Length of UDP data
- * @retval app_data_length   : Error = 0, Success = 1
+ * @param app_data_length   :
+ * @retval uint16_t          : Error = 0, Success = bytes read
  **************************************************************/
-uint8_t ether_read_udp_raw(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t net_data_length,
+uint16_t ether_read_udp_raw(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t net_data_length,
                            uint16_t *source_port, uint16_t *destination_port, char *application_data, uint16_t app_data_length)
 {
-    uint8_t func_retval = 0;
+    uint16_t func_retval = 0;
 
     net_ip_t  *ip;
     net_udp_t *udp;
@@ -587,9 +588,9 @@ uint8_t ether_read_udp_raw(ethernet_handle_t *ethernet, uint8_t *network_data, u
             if(validate)
             {
                 memcpy((char*)application_data, (char*)&udp->data, app_data_length);
-            }
 
-            func_retval = validate;
+                func_retval = app_data_length;
+            }
 
         }
     }
