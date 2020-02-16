@@ -232,7 +232,7 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
         /* Set status to static */
         ethernet.status.mode_static      = 1;
         ethernet.status.mode_dynamic     = 0;
-        ethernet.status.mode_dhcp_req    = 0;
+        ethernet.status.mode_dhcp_init   = 0;
 
         /* Configure broadcast addresses */
         set_broadcast_address(ethernet.broadcast_mac, ETHER_MAC_SIZE);

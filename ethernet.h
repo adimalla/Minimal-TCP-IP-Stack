@@ -130,7 +130,8 @@ typedef struct _network_status
 {
     uint8_t mode_static      : 1;
     uint8_t mode_dynamic     : 1;
-    uint8_t mode_dhcp_req    : 1;
+    uint8_t mode_dhcp_init   : 1;
+    uint8_t mode_dhcp_bound  : 1;
     uint8_t reserved         : 5;
 
 }net_status_t;
@@ -152,6 +153,7 @@ struct _ethernet_handle
     uint8_t  broadcast_ip[ETHER_IPV4_SIZE];  /*!< */
     uint8_t  subnet_mask[ETHER_IPV4_SIZE];   /*!< */
     uint8_t  gateway_ip[ETHER_IPV4_SIZE];    /*!< */
+    uint32_t lease_time;                     /*!< */
 
     ether_operations_t *ether_commands;  /*!< Network Operations    */
 
