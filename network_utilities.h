@@ -61,9 +61,10 @@
 /******************************************************************************/
 
 
+/* defines network to host order function */
 #define ntohs htons
 
-
+#define ntohl htonl
 
 
 /******************************************************************************/
@@ -80,6 +81,17 @@
  * @retval uint16_t : host to network or network to host converted data
  ************************************************************************/
 uint16_t htons(uint16_t value);
+
+
+
+/************************************************************************
+ * @brief  Function to convert from host to network order and vice versa
+ *         (For 32 bit data)
+ *         Copyright (C) 1997-2019 Free Software Foundation, Inc.
+ *
+ * @retval uint32_t : host to network or network to host converted data
+ ************************************************************************/
+uint32_t htonl(uint32_t x);
 
 
 
