@@ -163,8 +163,8 @@ uint8_t ether_open(uint8_t *mac_address)
 
 
 
-#define TEST 1
-
+#define TEST  1
+#define TEST2 1
 
 
 
@@ -199,7 +199,7 @@ int main(void)
     };
 
     /* Create Ethernet handle */
-    ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:05:60:48", "192.168.1.197", &ether_ops);
+    ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:50:60:48", "192.168.1.197", &ether_ops);
 
 
     // flash phy leds
@@ -238,17 +238,18 @@ int main(void)
     ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, gateway_ip, &sequence_no, \
                         ethernet->arp_table[0].mac_address, ethernet->host_mac);
 
-
-    /* test DHCP */
-    ether_dhcp_enable(ethernet, (uint8_t*)network_hardware);
-
-
-
-
-#if 1
-
     /* Test UDP packets */
     char udp_data[APP_BUFF_SIZE] = {0};
+
+
+#endif
+
+
+    /* test DHCP */
+    ether_dhcp_enable(ethernet, (uint8_t*)network_hardware, DHCP_INIT_STATE);
+
+
+#if TEST2
 
     ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "Hello", 5);
 
@@ -259,8 +260,6 @@ int main(void)
 
 #endif
 
-
-#endif
 
     /* State machine */
 
@@ -332,11 +331,11 @@ int main(void)
                             BLUE_LED = 1;
                             waitMicrosecond(50000);
                             BLUE_LED = 0;
-
+#if TEST
                             /* test only */
                             if(strncmp(udp_data, "on", 2) == 0)
                                 ether_send_udp(ethernet, gateway_ip, 8080, "switched on", 11);
-
+#endif
                         }
 
                         break;
