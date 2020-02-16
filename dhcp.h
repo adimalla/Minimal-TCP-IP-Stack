@@ -59,6 +59,7 @@
 /*                                                                            */
 /******************************************************************************/
 
+#pragma pack(1)
 
 #define DHCP_FRAME_SIZE 240
 
@@ -150,7 +151,7 @@ typedef struct _opts_51
 {
     uint8_t option_number;
     uint8_t length;
-    uint8_t lease_time[4];
+    uint32_t lease_time;
 
 }dhcp_option_51_t;
 
@@ -225,6 +226,7 @@ typedef enum _dhcp_boot_message
     DHCP_DISCOVER   = 1,
     DHCP_OFFER      = 2,
     DHCP_REQUEST    = 3,
+    DHCP_ACK        = 5,
 
 }dhcp_boot_msg_t;
 
@@ -244,6 +246,22 @@ typedef enum _dhcp_option_types
     DHCP_OPTION_END        = 255,
 
 }dhcp_options_types_t;
+
+
+
+/* DHCP states */
+typedef enum _dhcp_state_values
+{
+    DHCP_INIT_STATE       = 1,
+    DHCP_SELECTING_STATE  = 2,
+    DHCP_READ_STATE       = 3,
+    DHCP_REQUESTING_STATE = 4,
+    DHCP_ACK_STATE        = 5,
+    DHCP_BOUND_STATE      = 6,
+
+}dhcp_states;
+
+
 
 
 
@@ -307,13 +325,19 @@ int8_t ether_dhcp_read_offer(ethernet_handle_t *ethernet, uint8_t *network_data,
  * @retval  uint8_t         : Error = -1, Success = 0
  *************************************************************/
 int8_t ether_dhcp_send_request(ethernet_handle_t *ethernet, uint32_t transaction_id, uint16_t seconds_elapsed,
-                               uint8_t *server_ip, uint8_t *requested_ip, uint8_t *lease_time);
+                               uint8_t *server_ip, uint8_t *requested_ip, uint32_t lease_time);
 
 
 
 
-
-int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data);
+/*************************************************************
+ * @brief   Function Enable DHCP mode
+ * @param   *ethernet     : reference to the Ethernet handle
+ * @param   *network_data : network data from PHY
+ * @param   dhcp_state    : DHCP state machine states
+ * @retval  uint8_t       : Error = NA, Success = NA
+ *************************************************************/
+int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data, dhcp_states dhcp_state);
 
 
 

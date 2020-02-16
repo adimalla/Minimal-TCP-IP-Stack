@@ -47,6 +47,7 @@
  */
 
 #include <string.h>
+#include <stdlib.h>
 
 #include "udp.h"
 #include "network_utilities.h"
@@ -306,7 +307,7 @@ int8_t ether_dhcp_read_offer(ethernet_handle_t *ethernet, uint8_t *network_data,
  * @retval  uint8_t         : Error = -1, Success = 0
  *************************************************************/
 int8_t ether_dhcp_send_request(ethernet_handle_t *ethernet, uint32_t transaction_id, uint16_t seconds_elapsed,
-                               uint8_t *server_ip, uint8_t *requested_ip, uint8_t *lease_time)
+                               uint8_t *server_ip, uint8_t *requested_ip, uint32_t lease_time)
 {
 
     int8_t func_retval = 0;
@@ -363,7 +364,8 @@ int8_t ether_dhcp_send_request(ethernet_handle_t *ethernet, uint32_t transaction
         /* options (51) */
         request_opts->lease_time.option_number = DHCP_ADDR_LEASE_TIME;
         request_opts->lease_time.length        = 4;
-        memcpy((char*)request_opts->lease_time.lease_time, (char*)lease_time, 4);
+        //memcpy((char*)request_opts->lease_time.lease_time, (char*)lease_time, 4);
+        request_opts->lease_time.lease_time  = htonl(lease_time);
 
 
         /* option (53) */
@@ -424,43 +426,47 @@ int8_t ether_dhcp_send_request(ethernet_handle_t *ethernet, uint32_t transaction
 
 
 
-typedef enum _dhcp_state_values
-{
-    DHCP_DISCOVER_STATE = 1,
-    DHCP_READ_STATE    = 2,
-    DHCP_REQUEST_STATE  = 3,
-    DHCP_ACK_STATE      = 4,
-    DHCP_EXIT_STATE     = 5,
 
-}dhcp_states;
-
-
-
-int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data)
+/*************************************************************
+ * @brief   Function Enable DHCP mode
+ * @param   *ethernet     : reference to the Ethernet handle
+ * @param   *network_data : network data from PHY
+ * @param   dhcp_state    : DHCP state machine states
+ * @retval  uint8_t       : Error = NA, Success = NA
+ *************************************************************/
+int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data, dhcp_states dhcp_state)
 {
 
-    dhcp_states       dhcp_state;
     dhcp_offer_opts_t *offer_options;
 
-    int8_t dhcp_type = 0;
-
-    uint8_t your_ip[4]      = {0};
-    uint8_t server_ip[4]    = {0};
-    uint8_t subnet_mask[4];
-    uint8_t lease_time[4];
+    uint8_t your_ip[4]       = {0};
+    uint8_t server_ip[4]     = {0};
+    uint8_t subnet_mask[4]   = {0};
     uint8_t dhcp_options[60] = {0};
 
+    int8_t  dhcp_type         = 0;
+    uint8_t dhcp_request_flag = 0;
+    uint8_t dhcp_loop         = 1;
 
-    uint8_t dhcp_loop  = 1;
+    dhcp_state = DHCP_INIT_STATE;
 
-    dhcp_state = DHCP_DISCOVER_STATE;
+    uint32_t lease_time = 0;
 
     while(dhcp_loop)
     {
         switch(dhcp_state)
         {
 
-        case DHCP_DISCOVER_STATE:
+        case DHCP_INIT_STATE:
+
+            ethernet->status.mode_dhcp_init = 1;
+
+            dhcp_state = DHCP_SELECTING_STATE;
+
+            break;
+
+
+        case DHCP_SELECTING_STATE:
 
             ether_dhcp_send_discover(ethernet, 156256, 0);
 
@@ -469,53 +475,61 @@ int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data)
             break;
 
 
+
         case DHCP_READ_STATE:
 
             dhcp_type = ether_dhcp_read(ethernet, (uint8_t*)network_data, your_ip, dhcp_options);
 
-            if(dhcp_type == 2)
+            /* Handle DHCP offer */
+            if(dhcp_type == DHCP_OFFER && ethernet->status.mode_dhcp_init == 1)
             {
-
                 /* Get server_ip, SUBNET mask, lease time from DHCP offer options */
                 offer_options = (void*)dhcp_options;
 
-                memcpy((char*)server_ip, (char*)offer_options->server_identifier.server_ip, ETHER_IPV4_SIZE);
+                memcpy(server_ip, offer_options->server_identifier.server_ip, ETHER_IPV4_SIZE);
+                memcpy(subnet_mask, offer_options->subnet_mask.subnet_mask, ETHER_IPV4_SIZE);
 
-                memcpy((char*)lease_time, (char*)offer_options->lease_time.lease_time, ETHER_IPV4_SIZE);
+                lease_time = ntohl(offer_options->lease_time.lease_time);
 
-                memcpy((char*)subnet_mask, (char*)offer_options->subnet_mask.subnet_mask, ETHER_IPV4_SIZE);
+                dhcp_state = DHCP_REQUESTING_STATE;
 
-
-                dhcp_state = DHCP_REQUEST_STATE;
             }
-            else if(dhcp_type == 5 &&  ethernet->status.mode_dhcp_req == 1)
+            else
+            {
+                dhcp_state = DHCP_SELECTING_STATE;
+            }
+
+
+            /* Handle DHCP ACK */
+            if(dhcp_type == DHCP_ACK &&  dhcp_request_flag == 1)
             {
                 dhcp_state = DHCP_ACK_STATE;
+            }
+            else if(dhcp_request_flag == 1)
+            {
+                dhcp_state = DHCP_REQUESTING_STATE;
             }
 
             break;
 
 
-        case DHCP_REQUEST_STATE:
 
-            lease_time[0] = 0;
-            lease_time[1] = 0;
-            lease_time[2] = 0x0E;
-            lease_time[3] = 0x10;
+        case DHCP_REQUESTING_STATE:
+
 
             ether_dhcp_send_request(ethernet, 156256, 1, server_ip, your_ip, lease_time);
 
-            ethernet->status.mode_dhcp_req = 1;
+            dhcp_request_flag = 1;
 
             dhcp_state = DHCP_READ_STATE;
 
             break;
 
 
+
         case DHCP_ACK_STATE:
 
-
-            /* Must read data here */
+            dhcp_request_flag = 0;
 
             memcpy((char*)ethernet->host_ip, (char*)your_ip, 4);
 
@@ -523,13 +537,27 @@ int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data)
 
             memcpy((char*)ethernet->subnet_mask, (char*)subnet_mask, 4);
 
-            ethernet->status.mode_dhcp_req = 0;
+            ethernet->lease_time = lease_time;
 
-            dhcp_state = DHCP_EXIT_STATE;
+            dhcp_state = DHCP_BOUND_STATE;
 
             break;
 
-        case DHCP_EXIT_STATE:
+
+
+        case DHCP_BOUND_STATE:
+
+            ethernet->status.mode_dhcp_init  = 0;
+            ethernet->status.mode_dhcp_bound = 1;
+
+            ethernet->status.mode_dynamic   = 1;
+
+            dhcp_loop =  0;
+
+            break;
+
+
+        default:
 
             dhcp_loop =  0;
 
