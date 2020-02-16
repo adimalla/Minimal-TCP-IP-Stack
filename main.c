@@ -163,7 +163,8 @@ uint8_t ether_open(uint8_t *mac_address)
 
 
 
-#define TEST 1
+#define TEST  1
+#define TEST2 1
 
 
 
@@ -171,7 +172,7 @@ uint8_t ether_open(uint8_t *mac_address)
 int main(void)
 {
 
-    uint8_t data[1500] = {0};
+    uint8_t data[ETHER_MTU_SIZE] = {0};
 
     uint8_t loop = 0;
 
@@ -198,7 +199,7 @@ int main(void)
     };
 
     /* Create Ethernet handle */
-    ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:05:60:48", "192.168.1.197", &ether_ops);
+    ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:50:60:48", "192.168.1.197", &ether_ops);
 
 
     // flash phy leds
@@ -214,13 +215,13 @@ int main(void)
 #if TEST
 
     /* Test ARP packets */
-    uint8_t test_ip[4] = {0};
+    uint8_t gateway_ip[4] = {0};
 
     uint8_t sequence_no = 1;
 
-    set_ip_address(test_ip, "192.168.1.196");
+    set_ip_address(gateway_ip, "192.168.1.196");
 
-    ether_send_arp_req(ethernet, ethernet->host_ip, test_ip);
+    ether_send_arp_req(ethernet, ethernet->host_ip, gateway_ip);
 
     if(ether_is_arp(ethernet, (uint8_t*)network_hardware, 128))
     {
@@ -234,28 +235,31 @@ int main(void)
 
 
     /* Test ICMP packets */
-    ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, test_ip, &sequence_no,
+    ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, gateway_ip, &sequence_no, \
                         ethernet->arp_table[0].mac_address, ethernet->host_mac);
 
-
     /* Test UDP packets */
-    char udp_data[40] = {0};
+    char udp_data[APP_BUFF_SIZE] = {0};
 
-    ether_send_udp(ethernet, test_ip, 8080, "Hello", 5);
 
-#if 0
-    ether_read_udp(ethernet, (uint8_t*)network_hardware, 1500, udp_data, 40);
+#endif
+
+
+    /* test DHCP */
+    ether_dhcp_enable(ethernet, (uint8_t*)network_hardware, DHCP_INIT_STATE);
+
+
+#if TEST2
+
+    ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "Hello", 5);
+
+    ether_read_udp(ethernet, (uint8_t*)network_hardware, udp_data, APP_BUFF_SIZE);
 
     if(strncmp(udp_data, "Hello from server", 18) == 0)
-        ether_send_udp(ethernet, test_ip, 8080, "Received", 9);
+        ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "Hello again", 11);
 
 #endif
 
-
-    ether_dhcp_discover_send(ethernet, 156256, 0);
-
-
-#endif
 
     /* State machine */
 
@@ -264,7 +268,7 @@ int main(void)
     while(loop)
     {
 
-        if (ether_get_data(ethernet, (uint8_t*)network_hardware, 128))
+        if (ether_get_data(ethernet, (uint8_t*)network_hardware, ETHER_MTU_SIZE))
         {
             if (etherIsOverflow())
             {
@@ -322,16 +326,16 @@ int main(void)
                     case IP_UDP:
 
                         /* Handle UDP packets */
-                        if (ether_get_udp_data(ethernet, (uint8_t*)udp_data, 100))
+                        if (ether_get_udp_data(ethernet, (uint8_t*)udp_data, APP_BUFF_SIZE))
                         {
                             BLUE_LED = 1;
                             waitMicrosecond(50000);
                             BLUE_LED = 0;
-
+#if TEST
                             /* test only */
                             if(strncmp(udp_data, "on", 2) == 0)
-                                ether_send_udp(ethernet, test_ip, 8080, "switched on", 11);
-
+                                ether_send_udp(ethernet, gateway_ip, 8080, "switched on", 11);
+#endif
                         }
 
                         break;
@@ -341,6 +345,33 @@ int main(void)
                         break;
 
                     }
+                }
+                if(retval == 2)
+                {
+                    /* Get transport layer protocol type */
+                    switch(get_ip_protocol_type(ethernet))
+                    {
+
+                    case IP_UDP:
+
+                        /* Handle UDP packets */
+                        if (ether_get_udp_data(ethernet, (uint8_t*)udp_data, APP_BUFF_SIZE))
+                        {
+                            RED_LED = 1;
+                            waitMicrosecond(50000);
+                            RED_LED = 0;
+
+                        }
+
+                        break;
+
+
+                    default:
+
+                        break;
+
+                    }
+
                 }
 
                 break;

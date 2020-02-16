@@ -157,8 +157,10 @@ uint16_t ether_get_checksum(uint32_t sum)
 
     checksum = sum & 0xFFFF;
 
+    checksum = ~checksum;
+
     /* return 1s complement */
-    return ~checksum;
+    return checksum;
 }
 
 
@@ -227,6 +229,10 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
 
         api_retval = set_ip_address(ethernet.host_ip, ip_address);
 
+        /* Set status to static */
+        ethernet.status.mode_static      = 1;
+        ethernet.status.mode_dynamic     = 0;
+        ethernet.status.mode_dhcp_init   = 0;
 
         /* Configure broadcast addresses */
         set_broadcast_address(ethernet.broadcast_mac, ETHER_MAC_SIZE);

@@ -119,12 +119,26 @@ uint16_t htons(uint16_t value)
 
 
 
+/************************************************************************
+ * @brief  Function to convert from host to network order and vice versa
+ *         (For 32 bit data)
+ *         Copyright (C) 1997-2019 Free Software Foundation, Inc.
+ *
+ * @retval uint32_t : host to network or network to host converted data
+ ************************************************************************/
+
+
+/* Swap bytes in 32-bit value.  */
+#define __bswap_constant_32(x)                                      \
+        ((((x) & 0xff000000u) >> 24) | (((x) & 0x00ff0000u) >> 8)   \
+       | (((x) & 0x0000ff00u) << 8) | (((x) & 0x000000ffu) << 24))
+
+
 uint32_t htonl(uint32_t x)
 {
-    uint8_t *s = (uint8_t *)&x;
-
-    return (uint32_t)(s[0] << 24 | s[1] << 16 | s[2] << 8 | s[3]);
+    return (uint32_t)__bswap_constant_32 (x);
 }
+
 
 
 
