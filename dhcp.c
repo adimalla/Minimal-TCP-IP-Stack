@@ -56,6 +56,215 @@
 
 
 
+/******************************************************************************/
+/*                                                                            */
+/*                      Data Structures and Defines                           */
+/*                                                                            */
+/******************************************************************************/
+
+
+#pragma pack(1)
+
+#define DHCP_FRAME_SIZE         240
+#define DHCP_DISCOVER_OPTS_SIZE 18
+#define DHCP_REQUEST_OPTS_SIZE  36
+
+
+
+/* DHCP UDP port */
+typedef enum _network_ports
+{
+    DHCP_DESTINATION_PORT = 67,
+    DHCP_SOURCE_PORT      = 68,
+
+}network_ports_t;
+
+
+
+/* DHCP FRAME (240 bytes), options variable data */
+typedef struct _net_dhcp
+{
+    uint8_t  op_code;                 /*!< Operation code or message type */
+    uint8_t  hw_type;                 /*!< Hardware type                  */
+    uint8_t  hw_length;               /*!< Hardware length                */
+    uint8_t  hops;                    /*!< Number of Hops                 */
+    uint32_t transaction_id;          /*!< */
+    uint16_t seconds;                 /*!< */
+    uint16_t flags;                   /*!< */
+    uint8_t  client_ip[4];            /*!< */
+    uint8_t  your_ip[4];              /*!< */
+    uint8_t  server_ip[4];            /*!< */
+    uint8_t  gateway_ip[4];           /*!< */
+    uint8_t  client_hw_addr[6];       /*!< */
+    uint8_t  client_hw_addr_pad[10];  /*!< */
+    uint8_t  server_name[64];         /*!< */
+    uint8_t  boot_filename[128];      /*!< */
+    uint8_t  magic_cookie[4];         /*!< */
+    uint8_t  options;
+
+}net_dhcp_t ;
+
+
+
+
+/************* DHCP Discover options structures **************/
+
+/* DHCP Option message type */
+typedef struct _opts_53
+{
+    uint8_t option_number;
+    uint8_t length;
+    uint8_t dhcp;
+
+}dhcp_option_53_t;
+
+
+/* DHCP Option parameter request list  */
+typedef struct _opts_55
+{
+    uint8_t option_number;
+    uint8_t length;
+    uint8_t req_item[3];
+
+}dhcp_option_55_t;
+
+
+/* DHCP Option client identifier */
+typedef struct _opts_61
+{
+    uint8_t option_number;
+    uint8_t length;
+    uint8_t hw_type;
+    uint8_t client_mac[ETHER_MAC_SIZE];
+
+}dhcp_option_61_t;
+
+
+
+/* DHCP Discover options (18 bytes) */
+typedef struct _dhcp_discover_options
+{
+    dhcp_option_53_t message_type;
+    dhcp_option_55_t param_request_list;
+    dhcp_option_61_t client_identifier;
+    uint8_t          options_end;
+
+}dhcp_discover_opts_t;
+
+
+
+/************* DHCP Offer options structures **************/
+
+/* */
+typedef struct _opts_54
+{
+    uint8_t option_number;
+    uint8_t length;
+    uint8_t server_ip[ETHER_IPV4_SIZE];
+
+}dhcp_option_54_t;
+
+/* */
+typedef struct _opts_51
+{
+    uint8_t option_number;
+    uint8_t length;
+    uint32_t lease_time;
+
+}dhcp_option_51_t;
+
+/* */
+typedef struct _opts_1
+{
+    uint8_t option_number;
+    uint8_t length;
+    uint8_t subnet_mask[ETHER_IPV4_SIZE];
+
+}dhcp_option_1_t;
+
+/* */
+typedef struct _opts_3
+{
+    uint8_t option_number;
+    uint8_t length;
+    uint8_t router[ETHER_IPV4_SIZE];
+
+}dhcp_option_3_t;
+
+
+
+/* DHCP Offer options */
+typedef struct _dhcp_offer_options
+{
+    dhcp_option_53_t message_type;
+    dhcp_option_54_t server_identifier;
+    dhcp_option_51_t lease_time;
+    dhcp_option_1_t  subnet_mask;
+    dhcp_option_3_t  router;
+    uint8_t          options_end;
+
+}dhcp_offer_opts_t;
+
+
+/************* DHCP Offer Request structures **************/
+
+
+/* */
+typedef struct _opts_50
+{
+    uint8_t option_number;
+    uint8_t length;
+    uint8_t requested_ip[ETHER_IPV4_SIZE];
+
+}dhcp_option_50_t;
+
+
+
+/* DHCP Request options */
+typedef struct _dhcp_request_options
+{
+    dhcp_option_51_t lease_time;
+    dhcp_option_53_t message_type;
+    dhcp_option_55_t param_request_list;
+    dhcp_option_61_t client_identifier;
+    dhcp_option_50_t requested_ip;
+    dhcp_option_54_t server_identifier;
+    uint8_t          options_end;
+
+}dhcp_request_opts_t;
+
+
+
+/* */
+typedef enum _dhcp_boot_message
+{
+    DHCP_BOOT_REQ   = 1,
+    DHCP_BOOT_REPLY = 2,
+    DHCP_DISCOVER   = 1,
+    DHCP_OFFER      = 2,
+    DHCP_REQUEST    = 3,
+    DHCP_ACK        = 5,
+
+}dhcp_boot_msg_t;
+
+
+
+/* */
+typedef enum _dhcp_option_types
+{
+    DHCP_SUBNET_MASK       = 1,
+    DHCP_ROUTER            = 3,
+    DHCP_REQUESTED_IP      = 50,
+    DHCP_ADDR_LEASE_TIME   = 51,
+    DHCP_MESSAGE_TYPE      = 53,
+    DHCP_SERVER_IDENTIFIER = 54,
+    DHCP_PARAM_REQ_LIST    = 55,
+    DHCP_CLIENT_IDENTIFIER = 61,
+    DHCP_OPTION_END        = 255,
+
+}dhcp_options_types_t;
+
+
 
 /******************************************************************************/
 /*                                                                            */
@@ -85,7 +294,7 @@ int8_t ether_dhcp_send_discover(ethernet_handle_t *ethernet, uint32_t transactio
     uint8_t destination_ip[4]  = {0};
     uint8_t destination_mac[6] = {0};
 
-    char data[260] = {0};
+    char data[258] = {0};
 
     if(ethernet == NULL)
     {
@@ -100,7 +309,7 @@ int8_t ether_dhcp_send_discover(ethernet_handle_t *ethernet, uint32_t transactio
         dhcp_discover->hw_type        = 1;
         dhcp_discover->hw_length      = ETHER_MAC_SIZE;
         dhcp_discover->hops           = 0;
-        dhcp_discover->transaction_id = transaction_id;
+        dhcp_discover->transaction_id = htonl(transaction_id);
         dhcp_discover->seconds        = htons(seconds_elapsed);
         dhcp_discover->flags          = htons(0x8000);
 
@@ -162,13 +371,12 @@ int8_t ether_dhcp_send_discover(ethernet_handle_t *ethernet, uint32_t transactio
 
 
         /* Send DHCP packet as UPD message */
-        ether_send_udp_raw(ethernet, &dhcp_client, destination_ip, destination_mac, DHCP_DESTINATION_PORT, (uint8_t*)dhcp_discover, (DHCP_FRAME_SIZE + 18));
+        ether_send_udp_raw(ethernet, &dhcp_client, destination_ip, destination_mac, DHCP_DESTINATION_PORT,
+                           (uint8_t*)dhcp_discover, (DHCP_FRAME_SIZE + DHCP_DISCOVER_OPTS_SIZE));
     }
 
     return func_retval;
 }
-
-
 
 
 
@@ -178,10 +386,11 @@ int8_t ether_dhcp_send_discover(ethernet_handle_t *ethernet, uint32_t transactio
  * @param   *ethernet     : reference to the Ethernet handle
  * @param   *network_data : network_data from PHY
  * @param   *your_ip      : 'your IP' address
+ *
  * @param   *dhcp_options : DHCP options data
  * @retval  uint8_t       : Error = 0, Success = DHCP type
  ************************************************************/
-int8_t ether_dhcp_read(ethernet_handle_t *ethernet, uint8_t *network_data, uint8_t *your_ip, uint8_t *dhcp_options)
+int8_t ether_dhcp_read(ethernet_handle_t *ethernet, uint8_t *network_data, uint8_t *your_ip, uint32_t client_transac_id, uint8_t *dhcp_options)
 {
     int8_t   func_retval        = 0;
     uint16_t udp_message_length = 0;
@@ -192,7 +401,7 @@ int8_t ether_dhcp_read(ethernet_handle_t *ethernet, uint8_t *network_data, uint8
     uint16_t udp_src_port  = 0;
     uint16_t udp_dest_port = 0;
 
-    char dhcp_data[300] = {0};
+    char dhcp_data[APP_BUFF_SIZE] = {0};
 
     if(ethernet == NULL || network_data == NULL)
     {
@@ -201,7 +410,7 @@ int8_t ether_dhcp_read(ethernet_handle_t *ethernet, uint8_t *network_data, uint8
     else
     {
         /* read UDP packet */
-        udp_message_length = ether_read_udp_raw(ethernet, network_data, ETHER_MTU_SIZE, &udp_src_port, &udp_dest_port, dhcp_data, 300);
+        udp_message_length = ether_read_udp_raw(ethernet, network_data, ETHER_MTU_SIZE, &udp_src_port, &udp_dest_port, dhcp_data, APP_BUFF_SIZE);
 
 
         /* Check if UDP source ports = DHCP destination port */
@@ -209,15 +418,19 @@ int8_t ether_dhcp_read(ethernet_handle_t *ethernet, uint8_t *network_data, uint8
         {
             dhcp_reply = (void*)dhcp_data;
 
-            /* Get your_ip from DHCP standard header*/
-            strncpy((char*)your_ip, (char*)dhcp_reply->your_ip, ETHER_IPV4_SIZE);
+            if(client_transac_id == ntohl(dhcp_reply->transaction_id))
+            {
 
-            /* Get server_ip, SUBNET mask, lease time from DHCP offer options */
-            dhcp_opts = (void*)&dhcp_reply->options;
+                /* Get your_ip from DHCP standard header*/
+                strncpy((char*)your_ip, (char*)dhcp_reply->your_ip, ETHER_IPV4_SIZE);
 
-            func_retval = dhcp_opts->message_type.dhcp;
+                /* Get server_ip, SUBNET mask, lease time from DHCP offer options */
+                dhcp_opts = (void*)&dhcp_reply->options;
 
-            memcpy(dhcp_options, (uint8_t*)dhcp_opts, (udp_message_length - DHCP_FRAME_SIZE));
+                func_retval = dhcp_opts->message_type.dhcp;
+
+                memcpy(dhcp_options, (uint8_t*)dhcp_opts, (udp_message_length - DHCP_FRAME_SIZE));
+            }
 
         }
 
@@ -232,7 +445,7 @@ int8_t ether_dhcp_read(ethernet_handle_t *ethernet, uint8_t *network_data, uint8
 
 
 /************************************************************
- * @brief   Function read DHCP offer
+ * @brief   Function read DHCP offer (Depreciated)
  * @param   *ethernet     : reference to the Ethernet handle
  * @param   *network_data : network_data from PHY
  * @param   *your_ip      : 'your IP' address
@@ -271,7 +484,7 @@ int8_t ether_dhcp_read_offer(ethernet_handle_t *ethernet, uint8_t *network_data,
             dhcp_offer = (void*)dhcp_data;
 
             /* Get your_ip from DHCP standard header*/
-            strncpy((char*)your_ip, (char*)dhcp_offer->your_ip, ETHER_IPV4_SIZE);
+            memcpy((char*)your_ip, (char*)dhcp_offer->your_ip, ETHER_IPV4_SIZE);
 
 
             /* Get server_ip, SUBNET mask, lease time from DHCP offer options */
@@ -334,7 +547,7 @@ int8_t ether_dhcp_send_request(ethernet_handle_t *ethernet, uint32_t transaction
         dhcp_request->hw_type        = 1;
         dhcp_request->hw_length      = ETHER_MAC_SIZE;
         dhcp_request->hops           = 0;
-        dhcp_request->transaction_id = transaction_id;
+        dhcp_request->transaction_id = htonl(transaction_id);
         dhcp_request->seconds        = htons(seconds_elapsed);
         dhcp_request->flags          = htons(0x8000);
 
@@ -384,19 +597,19 @@ int8_t ether_dhcp_send_request(ethernet_handle_t *ethernet, uint32_t transaction
         request_opts->client_identifier.option_number = DHCP_CLIENT_IDENTIFIER;
         request_opts->client_identifier.length        = 7;
         request_opts->client_identifier.hw_type       = 1;
-        strncpy((char*)request_opts->client_identifier.client_mac, (char*)ethernet->host_mac, ETHER_MAC_SIZE);
+        memcpy((char*)request_opts->client_identifier.client_mac, (char*)ethernet->host_mac, ETHER_MAC_SIZE);
 
 
         /* options (50) */
         request_opts->requested_ip.option_number = DHCP_REQUESTED_IP;
         request_opts->requested_ip.length        = 4;
-        strncpy((char*)request_opts->requested_ip.requested_ip, (char*)requested_ip, ETHER_IPV4_SIZE);
+        memcpy((char*)request_opts->requested_ip.requested_ip, (char*)requested_ip, ETHER_IPV4_SIZE);
 
 
         /* options (54) */
         request_opts->server_identifier.option_number = DHCP_SERVER_IDENTIFIER;
         request_opts->server_identifier.length        = 4;
-        strncpy((char*)request_opts->server_identifier.server_ip, (char*)server_ip, ETHER_IPV4_SIZE);
+        memcpy((char*)request_opts->server_identifier.server_ip, (char*)server_ip, ETHER_IPV4_SIZE);
 
 
         /* option end */
@@ -409,15 +622,16 @@ int8_t ether_dhcp_send_request(ethernet_handle_t *ethernet, uint32_t transaction
         dhcp_client.identifier  = 1;
         dhcp_client.source_port = DHCP_SOURCE_PORT;
 
-        strncpy((char*)dhcp_client.source_mac, (char*)ethernet->host_mac, ETHER_MAC_SIZE);
+        memcpy((char*)dhcp_client.source_mac, (char*)ethernet->host_mac, ETHER_MAC_SIZE);
 
         /* Configure destination address */
-        strncpy((char*)destination_ip, (char*)ethernet->broadcast_ip, ETHER_IPV4_SIZE);
-        strncpy((char*)destination_mac, (char*)ethernet->broadcast_mac, ETHER_MAC_SIZE);
+        memcpy((char*)destination_ip, (char*)ethernet->broadcast_ip, ETHER_IPV4_SIZE);
+        memcpy((char*)destination_mac, (char*)ethernet->broadcast_mac, ETHER_MAC_SIZE);
 
 
         /* Send DHCP packet as UPD message */
-        ether_send_udp_raw(ethernet, &dhcp_client, destination_ip, destination_mac, DHCP_DESTINATION_PORT, (uint8_t*)dhcp_request, (DHCP_FRAME_SIZE + 36));
+        ether_send_udp_raw(ethernet, &dhcp_client, destination_ip, destination_mac, DHCP_DESTINATION_PORT,
+                           (uint8_t*)dhcp_request, (DHCP_FRAME_SIZE + DHCP_REQUEST_OPTS_SIZE));
     }
 
     return func_retval;
@@ -444,9 +658,11 @@ int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data, dhc
     uint8_t subnet_mask[4]   = {0};
     uint8_t dhcp_options[60] = {0};
 
-    int8_t  dhcp_type         = 0;
-    uint8_t dhcp_request_flag = 0;
-    uint8_t dhcp_loop         = 1;
+    int8_t   dhcp_type         = 0;
+    uint8_t  dhcp_request_flag = 0;
+    uint8_t  dhcp_loop         = 1;
+
+    uint32_t dhcp_transac_id   = get_random_port_l(ethernet, 65535);
 
     dhcp_state = DHCP_INIT_STATE;
 
@@ -468,17 +684,16 @@ int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data, dhc
 
         case DHCP_SELECTING_STATE:
 
-            ether_dhcp_send_discover(ethernet, 156256, 0);
+            ether_dhcp_send_discover(ethernet, dhcp_transac_id, 0);
 
             dhcp_state = DHCP_READ_STATE;
 
             break;
 
 
-
         case DHCP_READ_STATE:
 
-            dhcp_type = ether_dhcp_read(ethernet, (uint8_t*)network_data, your_ip, dhcp_options);
+            dhcp_type = ether_dhcp_read(ethernet, (uint8_t*)network_data, your_ip, dhcp_transac_id, dhcp_options);
 
             /* Handle DHCP offer */
             if(dhcp_type == DHCP_OFFER && ethernet->status.mode_dhcp_init == 1)
@@ -492,39 +707,39 @@ int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data, dhc
                 lease_time = ntohl(offer_options->lease_time.lease_time);
 
                 dhcp_state = DHCP_REQUESTING_STATE;
+                break;
 
             }
-            else
+            /* Handle DHCP ACK */
+            else if(dhcp_type == DHCP_ACK &&  dhcp_request_flag == 1)
+            {
+                dhcp_state = DHCP_ACK_STATE;
+                break;
+            }
+            /* Handle DHCP offer or request not received conditions */
+            else if(dhcp_request_flag == 1)
+            {
+                dhcp_state = DHCP_REQUESTING_STATE;
+                break;
+            }
+            else if(ethernet->status.mode_dhcp_init == 1)
             {
                 dhcp_state = DHCP_SELECTING_STATE;
             }
 
 
-            /* Handle DHCP ACK */
-            if(dhcp_type == DHCP_ACK &&  dhcp_request_flag == 1)
-            {
-                dhcp_state = DHCP_ACK_STATE;
-            }
-            else if(dhcp_request_flag == 1)
-            {
-                dhcp_state = DHCP_REQUESTING_STATE;
-            }
-
             break;
-
 
 
         case DHCP_REQUESTING_STATE:
 
-
-            ether_dhcp_send_request(ethernet, 156256, 1, server_ip, your_ip, lease_time);
+            ether_dhcp_send_request(ethernet, dhcp_transac_id, 1, server_ip, your_ip, lease_time);
 
             dhcp_request_flag = 1;
 
             dhcp_state = DHCP_READ_STATE;
 
             break;
-
 
 
         case DHCP_ACK_STATE:
@@ -544,13 +759,11 @@ int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data, dhc
             break;
 
 
-
         case DHCP_BOUND_STATE:
 
             ethernet->status.mode_dhcp_init  = 0;
             ethernet->status.mode_dhcp_bound = 1;
-
-            ethernet->status.mode_dynamic   = 1;
+            ethernet->status.mode_dynamic    = 1;
 
             dhcp_loop =  0;
 

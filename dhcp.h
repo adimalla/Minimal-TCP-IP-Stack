@@ -59,193 +59,6 @@
 /*                                                                            */
 /******************************************************************************/
 
-#pragma pack(1)
-
-#define DHCP_FRAME_SIZE 240
-
-/* DHCP FRAME (240 bytes), options variable data */
-typedef struct _net_dhcp
-{
-    uint8_t  op_code;                 /*!< Operation code or message type */
-    uint8_t  hw_type;                 /*!< Hardware type                  */
-    uint8_t  hw_length;               /*!< Hardware length                */
-    uint8_t  hops;                    /*!< Number of Hops                 */
-    uint32_t transaction_id;          /*!< */
-    uint16_t seconds;                 /*!< */
-    uint16_t flags;                   /*!< */
-    uint8_t  client_ip[4];            /*!< */
-    uint8_t  your_ip[4];              /*!< */
-    uint8_t  server_ip[4];            /*!< */
-    uint8_t  gateway_ip[4];           /*!< */
-    uint8_t  client_hw_addr[6];       /*!< */
-    uint8_t  client_hw_addr_pad[10];  /*!< */
-    uint8_t  server_name[64];         /*!< */
-    uint8_t  boot_filename[128];      /*!< */
-    uint8_t  magic_cookie[4];         /*!< */
-    uint8_t  options;
-
-}net_dhcp_t ;
-
-
-
-
-/************* DHCP Discover options structures **************/
-
-/* DHCP Option message type */
-typedef struct _opts_53
-{
-    uint8_t option_number;
-    uint8_t length;
-    uint8_t dhcp;
-
-}dhcp_option_53_t;
-
-
-/* DHCP Option parameter request list  */
-typedef struct _opts_55
-{
-    uint8_t option_number;
-    uint8_t length;
-    uint8_t req_item[3];
-
-}dhcp_option_55_t;
-
-
-/* DHCP Option client identifier */
-typedef struct _opts_61
-{
-    uint8_t option_number;
-    uint8_t length;
-    uint8_t hw_type;
-    uint8_t client_mac[ETHER_MAC_SIZE];
-
-}dhcp_option_61_t;
-
-
-
-/* DHCP Discover options (18 bytes) */
-typedef struct _dhcp_discover_options
-{
-    dhcp_option_53_t message_type;
-    dhcp_option_55_t param_request_list;
-    dhcp_option_61_t client_identifier;
-    uint8_t          options_end;
-
-}dhcp_discover_opts_t;
-
-
-
-/************* DHCP Offer options structures **************/
-
-/* */
-typedef struct _opts_54
-{
-    uint8_t option_number;
-    uint8_t length;
-    uint8_t server_ip[ETHER_IPV4_SIZE];
-
-}dhcp_option_54_t;
-
-/* */
-typedef struct _opts_51
-{
-    uint8_t option_number;
-    uint8_t length;
-    uint32_t lease_time;
-
-}dhcp_option_51_t;
-
-/* */
-typedef struct _opts_1
-{
-    uint8_t option_number;
-    uint8_t length;
-    uint8_t subnet_mask[ETHER_IPV4_SIZE];
-
-}dhcp_option_1_t;
-
-/* */
-typedef struct _opts_3
-{
-    uint8_t option_number;
-    uint8_t length;
-    uint8_t router[ETHER_IPV4_SIZE];
-
-}dhcp_option_3_t;
-
-
-
-/* DHCP Offer options */
-typedef struct _dhcp_offer_options
-{
-    dhcp_option_53_t message_type;
-    dhcp_option_54_t server_identifier;
-    dhcp_option_51_t lease_time;
-    dhcp_option_1_t  subnet_mask;
-    dhcp_option_3_t  router;
-    uint8_t          options_end;
-
-}dhcp_offer_opts_t;
-
-
-/************* DHCP Offer Request structures **************/
-
-
-/* */
-typedef struct _opts_50
-{
-    uint8_t option_number;
-    uint8_t length;
-    uint8_t requested_ip[ETHER_IPV4_SIZE];
-
-}dhcp_option_50_t;
-
-
-
-/* DHCP Request options */
-typedef struct _dhcp_request_options
-{
-    dhcp_option_51_t lease_time;
-    dhcp_option_53_t message_type;
-    dhcp_option_55_t param_request_list;
-    dhcp_option_61_t client_identifier;
-    dhcp_option_50_t requested_ip;
-    dhcp_option_54_t server_identifier;
-    uint8_t          options_end;
-
-}dhcp_request_opts_t;
-
-
-
-
-/* */
-typedef enum _dhcp_boot_message
-{
-    DHCP_BOOT_REQ   = 1,
-    DHCP_BOOT_REPLY = 2,
-    DHCP_DISCOVER   = 1,
-    DHCP_OFFER      = 2,
-    DHCP_REQUEST    = 3,
-    DHCP_ACK        = 5,
-
-}dhcp_boot_msg_t;
-
-
-
-/* */
-typedef enum _dhcp_option_types
-{
-    DHCP_SUBNET_MASK       = 1,
-    DHCP_ROUTER            = 3,
-    DHCP_REQUESTED_IP      = 50,
-    DHCP_ADDR_LEASE_TIME   = 51,
-    DHCP_MESSAGE_TYPE      = 53,
-    DHCP_SERVER_IDENTIFIER = 54,
-    DHCP_PARAM_REQ_LIST    = 55,
-    DHCP_CLIENT_IDENTIFIER = 61,
-    DHCP_OPTION_END        = 255,
-
-}dhcp_options_types_t;
 
 
 
@@ -260,7 +73,6 @@ typedef enum _dhcp_state_values
     DHCP_BOUND_STATE      = 6,
 
 }dhcp_states;
-
 
 
 
@@ -290,16 +102,17 @@ int8_t ether_dhcp_send_discover(ethernet_handle_t *ethernet, uint32_t transactio
  * @param   *ethernet     : reference to the Ethernet handle
  * @param   *network_data : network_data from PHY
  * @param   *your_ip      : 'your IP' address
+ *
  * @param   *dhcp_options : DHCP options data
  * @retval  uint8_t       : Error = 0, Success = DHCP type
  ************************************************************/
-int8_t ether_dhcp_read(ethernet_handle_t *ethernet, uint8_t *network_data, uint8_t *your_ip, uint8_t *dhcp_options);
+int8_t ether_dhcp_read(ethernet_handle_t *ethernet, uint8_t *network_data, uint8_t *your_ip, uint32_t client_transac_id, uint8_t *dhcp_options);
 
 
 
 
 /************************************************************
- * @brief   Function read DHCP offer
+ * @brief   Function read DHCP offer (Depreciated)
  * @param   *ethernet     : reference to the Ethernet handle
  * @param   *network_data : network_data from PHY
  * @param   *your_ip      : 'your IP' address
