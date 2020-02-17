@@ -162,10 +162,60 @@ uint8_t ether_open(uint8_t *mac_address)
 
 
 
+typedef struct _net_tcp
+{
+    uint16_t source_port;
+    uint16_t destination_port;
+    uint32_t sequence_number;
+    uint32_t ack_number;
+    uint8_t  data_offset;
+    uint8_t  control_bits;
+    uint16_t window;
+    uint16_t checksum;
+    uint16_t urgent_pointer;//Zero
+    uint8_t  data;
 
-#define TEST  1
-#define TEST2 1
+}net_tcp_t;
 
+
+
+int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t destination_port, uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip)
+{
+
+    net_ip_t  *ip;
+    net_tcp_t *tcp;
+
+
+    ip  = (void*)&ethernet->ether_obj->data;
+
+    tcp = (void*)( (uint8_t*)ip + IP_HEADER_SIZE );
+
+
+    /* Fill TCP frame */
+    tcp->source_port      = htons(ethernet->source_port);
+    tcp->destination_port = htons(destination_port);
+
+    tcp->sequence_number  = htons(sequence_number);
+    tcp->ack_number       = htons(ack_number);
+
+    tcp->data_offset      = 40;
+
+    tcp->control_bits     = (2 & 0x3F);
+
+    tcp->window           = ntohs(1);
+
+    tcp->urgent_pointer   = 0;
+
+
+
+
+    return 0;
+}
+
+
+
+#define TEST  0
+#define TEST2 0
 
 
 
@@ -173,6 +223,10 @@ int main(void)
 {
 
     uint8_t data[ETHER_MTU_SIZE] = {0};
+
+    /* For UDP packets */
+    char udp_data[APP_BUFF_SIZE] = {0};
+
 
     uint8_t loop = 0;
 
@@ -210,6 +264,8 @@ int main(void)
     RED_LED = 0;
     waitMicrosecond(500000);
 
+    //ether_control(ethernet, ETHER_READ_NONBLOCK);
+
 
 
 #if TEST
@@ -238,12 +294,8 @@ int main(void)
     ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, gateway_ip, &sequence_no, \
                         ethernet->arp_table[0].mac_address, ethernet->host_mac);
 
-    /* Test UDP packets */
-    char udp_data[APP_BUFF_SIZE] = {0};
-
 
 #endif
-
 
     /* test DHCP */
     ether_dhcp_enable(ethernet, (uint8_t*)network_hardware, DHCP_INIT_STATE);
@@ -277,7 +329,7 @@ int main(void)
                 RED_LED = 0;
             }
 
-            switch(ntohs(ethernet->ether_obj->type))
+            switch(get_ether_protocol_type(ethernet))
             {
 
             case ETHER_ARP:
@@ -331,10 +383,10 @@ int main(void)
                             BLUE_LED = 1;
                             waitMicrosecond(50000);
                             BLUE_LED = 0;
-#if TEST
+#if 1
                             /* test only */
                             if(strncmp(udp_data, "on", 2) == 0)
-                                ether_send_udp(ethernet, gateway_ip, 8080, "switched on", 11);
+                                ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "switched on", 11);
 #endif
                         }
 
