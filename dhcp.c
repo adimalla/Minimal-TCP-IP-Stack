@@ -691,7 +691,6 @@ int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data, dhc
             break;
 
 
-
         case DHCP_READ_STATE:
 
             dhcp_type = ether_dhcp_read(ethernet, (uint8_t*)network_data, your_ip, dhcp_transac_id, dhcp_options);
@@ -717,6 +716,7 @@ int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data, dhc
                 dhcp_state = DHCP_ACK_STATE;
                 break;
             }
+            /* Handle DHCP offer or request not received conditions */
             else if(dhcp_request_flag == 1)
             {
                 dhcp_state = DHCP_REQUESTING_STATE;
@@ -731,7 +731,6 @@ int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data, dhc
             break;
 
 
-
         case DHCP_REQUESTING_STATE:
 
 
@@ -742,7 +741,6 @@ int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data, dhc
             dhcp_state = DHCP_READ_STATE;
 
             break;
-
 
 
         case DHCP_ACK_STATE:
@@ -760,7 +758,6 @@ int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data, dhc
             dhcp_state = DHCP_BOUND_STATE;
 
             break;
-
 
 
         case DHCP_BOUND_STATE:
