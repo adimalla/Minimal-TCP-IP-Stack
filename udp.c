@@ -157,6 +157,7 @@ static uint16_t get_udp_checksum(net_ip_t *ip, net_udp_t *udp, uint16_t data_len
 
         pseudo_protocol = ip->protocol;
 
+        /* create space for reserved bits */
         sum += ( (pseudo_protocol & 0xFF) << 8 );
 
         ether_sum_words(&sum, &udp->length, 2);
@@ -347,14 +348,14 @@ uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_
     else
     {
         /* Wait for data */
-        block_loop = 1;
+        block_loop = ethernet->status.mode_read_block;
 
-        while(block_loop)
+        do
         {
             if(ether_get_data(ethernet, network_data, network_data_length))
             {
                 /* Check if protocol is IPV4 */
-                if(ntohs(ethernet->ether_obj->type) == ETHER_IPV4)
+                if(get_ether_protocol_type(ethernet) == ETHER_IPV4)
                 {
 
                     /* Checks if UNICAST, validates checksum */
@@ -388,7 +389,7 @@ uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_
 
             }
 
-        }
+        }while(block_loop);
 
     }
 
@@ -496,7 +497,7 @@ int8_t ether_send_udp(ethernet_handle_t *ethernet, uint8_t *destination_ip, uint
 
 
         /* Fill IP frame */
-        ip_identfier = get_unique_identifier(ethernet, 2000);
+        ip_identfier = get_unique_id(ethernet, 2000);
 
         udp_packet_size = UDP_FRAME_SIZE + data_length;
 
@@ -507,7 +508,7 @@ int8_t ether_send_udp(ethernet_handle_t *ethernet, uint8_t *destination_ip, uint
         udp->checksum = get_udp_checksum(ip, udp, data_length);
 
 
-        /* Get mac address from ARP table */
+        /* Get MAC address from ARP table */
         ether_arp_resolve_address(ethernet, destination_mac, destination_ip);
 
         /* Fill Ethernet frame */
