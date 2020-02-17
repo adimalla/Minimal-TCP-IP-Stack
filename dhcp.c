@@ -733,7 +733,6 @@ int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data, dhc
 
         case DHCP_REQUESTING_STATE:
 
-
             ether_dhcp_send_request(ethernet, dhcp_transac_id, 1, server_ip, your_ip, lease_time);
 
             dhcp_request_flag = 1;
