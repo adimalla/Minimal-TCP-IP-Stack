@@ -197,6 +197,38 @@ int16_t get_random_port(ethernet_handle_t *ethernet, uint16_t lower_bound)
 
 
 
+/******************************************************
+ * @brief  Function to get random number above a bound
+ *         (32 bit)
+ * @param  *ethernet   : reference to Ethernet handle
+ * @param  lower_bound : lower bound value
+ * @retval uint32_t    : Error = -1, Success = 0
+ ******************************************************/
+int32_t get_random_port_l(ethernet_handle_t *ethernet, uint32_t lower_bound)
+{
+    int32_t func_retval    = 0;
+
+    uint32_t random_number = 0;
+
+    if(ethernet->ether_obj == NULL)
+    {
+        func_retval = -1;
+    }
+    else
+    {
+        srand(ethernet->ether_commands->random_gen_seed());
+
+        random_number  = ( rand() % (UINT32_MAX - lower_bound) ) + lower_bound;
+
+        func_retval = random_number;
+    }
+
+    return func_retval;
+}
+
+
+
+
 /**************************************************************************
  * @brief  constructor function to create Ethernet handle
  *         (Multiple exit points)
@@ -229,10 +261,11 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
 
         api_retval = set_ip_address(ethernet.host_ip, ip_address);
 
-        /* Set status to static */
+        /* Set default modes */
         ethernet.status.mode_static      = 1;
         ethernet.status.mode_dynamic     = 0;
         ethernet.status.mode_dhcp_init   = 0;
+        ethernet.status.mode_read_block  = ETHER_READ_BLOCK;
 
         /* Configure broadcast addresses */
         set_broadcast_address(ethernet.broadcast_mac, ETHER_MAC_SIZE);
@@ -280,6 +313,22 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
 
     return &ethernet;
 }
+
+
+
+uint8_t ether_control(ethernet_handle_t *ethernet, ether_control_t ether_mode)
+{
+
+    if(ether_mode == ETHER_READ_NONBLOCK)
+    {
+        ethernet->status.mode_read_block = ETHER_READ_NONBLOCK;
+    }
+
+
+    return 0;
+}
+
+
 
 
 
@@ -419,7 +468,28 @@ int8_t fill_ether_frame(ethernet_handle_t *ethernet, uint8_t *destination_mac_ad
 
 
 
+/***********************************************************
+ * @brief  Function get ethernet protocol type
+ * @param  *ethernet     : reference to the Ethernet handle
+ * @retval  ether_type_t : Error = 0, Success = 1
+ ***********************************************************/
+ether_type_t get_ether_protocol_type(ethernet_handle_t *ethernet)
+{
 
+    ether_type_t func_retval;
+
+    if(ethernet == NULL || ethernet->ether_obj ==  NULL)
+    {
+        func_retval = (ether_type_t)0;
+    }
+    else
+    {
+        func_retval = (ether_type_t)(ntohs(ethernet->ether_obj->type));
+    }
+
+    return func_retval;
+
+}
 
 
 
