@@ -155,8 +155,8 @@ int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_port, uin
     tcp->source_port      = htons(source_port);
     tcp->destination_port = htons(destination_port);
 
-    tcp->sequence_number  = htons(sequence_number);
-    tcp->ack_number       = htons(ack_number);
+    tcp->sequence_number  = htonl(sequence_number);
+    tcp->ack_number       = htonl(ack_number);
 
     /* Shift data offset to Big-Endian MSB (4 bits) */
     tcp->data_offset      = ((TCP_FRAME_SIZE + 12) >> 2) << 4;
