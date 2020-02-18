@@ -165,6 +165,7 @@ static uint16_t get_udp_checksum(net_ip_t *ip, net_udp_t *udp, uint16_t data_len
         /* UDP Fixed header checksum calculation, excluding checksum field */
         ether_sum_words(&sum, udp, UDP_FRAME_SIZE - 2);
 
+        /* Add UPD data sum */
         ether_sum_words(&sum, &udp->data, data_length);
 
         func_retval = ether_get_checksum(sum);
