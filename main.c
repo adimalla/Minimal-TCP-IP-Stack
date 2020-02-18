@@ -268,6 +268,7 @@ int main(void)
 
 #endif
 
+    uint16_t ip_src_port;
 
     /* State machine */
 
@@ -346,13 +347,23 @@ int main(void)
                                 ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "switched on", 11);
 
                                 /* trigger tcp test */
-                                ether_send_tcp_syn(ethernet, get_random_port(ethernet, 6000), 7788, 0, 0, ethernet->gateway_ip);
+
+                                ip_src_port = get_random_port(ethernet, 6534);
+
+                                ether_send_tcp_syn(ethernet, ip_src_port, 7788, 0, 0, ethernet->gateway_ip);
+
 
                             }
 #endif
                         }
 
                         break;
+
+
+                    case IP_TCP:
+
+                        break;
+
 
                     default:
 
