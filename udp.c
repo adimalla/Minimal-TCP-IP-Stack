@@ -139,7 +139,9 @@ static uint8_t validate_udp_checksum(net_ip_t *ip, net_udp_t *udp)
 static uint16_t get_udp_checksum(net_ip_t *ip, net_udp_t *udp, uint16_t data_length)
 {
 
-    uint16_t func_retval = 0;
+    uint16_t func_retval     = 0;
+    uint32_t sum             = 0;
+    uint16_t pseudo_protocol = 0;
 
     if(ip == NULL || udp == NULL)
     {
@@ -147,8 +149,6 @@ static uint16_t get_udp_checksum(net_ip_t *ip, net_udp_t *udp, uint16_t data_len
     }
     else
     {
-        uint32_t sum = 0;
-        uint16_t pseudo_protocol = 0;
 
         /* UDP Pseudo Header checksum calculation */
         sum = 0;
@@ -300,7 +300,7 @@ int8_t ether_send_udp_raw(ethernet_handle_t *ethernet, ether_source_t *source_ad
         }
 
 
-        /* Fill IP frame */
+        /* Fill IP frame before UDP checksum calculation */
         udp_packet_size = UDP_FRAME_SIZE + data_length;
 
         fill_ip_frame(ip, &source_addr->identifier, destination_ip, source_addr->source_ip, IP_UDP, udp_packet_size);

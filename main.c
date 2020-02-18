@@ -161,7 +161,9 @@ uint8_t ether_open(uint8_t *mac_address)
 }
 
 
+#define TCP_FRAME_SIZE 20
 
+/**/
 typedef struct _net_tcp
 {
     uint16_t source_port;
@@ -172,18 +174,113 @@ typedef struct _net_tcp
     uint8_t  control_bits;
     uint16_t window;
     uint16_t checksum;
-    uint16_t urgent_pointer;//Zero
+    uint16_t urgent_pointer;
     uint8_t  data;
 
 }net_tcp_t;
 
 
 
-int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t destination_port, uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip)
+typedef enum _tcp_option_kinds
+{
+    TCP_NO_OPERATION     = 1,
+    TCP_MAX_SEGMENT_SIZE = 2,
+    TCP_SACK_PERMITTED   = 4,
+    TCP_WINDOW_SCALING   = 3,
+    TCP_TIMESTAMPS       = 8,
+
+}tcp_opts_kind;
+
+
+typedef struct tcp_max_segment_size
+{
+    uint8_t  option_kind;
+    uint8_t  length;
+    uint16_t value;
+
+}tcp_mss_t;
+
+
+typedef struct tcp_sack_permitted_size
+{
+    uint8_t option_kind;
+    uint8_t length;
+
+}tcp_sack_t;
+
+
+typedef struct tcp_no_operation
+{
+    uint8_t option_kind;
+
+}tcp_nop_t;
+
+
+
+typedef struct tcp_window_scaling
+{
+    uint8_t option_kind;
+    uint8_t length;
+    uint8_t value;
+
+}tcp_win_scale_t;
+
+
+typedef struct _tcp_syn_options
+{
+    tcp_mss_t       mss;
+    tcp_sack_t      sack;
+    tcp_nop_t       nop;
+    tcp_nop_t       nop1;
+    tcp_nop_t       nop2;
+    tcp_win_scale_t window_scale;
+
+}tcp_syn_opts_t;
+
+
+uint16_t get_tcp_checksum(net_ip_t *ip, net_tcp_t *tcp, uint16_t data_length)
+{
+    uint16_t func_retval = 0;
+
+    uint32_t sum             = 0;
+    uint16_t pseudo_protocol = 0;
+    uint16_t tcp_length      = 0;
+
+
+    /* TCP Pseudo Header checksum calculation */
+    sum = 0;
+
+    ether_sum_words(&sum, ip->source_ip, 8);
+
+    pseudo_protocol = ip->protocol;
+
+    /* create space for reserved bits */
+    sum += ( (pseudo_protocol & 0xFF) << 8 );
+
+    tcp_length = htons(TCP_FRAME_SIZE + data_length);
+
+    sum += tcp_length;
+
+    /* TCP header checksum */
+    ether_sum_words(&sum, tcp, 12);
+
+    //sum += tcp->sequence_number;
+    //sum += tcp->ack_number;
+
+    ether_sum_words(&sum, &tcp->data_offset, 4);
+
+
+    return func_retval;
+}
+
+
+int8_t ether_send_tcp_syn_raw(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
+                              uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip)
 {
 
     net_ip_t  *ip;
     net_tcp_t *tcp;
+    tcp_syn_opts_t *syn_option;
 
 
     ip  = (void*)&ethernet->ether_obj->data;
@@ -192,22 +289,91 @@ int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t destination_port
 
 
     /* Fill TCP frame */
-    tcp->source_port      = htons(ethernet->source_port);
+    tcp->source_port      = htons(source_port);
     tcp->destination_port = htons(destination_port);
 
     tcp->sequence_number  = htons(sequence_number);
     tcp->ack_number       = htons(ack_number);
 
-    tcp->data_offset      = 40;
-
-    tcp->control_bits     = (2 & 0x3F);
+    tcp->data_offset      = ((20 + 12) >> 2) << 4;
+    tcp->control_bits     = 2;
 
     tcp->window           = ntohs(1);
-
     tcp->urgent_pointer   = 0;
 
+    /* Configure TCP options */
+    syn_option = (void*)&tcp->data;
+
+    syn_option->mss.option_kind = TCP_MAX_SEGMENT_SIZE;
+    syn_option->mss.length      = 4;
+    syn_option->mss.value       = ntohs(ETHER_MTU_SIZE);
+
+    syn_option->sack.option_kind = TCP_SACK_PERMITTED;
+    syn_option->sack.length      = 2;
+
+    syn_option->nop.option_kind = TCP_NO_OPERATION;
+    syn_option->nop1.option_kind = TCP_NO_OPERATION;
+    syn_option->nop2.option_kind = TCP_NO_OPERATION;
+
+    syn_option->window_scale.option_kind = TCP_WINDOW_SCALING;
+    syn_option->window_scale.length      = 3;
+    syn_option->window_scale.value       = 7;
 
 
+    /* fill IP frame before TCP checksum calculation */
+
+    uint16_t ip_identifier = get_unique_id(ethernet, 2000);
+
+    fill_ip_frame(ip, &ip_identifier, destination_ip, ethernet->host_ip, IP_TCP, 32);
+
+
+    /* checksum calculations */
+
+    uint32_t sum = 0;
+    uint16_t pseudo_protocol = 0;
+    uint16_t tcp_length;
+
+    /* TCP Pseudo Header checksum calculation */
+    sum = 0;
+
+    ether_sum_words(&sum, ip->source_ip, 8);
+
+    pseudo_protocol = ip->protocol;
+
+    /* create space for reserved bits */
+    sum += ( (pseudo_protocol & 0xFF) << 8 );
+
+    /* add TCP total length */
+    tcp_length = htons(32);
+
+    sum += tcp_length;
+
+    /* TCP header checksum */
+    ether_sum_words(&sum, tcp, 12);
+
+    //sum += tcp->sequence_number;
+    //sum += tcp->ack_number;
+
+    ether_sum_words(&sum, &tcp->data_offset, 4);
+
+    /* TCP options to checksum */
+    ether_sum_words(&sum, &tcp->data, 12);
+
+    tcp->checksum = ether_get_checksum(sum);
+
+
+    /* Get MAC address from ARP table */
+
+    /* Ethernet Frame related variables */
+    uint8_t  destination_mac[ETHER_MAC_SIZE] = {0};
+
+    ether_arp_resolve_address(ethernet, destination_mac, destination_ip);
+
+    /* fill Ether frame */
+    fill_ether_frame(ethernet, destination_mac, ethernet->host_mac, ETHER_IPV4);
+
+
+    ether_send_data(ethernet,(uint8_t*)ethernet->ether_obj, ETHER_FRAME_SIZE + htons(ip->total_length));
 
     return 0;
 }
@@ -386,7 +552,13 @@ int main(void)
 #if 1
                             /* test only */
                             if(strncmp(udp_data, "on", 2) == 0)
+                            {
                                 ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "switched on", 11);
+
+                                /* trigger tcp test */
+                                ether_send_tcp_syn_raw(ethernet, get_random_port(ethernet, 6000), 7788, 0, 0, ethernet->gateway_ip);
+
+                            }
 #endif
                         }
 
