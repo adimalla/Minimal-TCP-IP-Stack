@@ -90,8 +90,8 @@ typedef enum _tcp_option_kinds
 {
     TCP_NO_OPERATION     = 1,
     TCP_MAX_SEGMENT_SIZE = 2,
-    TCP_SACK_PERMITTED   = 4,
     TCP_WINDOW_SCALING   = 3,
+    TCP_SACK_PERMITTED   = 4,
     TCP_TIMESTAMPS       = 8,
 
 }tcp_opts_kind;
@@ -161,6 +161,9 @@ int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_port, uin
                               uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip);
 
 
+
+uint8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
+                           uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip);
 
 
 #endif /* TCP_H_ */
