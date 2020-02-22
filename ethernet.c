@@ -265,7 +265,7 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
         ethernet.status.mode_static      = 1;
         ethernet.status.mode_dynamic     = 0;
         ethernet.status.mode_dhcp_init   = 0;
-        ethernet.status.mode_read_block  = ETHER_READ_BLOCK;
+        ethernet.status.mode_read_blocking  = ETHER_READ_BLOCK;
 
         /* Configure broadcast addresses */
         set_broadcast_address(ethernet.broadcast_mac, ETHER_MAC_SIZE);
@@ -321,7 +321,7 @@ uint8_t ether_control(ethernet_handle_t *ethernet, ether_control_t ether_mode)
 
     if(ether_mode == ETHER_READ_NONBLOCK)
     {
-        ethernet->status.mode_read_block = ETHER_READ_NONBLOCK;
+        ethernet->status.mode_read_blocking = ETHER_READ_NONBLOCK;
     }
 
 

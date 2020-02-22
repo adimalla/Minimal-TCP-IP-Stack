@@ -349,7 +349,7 @@ uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_
     else
     {
         /* Wait for data */
-        block_loop = ethernet->status.mode_read_block;
+        block_loop = ethernet->status.mode_read_blocking;
 
         do
         {
