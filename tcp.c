@@ -240,7 +240,7 @@ int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_port, uin
 
 
 tcp_cl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  uint32_t *sequence_number, uint32_t *ack_number,
-                                 uint16_t server_src_port, uint16_t client_src_port, uint8_t *sender_src_ip)
+                                        uint16_t server_src_port, uint16_t client_src_port, uint8_t *sender_src_ip)
 {
 
     tcp_cl_flags_t func_retval =  (tcp_cl_flags_t)0;
@@ -269,7 +269,7 @@ tcp_cl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  uint32_t *
             *sequence_number = ntohl(tcp->sequence_number);
             *ack_number      = ntohl(tcp->ack_number);
 
-           func_retval = (tcp_cl_flags_t)tcp->control_bits;
+            func_retval = (tcp_cl_flags_t)tcp->control_bits;
         }
 
     }
@@ -373,12 +373,66 @@ uint16_t ether_get_tcp_psh_ack(ethernet_handle_t *ethernet, char *tcp_data, uint
 
 
 
-int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, char *tcp_data, uint16_t data_buffer_length)
+int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
+                              uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip, char *tcp_data, uint16_t data_length)
 {
     int8_t func_retval = 0;
 
+    net_ip_t  *ip;
+    net_tcp_t *tcp;
+
+    uint8_t *data_copy;
+
+    uint16_t index = 0;
+
+    /* Ethernet Frame related variables */
+    uint8_t  destination_mac[ETHER_MAC_SIZE] = {0};
+
+    ip  = (void*)&ethernet->ether_obj->data;
+
+    tcp = (void*)( (uint8_t*)ip + IP_HEADER_SIZE );
 
 
+    /* Fill TCP frame */
+    tcp->source_port      = htons(source_port);
+    tcp->destination_port = htons(destination_port);
+
+    tcp->sequence_number  = htonl(sequence_number);
+    tcp->ack_number       = htonl(ack_number);
+
+    /* Shift data offset to Big-Endian MSB (4 bits) */
+    tcp->data_offset      = ((TCP_FRAME_SIZE) >> 2) << 4;
+    tcp->control_bits     = (uint8_t)(TCP_PSH_ACK);
+
+    tcp->window           = ntohs(1);
+    tcp->urgent_pointer   = 0;
+
+    /* Copy TCP data */
+    data_copy = &tcp->data;
+
+    for(index = 0; index < data_length; index++)
+    {
+        data_copy[index] = (uint8_t)(tcp_data[index]);
+    }
+
+
+    /* fill IP frame before TCP checksum calculation */
+    fill_ip_frame(ip, &ethernet->ip_identifier, destination_ip, ethernet->host_ip, IP_TCP, TCP_FRAME_SIZE + 12);
+
+    /*Get TCP checksum */
+    tcp->checksum = get_tcp_checksum(ip, tcp, data_length);
+
+
+    /* Get MAC address from ARP table */
+    ether_arp_resolve_address(ethernet, destination_mac, destination_ip);
+
+
+    /* Fill Ethernet frame */
+    fill_ether_frame(ethernet, destination_mac, ethernet->host_mac, ETHER_IPV4);
+
+
+    /*Send TCP data */
+    ether_send_data(ethernet,(uint8_t*)ethernet->ether_obj, ETHER_FRAME_SIZE + htons(ip->total_length));
 
 
     return func_retval;
