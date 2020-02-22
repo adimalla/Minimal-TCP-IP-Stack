@@ -329,7 +329,7 @@ uint16_t ether_get_tcp_syn_ack(ethernet_handle_t *ethernet, uint32_t *sequence_n
 
 
 uint8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
-                           uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip)
+                           uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip, tcp_cl_flags_t ack_type)
 {
 
     net_ip_t  *ip;
@@ -354,7 +354,7 @@ uint8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_port, ui
 
     /* Shift data offset to Big-Endian MSB (4 bits) */
     tcp->data_offset      = ((TCP_FRAME_SIZE) >> 2) << 4;
-    tcp->control_bits     = TCP_ACK;
+    tcp->control_bits     = (uint8_t)ack_type;
 
     tcp->window           = ntohs(1);
     tcp->urgent_pointer   = 0;
@@ -387,63 +387,6 @@ uint8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_port, ui
 
 
 
-
-uint8_t ether_send_tcp_fin_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
-                           uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip)
-{
-
-    net_ip_t  *ip;
-    net_tcp_t *tcp;
-
-    uint16_t ip_identifier = 0;
-
-    /* Ethernet Frame related variables */
-    uint8_t  destination_mac[ETHER_MAC_SIZE] = {0};
-
-    ip  = (void*)&ethernet->ether_obj->data;
-
-    tcp = (void*)( (uint8_t*)ip + IP_HEADER_SIZE );
-
-
-    /* Fill TCP frame */
-    tcp->source_port      = htons(source_port);
-    tcp->destination_port = htons(destination_port);
-
-    tcp->sequence_number  = htonl(sequence_number);
-    tcp->ack_number       = htonl(ack_number);
-
-    /* Shift data offset to Big-Endian MSB (4 bits) */
-    tcp->data_offset      = ((TCP_FRAME_SIZE) >> 2) << 4;
-    tcp->control_bits     = TCP_FIN_ACK;
-
-    tcp->window           = ntohs(1);
-    tcp->urgent_pointer   = 0;
-
-
-    /* fill IP frame before TCP checksum calculation */
-    ip_identifier = get_unique_id(ethernet, 2000);
-
-    fill_ip_frame(ip, &ip_identifier, destination_ip, ethernet->host_ip, IP_TCP, TCP_FRAME_SIZE);
-
-
-    /*Get TCP checksum */
-    tcp->checksum = get_tcp_checksum(ip, tcp, 0);
-
-
-    /* Get MAC address from ARP table */
-    ether_arp_resolve_address(ethernet, destination_mac, destination_ip);
-
-
-    /* Fill Ethernet frame */
-    fill_ether_frame(ethernet, destination_mac, ethernet->host_mac, ETHER_IPV4);
-
-
-    /*Send TCP data */
-    ether_send_data(ethernet,(uint8_t*)ethernet->ether_obj, ETHER_FRAME_SIZE + htons(ip->total_length));
-
-
-    return 0;
-}
 
 
 

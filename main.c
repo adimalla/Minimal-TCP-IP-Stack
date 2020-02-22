@@ -385,7 +385,7 @@ int main(void)
                             /* Increment the sequence number and pass it as acknowledgment number*/
                             seq_num += 1;
 
-                            ether_send_tcp_ack(ethernet, tcp_src_port, tcp_dest_port, ack_num, seq_num, ethernet->gateway_ip);
+                            ether_send_tcp_ack(ethernet, tcp_src_port, tcp_dest_port, ack_num, seq_num, ethernet->gateway_ip, TCP_ACK);
 
                             break;
 
@@ -402,7 +402,7 @@ int main(void)
                             /* Increment the sequence number and pass it as acknowledgment number*/
                             seq_num += 1;
 
-                            ether_send_tcp_fin_ack(ethernet, tcp_src_port, tcp_dest_port, ack_num, seq_num, ethernet->gateway_ip);
+                            ether_send_tcp_ack(ethernet, tcp_src_port, tcp_dest_port, ack_num, seq_num, ethernet->gateway_ip, TCP_FIN_ACK);
 
                             break;
 
