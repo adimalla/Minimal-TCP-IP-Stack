@@ -301,8 +301,9 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
 
         /* Functions called after linking  */
 
-        /* configure source port */
-        ethernet.source_port = get_random_port(&ethernet, 2000);
+        /* configure sources */
+        ethernet.ip_identifier = get_unique_id(&ethernet, 2000);
+        ethernet.source_port   = get_random_port(&ethernet, 2000);
 
 
         /* Initialize Ethernet */
