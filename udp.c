@@ -131,6 +131,7 @@ static uint8_t validate_udp_checksum(net_ip_t *ip, net_udp_t *udp)
 
 /**************************************************************
  * @brief  Function get calculate UDP checksum
+ *         (UDP Headers + UDP data)
  * @param  *ip         : Reference to IP frame structure
  * @param  *udp        : Reference to UDP frame structure
  * @param  data_length : Length of UDP data
