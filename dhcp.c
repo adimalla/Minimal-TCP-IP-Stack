@@ -52,7 +52,7 @@
 #include "udp.h"
 #include "network_utilities.h"
 #include "dhcp.h"
-
+#include "arp.h"
 
 
 
@@ -766,6 +766,16 @@ int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data, dhc
             ethernet->status.mode_dynamic    = 1;
 
             dhcp_loop =  0;
+
+            ether_send_arp_req(ethernet, ethernet->host_ip, ethernet->gateway_ip);
+
+            if(ether_is_arp(ethernet, (uint8_t*)network_data, 128))
+            {
+
+                ether_handle_arp_resp_req(ethernet);
+
+            }
+
 
             break;
 

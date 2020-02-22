@@ -271,13 +271,14 @@ int main(void)
     uint16_t tcp_src_port =  0;
     uint16_t tcp_dest_port = 0;
 
-    /* get random port number */
-    tcp_src_port  = get_random_port(ethernet, 6534);
+
 
     uint32_t seq_num = 0;
     uint32_t ack_num = 0;
 
     uint8_t source_ip[4] = {0};
+
+    tcp_cl_flags_t tcp_ack_type;
 
     tcp_dest_port = 7788;
 
@@ -358,8 +359,10 @@ int main(void)
                                 ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "switched on", 11);
 
                                 /* trigger tcp test */
+                                /* get random port number */
+                                tcp_src_port  = get_random_port(ethernet, 6534);
 
-                                ether_send_tcp_syn(ethernet, tcp_src_port, tcp_dest_port, 1, 0, ethernet->gateway_ip);
+                                ether_send_tcp_syn(ethernet, tcp_src_port, tcp_dest_port, 0, 0, ethernet->gateway_ip);
 
 
                             }
@@ -371,8 +374,15 @@ int main(void)
 
                     case IP_TCP:
 
-                        ether_get_tcp_syn_ack(ethernet, &seq_num, &ack_num, tcp_dest_port, source_ip);
+                        tcp_ack_type = ether_get_tcp_server_ack(ethernet, &seq_num, &ack_num, tcp_dest_port,
+                                                                tcp_src_port, ethernet->gateway_ip);
 
+                        switch(tcp_ack_type)
+                        {
+
+                        case TCP_SYN | TCP_ACK:
+
+                        /* Increment the sequence number and pass it as acknowledgment number*/
                         seq_num += 1;
 
                         ether_send_tcp_ack(ethernet, tcp_src_port, tcp_dest_port, ack_num, seq_num, ethernet->gateway_ip);
@@ -380,11 +390,39 @@ int main(void)
                         break;
 
 
-                    default:
+                        case TCP_PSH | TCP_ACK:
+
+                        /* Read TCP data */
 
                         break;
 
+
+                        case TCP_FIN | TCP_ACK:
+
+                        /* Increment the sequence number and pass it as acknowledgment number*/
+                        seq_num += 1;
+
+                        ether_send_tcp_ack(ethernet, tcp_src_port, tcp_dest_port, ack_num, seq_num, ethernet->gateway_ip);
+
+
+                        break;
+
+
+                        default:
+
+                            break;
+
+                        }
+
+                        break;
+
+
+                        default:
+
+                            break;
+
                     }
+
                 }
                 if(retval == 2)
                 {

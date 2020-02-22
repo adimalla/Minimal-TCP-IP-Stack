@@ -63,14 +63,7 @@
 /******************************************************************************/
 
 
-typedef enum _tcp_control_flags
-{
 
-    TCP_SYN = 0x02,
-    TCP_ACK = 0x10,
-
-
-}tcp_cl_flags_t;
 
 
 
@@ -250,7 +243,43 @@ int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_port, uin
 
 
 
+tcp_cl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  uint32_t *sequence_number, uint32_t *ack_number,
+                                 uint16_t server_src_port, uint16_t client_src_port, uint8_t *sender_src_ip)
+{
 
+    tcp_cl_flags_t func_retval =  (tcp_cl_flags_t)0;
+
+    net_ip_t  *ip;
+    net_tcp_t *tcp;
+
+    uint8_t validate = 0;
+
+    uint16_t sender_src_port  = 0;
+    uint16_t sender_dest_port = 0;
+
+    ip  = (void*)&ethernet->ether_obj->data;
+
+    tcp = (void*)( (uint8_t*)ip + IP_HEADER_SIZE );
+
+    validate = validate_tcp_checksum(ip, tcp);
+
+    if(validate)
+    {
+        sender_src_port  = ntohs(tcp->source_port);
+        sender_dest_port = ntohs(tcp->destination_port);
+
+        if(server_src_port == sender_src_port && client_src_port == sender_dest_port)
+        {
+            *sequence_number = ntohl(tcp->sequence_number);
+            *ack_number      = ntohl(tcp->ack_number);
+
+           func_retval = (tcp_cl_flags_t)tcp->control_bits;
+        }
+
+    }
+
+    return func_retval;
+}
 
 
 
@@ -258,7 +287,7 @@ uint16_t ether_get_tcp_syn_ack(ethernet_handle_t *ethernet, uint32_t *sequence_n
                                uint16_t source_port, uint8_t *source_ip)
 {
 
-    uint16_t func_retval;
+    uint16_t func_retval = 0;
 
     net_ip_t  *ip;
     net_tcp_t *tcp;
@@ -280,12 +309,10 @@ uint16_t ether_get_tcp_syn_ack(ethernet_handle_t *ethernet, uint32_t *sequence_n
     {
         server_src_port = ntohs(tcp->source_port);
 
-        if(source_port == server_src_port)
+        if(source_port == server_src_port && tcp->control_bits == (TCP_SYN | TCP_ACK))
         {
             *sequence_number = ntohl(tcp->sequence_number);
             *ack_number      = ntohl(tcp->ack_number);
-
-
             func_retval = ntohs(ip->total_length + ETHER_FRAME_SIZE);
 
         }
