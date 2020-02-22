@@ -283,49 +283,6 @@ tcp_cl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  uint32_t *
 
 
 
-uint16_t ether_get_tcp_syn_ack(ethernet_handle_t *ethernet, uint32_t *sequence_number, uint32_t *ack_number,
-                               uint16_t source_port, uint8_t *source_ip)
-{
-
-    uint16_t func_retval = 0;
-
-    net_ip_t  *ip;
-    net_tcp_t *tcp;
-
-    uint8_t validate = 0;
-
-    uint16_t server_src_port = 0;
-
-    /* Ethernet Frame related variables */
-
-    ip  = (void*)&ethernet->ether_obj->data;
-
-    tcp = (void*)( (uint8_t*)ip + IP_HEADER_SIZE );
-
-
-    validate = validate_tcp_checksum(ip, tcp);
-
-    if(validate)
-    {
-        server_src_port = ntohs(tcp->source_port);
-
-        if(source_port == server_src_port && tcp->control_bits == (TCP_SYN | TCP_ACK))
-        {
-            *sequence_number = ntohl(tcp->sequence_number);
-            *ack_number      = ntohl(tcp->ack_number);
-            func_retval = ntohs(ip->total_length + ETHER_FRAME_SIZE);
-
-        }
-    }
-
-
-    return func_retval;
-}
-
-
-
-
-
 
 
 uint8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
@@ -388,5 +345,47 @@ uint8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_port, ui
 
 
 
+uint16_t ether_get_tcp_psh_ack(ethernet_handle_t *ethernet, char *tcp_data, uint16_t data_buffer_length)
+{
+    uint16_t func_retval = 0;
 
+
+    net_ip_t  *ip;
+    net_tcp_t *tcp;
+
+    uint16_t tcp_packet_length = 0;
+    uint16_t tcp_data_length   = 0;
+
+    ip  = (void*)&ethernet->ether_obj->data;
+
+    tcp = (void*)( (uint8_t*)ip + IP_HEADER_SIZE );
+
+    tcp_packet_length = ( ntohs(ip->total_length) - IP_HEADER_SIZE );
+
+    tcp_data_length = abs(tcp_packet_length - TCP_FRAME_SIZE);
+
+    if(data_buffer_length > tcp_data_length)
+        data_buffer_length = tcp_data_length;
+
+
+    memcpy(tcp_data, &tcp->data, data_buffer_length);
+
+
+    func_retval = tcp_data_length;
+
+    return func_retval;
+}
+
+
+
+
+
+
+uint16_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, char *tcp_data, uint16_t data_buffer_length)
+{
+
+
+
+
+}
 

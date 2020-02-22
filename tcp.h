@@ -181,17 +181,17 @@ tcp_cl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  uint32_t *
                                  uint16_t server_src_port, uint16_t client_src_port, uint8_t *sender_src_ip);
 
 
-uint16_t ether_get_tcp_syn_ack(ethernet_handle_t *ethernet, uint32_t *sequence_number, uint32_t *ack_number,
-                              uint16_t source_port, uint8_t *source_ip);
-
 
 
 uint8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
                            uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip, tcp_cl_flags_t ack_type);
 
 
-uint8_t ether_send_tcp_fin_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
-                           uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip);
+
+
+uint16_t ether_get_tcp_psh_ack(ethernet_handle_t *ethernet, char *tcp_data, uint16_t data_buffer_length);
+
+
 
 
 #endif /* TCP_H_ */
