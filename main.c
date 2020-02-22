@@ -278,6 +278,10 @@ int main(void)
 
     uint8_t source_ip[4] = {0};
 
+    char tcp_data[40] = {0};
+
+    uint16_t tcp_data_length = 0;
+
     tcp_cl_flags_t tcp_ack_type;
 
     tcp_dest_port = 7788;
@@ -366,6 +370,10 @@ int main(void)
 
 
                             }
+                            if(strncmp(udp_data, "off", 2) == 0)
+                            {
+
+                            }
 #endif
                         }
 
@@ -394,6 +402,14 @@ int main(void)
 
                             /* Read TCP data */
 
+                            tcp_data_length = 0;
+
+                            tcp_data_length = ether_get_tcp_psh_ack(ethernet, tcp_data, 40);
+
+                            seq_num += tcp_data_length;
+
+                            ether_send_tcp_ack(ethernet, tcp_src_port, tcp_dest_port, ack_num, seq_num, ethernet->gateway_ip, TCP_ACK);
+
                             break;
 
 
@@ -409,7 +425,7 @@ int main(void)
 
                         case TCP_ACK:
 
-
+                            /* Do nothing */
 
                             break;
 
