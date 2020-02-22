@@ -63,13 +63,14 @@
 
 
 
-/****************************************************************
- * @brief  Function to get UDP data inside network state machine
- * @param  *ethernet        : Reference to the Ethernet handle
- * @param  *data            : UDP data
- * @param  data_length      : Length of UDP data
- * @retval uint8_t          : Error = 0, Success = 1
- ****************************************************************/
+/**************************************************************
+ * @brief  Function get calculate UDP checksum
+ *         (UDP Headers + UDP data)
+ * @param  *ip         : Reference to IP frame structure
+ * @param  *udp        : Reference to UDP frame structure
+ * @param  data_length : Length of UDP data
+ * @retval uint8_t     : Error = 0, Success = checksum value
+ **************************************************************/
 uint8_t ether_get_udp_data(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data_length);
 
 

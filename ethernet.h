@@ -136,12 +136,13 @@ typedef struct _ethernet_operations
 /* Ethernet status fields */
 typedef struct _network_status
 {
-    uint8_t mode_static      : 1;
-    uint8_t mode_dynamic     : 1;
-    uint8_t mode_dhcp_init   : 1;
-    uint8_t mode_dhcp_bound  : 1;
-    uint8_t mode_read_block  : 1;
-    uint8_t reserved         : 3;
+    uint8_t mode_static         : 1;
+    uint8_t mode_dynamic        : 1;
+    uint8_t mode_dhcp_init      : 1;
+    uint8_t mode_dhcp_bound     : 1;
+    uint8_t mode_read_blocking  : 1;
+    uint8_t net_app_data_rdy    : 1;
+    uint8_t reserved            : 2;
 
 }net_status_t;
 
@@ -155,8 +156,9 @@ struct _ethernet_handle
     ether_operations_t *ether_commands;            /*!< Network Operations                              */
     arp_table_t        arp_table[ARP_TABLE_SIZE];  /*!< ARP Table                                       */
 
+    uint16_t ip_identifier;                   /*!< */
     uint16_t source_port;                     /*!< Ethernet source port, gets random source port value  */
-    uint8_t  *application_data;               /*!< Network application data, allocated by create handle */
+    uint8_t  *net_application_data;           /*!< Network application data, allocated by create handle */
     uint8_t  host_mac[ETHER_MAC_SIZE];        /*!< Host MAC address, given by handle                    */
     uint8_t  host_ip[ETHER_IPV4_SIZE];        /*!< Host IP address, static or dynamic                   */
     uint8_t  broadcast_mac[ETHER_MAC_SIZE];   /*!< Broadcast MAC address                                */

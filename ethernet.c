@@ -265,7 +265,7 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
         ethernet.status.mode_static      = 1;
         ethernet.status.mode_dynamic     = 0;
         ethernet.status.mode_dhcp_init   = 0;
-        ethernet.status.mode_read_block  = ETHER_READ_BLOCK;
+        ethernet.status.mode_read_blocking  = ETHER_READ_BLOCK;
 
         /* Configure broadcast addresses */
         set_broadcast_address(ethernet.broadcast_mac, ETHER_MAC_SIZE);
@@ -278,7 +278,7 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
 
 
         /* Configure application buffer */
-        ethernet.application_data = application_buffer;
+        ethernet.net_application_data = application_buffer;
 
         /* Configure network operations and weak linking of default functions */
         ethernet.ether_commands = ether_ops;
@@ -301,8 +301,9 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
 
         /* Functions called after linking  */
 
-        /* configure source port */
-        ethernet.source_port = get_random_port(&ethernet, 2000);
+        /* configure sources */
+        ethernet.ip_identifier = get_unique_id(&ethernet, 2000);
+        ethernet.source_port   = get_random_port(&ethernet, 2000);
 
 
         /* Initialize Ethernet */
@@ -321,7 +322,7 @@ uint8_t ether_control(ethernet_handle_t *ethernet, ether_control_t ether_mode)
 
     if(ether_mode == ETHER_READ_NONBLOCK)
     {
-        ethernet->status.mode_read_block = ETHER_READ_NONBLOCK;
+        ethernet->status.mode_read_blocking = ETHER_READ_NONBLOCK;
     }
 
 
