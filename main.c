@@ -360,7 +360,7 @@ int main(void)
                             /* test only */
                             if(strncmp(udp_data, "on", 2) == 0)
                             {
-                                ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "switched on", 11);
+                                //ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "switched on", 11);
 
                                 /* trigger tcp test */
                                 /* get random port number */
@@ -372,6 +372,11 @@ int main(void)
                             }
                             if(strncmp(udp_data, "off", 2) == 0)
                             {
+
+                                //ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "switched off", 12);
+
+                                ether_send_tcp_psh_ack(ethernet, tcp_src_port, tcp_dest_port, ack_num, seq_num,
+                                                       ethernet->gateway_ip, "switched off", 12);
 
                             }
 #endif
