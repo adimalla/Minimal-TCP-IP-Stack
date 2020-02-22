@@ -156,7 +156,7 @@ struct _ethernet_handle
     arp_table_t        arp_table[ARP_TABLE_SIZE];  /*!< ARP Table                                       */
 
     uint16_t source_port;                     /*!< Ethernet source port, gets random source port value  */
-    uint8_t  *application_data;               /*!< Network application data, allocated by create handle */
+    uint8_t  *net_application_data;           /*!< Network application data, allocated by create handle */
     uint8_t  host_mac[ETHER_MAC_SIZE];        /*!< Host MAC address, given by handle                    */
     uint8_t  host_ip[ETHER_IPV4_SIZE];        /*!< Host IP address, static or dynamic                   */
     uint8_t  broadcast_mac[ETHER_MAC_SIZE];   /*!< Broadcast MAC address                                */

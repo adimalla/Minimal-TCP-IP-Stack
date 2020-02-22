@@ -278,7 +278,7 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
 
 
         /* Configure application buffer */
-        ethernet.application_data = application_buffer;
+        ethernet.net_application_data = application_buffer;
 
         /* Configure network operations and weak linking of default functions */
         ethernet.ether_commands = ether_ops;
