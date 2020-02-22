@@ -172,8 +172,6 @@ int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_port, uin
     net_tcp_t *tcp;
     tcp_syn_opts_t *syn_option;
 
-    uint16_t ip_identifier = 0;
-
     /* Ethernet Frame related variables */
     uint8_t  destination_mac[ETHER_MAC_SIZE] = {0};
 
@@ -216,9 +214,7 @@ int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_port, uin
 
 
     /* fill IP frame before TCP checksum calculation */
-    ip_identifier = get_unique_id(ethernet, 2000);
-
-    fill_ip_frame(ip, &ip_identifier, destination_ip, ethernet->host_ip, IP_TCP, TCP_FRAME_SIZE + 12);
+    fill_ip_frame(ip, &ethernet->ip_identifier, destination_ip, ethernet->host_ip, IP_TCP, TCP_FRAME_SIZE + 12);
 
     /*Get TCP checksum */
     tcp->checksum = get_tcp_checksum(ip, tcp, 12);
@@ -292,8 +288,6 @@ uint8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_port, ui
     net_ip_t  *ip;
     net_tcp_t *tcp;
 
-    uint16_t ip_identifier = 0;
-
     /* Ethernet Frame related variables */
     uint8_t  destination_mac[ETHER_MAC_SIZE] = {0};
 
@@ -317,10 +311,8 @@ uint8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_port, ui
     tcp->urgent_pointer   = 0;
 
 
-    /* fill IP frame before TCP checksum calculation */
-    ip_identifier = get_unique_id(ethernet, 2000);
-
-    fill_ip_frame(ip, &ip_identifier, destination_ip, ethernet->host_ip, IP_TCP, TCP_FRAME_SIZE);
+    /* Fill IP frame before TCP checksum calculation */
+    fill_ip_frame(ip, &ethernet->ip_identifier, destination_ip, ethernet->host_ip, IP_TCP, TCP_FRAME_SIZE);
 
 
     /*Get TCP checksum */
@@ -381,11 +373,14 @@ uint16_t ether_get_tcp_psh_ack(ethernet_handle_t *ethernet, char *tcp_data, uint
 
 
 
-uint16_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, char *tcp_data, uint16_t data_buffer_length)
+int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, char *tcp_data, uint16_t data_buffer_length)
 {
+    int8_t func_retval = 0;
 
 
 
 
+
+    return func_retval;
 }
 
