@@ -146,7 +146,7 @@ uint16_t readAdc0Ss3()
 {
     ADC0_PSSI_R |= ADC_PSSI_SS3;                     // set start bit
     while (ADC0_ACTSS_R & ADC_ACTSS_BUSY);           // wait until SS3 is not busy
-    return ADC0_SSFIFO3_R;                           // get single result from the FIFO
+    return ADC0_SSFIFO3_R & 0x0F;                           // get single result from the FIFO
 }
 
 
@@ -268,7 +268,18 @@ int main(void)
 
 #endif
 
-    uint16_t ip_src_port;
+    uint16_t tcp_src_port =  0;
+    uint16_t tcp_dest_port = 0;
+
+    /* get random port number */
+    tcp_src_port  = get_random_port(ethernet, 6534);
+
+    uint32_t seq_num = 0;
+    uint32_t ack_num = 0;
+
+    uint8_t source_ip[4] = {0};
+
+    tcp_dest_port = 7788;
 
     /* State machine */
 
@@ -348,9 +359,7 @@ int main(void)
 
                                 /* trigger tcp test */
 
-                                ip_src_port = get_random_port(ethernet, 6534);
-
-                                ether_send_tcp_syn(ethernet, ip_src_port, 7788, 0, 0, ethernet->gateway_ip);
+                                ether_send_tcp_syn(ethernet, tcp_src_port, tcp_dest_port, 1, 0, ethernet->gateway_ip);
 
 
                             }
@@ -361,6 +370,12 @@ int main(void)
 
 
                     case IP_TCP:
+
+                        ether_get_tcp_syn_ack(ethernet, &seq_num, &ack_num, tcp_dest_port, source_ip);
+
+                        seq_num += 1;
+
+                        ether_send_tcp_ack(ethernet, tcp_src_port, tcp_dest_port, ack_num, seq_num, ethernet->gateway_ip);
 
                         break;
 

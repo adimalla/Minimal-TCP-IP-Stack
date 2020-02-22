@@ -162,6 +162,11 @@ int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_port, uin
 
 
 
+uint16_t ether_get_tcp_syn_ack(ethernet_handle_t *ethernet, uint32_t *sequence_number, uint32_t *ack_number,
+                              uint16_t source_port, uint8_t *source_ip);
+
+
+
 uint8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
                            uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip);
 

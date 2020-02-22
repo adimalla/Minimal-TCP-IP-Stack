@@ -123,6 +123,44 @@ static uint16_t get_tcp_checksum(net_ip_t *ip, net_tcp_t *tcp, uint16_t data_len
 
 
 
+static uint8_t validate_tcp_checksum(net_ip_t *ip, net_tcp_t *tcp)
+{
+    uint8_t func_retval = 0;
+
+    uint32_t sum = 0;
+    uint16_t pseudo_protocol = 0;
+
+    uint16_t tcp_length;
+
+    if(ip == NULL || tcp == NULL)
+    {
+        func_retval = 0;
+    }
+    else
+    {
+
+        /* validate TCP checksum */
+        sum = 0;
+
+        ether_sum_words(&sum, &ip->source_ip, 8);
+
+        pseudo_protocol = ip->protocol;
+
+        sum += ( (pseudo_protocol & 0xFF) << 8 );
+
+        tcp_length = ( ntohs(ip->total_length) - IP_HEADER_SIZE );
+
+        sum += htons(tcp_length);
+
+        ether_sum_words(&sum, tcp, tcp_length);
+
+        func_retval = (ether_get_checksum(sum) == 0);
+    }
+
+    return func_retval;
+}
+
+
 
 
 /******************************************************************************/
@@ -207,6 +245,57 @@ int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_port, uin
 
     return 0;
 }
+
+
+
+
+
+
+
+
+
+uint16_t ether_get_tcp_syn_ack(ethernet_handle_t *ethernet, uint32_t *sequence_number, uint32_t *ack_number,
+                               uint16_t source_port, uint8_t *source_ip)
+{
+
+    uint16_t func_retval;
+
+    net_ip_t  *ip;
+    net_tcp_t *tcp;
+
+    uint8_t validate = 0;
+
+    uint16_t server_src_port = 0;
+
+    /* Ethernet Frame related variables */
+
+    ip  = (void*)&ethernet->ether_obj->data;
+
+    tcp = (void*)( (uint8_t*)ip + IP_HEADER_SIZE );
+
+
+    validate = validate_tcp_checksum(ip, tcp);
+
+    if(validate)
+    {
+        server_src_port = ntohs(tcp->source_port);
+
+        if(source_port == server_src_port)
+        {
+            *sequence_number = ntohl(tcp->sequence_number);
+            *ack_number      = ntohl(tcp->ack_number);
+
+
+            func_retval = ntohs(ip->total_length + ETHER_FRAME_SIZE);
+
+        }
+    }
+
+
+    return func_retval;
+}
+
+
 
 
 
