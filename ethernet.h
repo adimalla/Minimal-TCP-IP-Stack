@@ -141,7 +141,8 @@ typedef struct _network_status
     uint8_t mode_dhcp_init      : 1;
     uint8_t mode_dhcp_bound     : 1;
     uint8_t mode_read_blocking  : 1;
-    uint8_t reserved            : 3;
+    uint8_t net_app_data_rdy    : 1;
+    uint8_t reserved            : 2;
 
 }net_status_t;
 

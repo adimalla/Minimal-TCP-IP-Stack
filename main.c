@@ -380,32 +380,38 @@ int main(void)
                         switch(tcp_ack_type)
                         {
 
-                        case TCP_SYN | TCP_ACK:
+                        case TCP_SYN_ACK:
 
-                        /* Increment the sequence number and pass it as acknowledgment number*/
-                        seq_num += 1;
+                            /* Increment the sequence number and pass it as acknowledgment number*/
+                            seq_num += 1;
 
-                        ether_send_tcp_ack(ethernet, tcp_src_port, tcp_dest_port, ack_num, seq_num, ethernet->gateway_ip);
+                            ether_send_tcp_ack(ethernet, tcp_src_port, tcp_dest_port, ack_num, seq_num, ethernet->gateway_ip);
 
-                        break;
-
-
-                        case TCP_PSH | TCP_ACK:
-
-                        /* Read TCP data */
-
-                        break;
+                            break;
 
 
-                        case TCP_FIN | TCP_ACK:
+                        case TCP_PSH_ACK:
 
-                        /* Increment the sequence number and pass it as acknowledgment number*/
-                        seq_num += 1;
+                            /* Read TCP data */
 
-                        ether_send_tcp_ack(ethernet, tcp_src_port, tcp_dest_port, ack_num, seq_num, ethernet->gateway_ip);
+                            break;
 
 
-                        break;
+                        case TCP_FIN_ACK:
+
+                            /* Increment the sequence number and pass it as acknowledgment number*/
+                            seq_num += 1;
+
+                            ether_send_tcp_fin_ack(ethernet, tcp_src_port, tcp_dest_port, ack_num, seq_num, ethernet->gateway_ip);
+
+                            break;
+
+
+                        case TCP_ACK:
+
+
+
+                            break;
 
 
                         default:

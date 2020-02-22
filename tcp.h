@@ -150,10 +150,13 @@ typedef struct _tcp_syn_options
 typedef enum _tcp_control_flags
 {
 
-    TCP_FIN = 0x01,
-    TCP_SYN = 0x02,
-    TCP_PSH = 0x08,
-    TCP_ACK = 0x10,
+    TCP_FIN     = 0x01,
+    TCP_SYN     = 0x02,
+    TCP_PSH     = 0x08,
+    TCP_ACK     = 0x10,
+    TCP_FIN_ACK = 0x11,
+    TCP_SYN_ACK = 0x12,
+    TCP_PSH_ACK = 0x18,
 
 }tcp_cl_flags_t;
 
@@ -184,6 +187,10 @@ uint16_t ether_get_tcp_syn_ack(ethernet_handle_t *ethernet, uint32_t *sequence_n
 
 
 uint8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
+                           uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip);
+
+
+uint8_t ether_send_tcp_fin_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
                            uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip);
 
 
