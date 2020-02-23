@@ -165,12 +165,18 @@ uint8_t ether_open(uint8_t *mac_address)
 
 
 
+typedef enum _app_state
+{
+    APP_INIT  = 0,
+    APP_READ  = 1,
+    APP_WRITE = 2,
+
+}app_state_t;
 
 
 
 
-
-#define TEST  0
+#define TEST1 0
 #define TEST2 0
 
 
@@ -223,17 +229,14 @@ int main(void)
     //ether_control(ethernet, ETHER_READ_NONBLOCK);
 
 
-
-#if TEST
+#if TEST1
 
     /* Test ARP packets */
-    uint8_t gateway_ip[4] = {0};
-
     uint8_t sequence_no = 1;
 
-    set_ip_address(gateway_ip, "192.168.1.196");
+    set_ip_address(ethernet->gateway_ip, "192.168.1.196");
 
-    ether_send_arp_req(ethernet, ethernet->host_ip, gateway_ip);
+    ether_send_arp_req(ethernet, ethernet->host_ip, ethernet->gateway_ip);
 
     if(ether_is_arp(ethernet, (uint8_t*)network_hardware, 128))
     {
@@ -247,7 +250,7 @@ int main(void)
 
 
     /* Test ICMP packets */
-    ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, gateway_ip, &sequence_no, \
+    ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, ethernet->gateway_ip, &sequence_no, \
                         ethernet->arp_table[0].mac_address, ethernet->host_mac);
 
 
@@ -271,29 +274,70 @@ int main(void)
     uint16_t tcp_src_port =  0;
     uint16_t tcp_dest_port = 0;
 
-
-
-    uint32_t seq_num = 0;
-    uint32_t ack_num = 0;
-
-    uint8_t source_ip[4] = {0};
-
-    char tcp_data[40] = {0};
-
-    uint16_t tcp_data_length = 0;
-
-    tcp_ctl_flags_t tcp_ack_type;
+    char tcp_data[50] = {0};
 
     tcp_dest_port = 7788;
 
-
     tcp_src_port  = get_random_port(ethernet, 6534);
 
-    tcp_client_t test_client;
+    tcp_client_t *test_client;
 
-    init_tcp_client(&test_client, tcp_src_port, tcp_dest_port);
 
-    ether_tcp_handshake(ethernet, (uint8_t*)network_hardware, &test_client, ethernet->gateway_ip);
+    /* APP state machine */
+    app_state_t app_state = APP_INIT;
+
+    int16_t tcp_retval = 0;
+
+    loop = 1 ;
+
+    test_client = tcp_create_client(tcp_src_port, tcp_dest_port, ethernet->gateway_ip);
+
+    ether_tcp_handshake(ethernet, (uint8_t*)network_hardware, test_client);
+
+    while(loop)
+    {
+        switch(app_state)
+        {
+
+        case APP_INIT:
+
+            app_state = APP_READ;
+
+            break;
+
+
+        case APP_READ:
+
+            tcp_retval = ether_read_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 50);
+
+            if(strncmp(tcp_data, "hi", 2) == 0 || strncmp(tcp_data, "Connection Accepted, Hello from Server", 38) == 0)
+                app_state = APP_WRITE;
+
+            if(tcp_retval < 0)
+                loop = 0;
+
+            memset(tcp_data, 0, 40);
+
+            break;
+
+
+        case APP_WRITE:
+
+            waitMicrosecond(1000);
+
+            tcp_retval = ether_send_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, "Hello", 5);
+
+
+            if(tcp_retval < 0)
+                loop = 0;
+
+            app_state = APP_READ;
+
+            break;
+
+        }
+
+    }
 
 
     /* State machine */
@@ -372,25 +416,11 @@ int main(void)
                             {
                                 ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "switched on", 11);
 
-                                /* trigger tcp test */
-
-                               //ether_send_tcp_syn(ethernet, tcp_src_port, tcp_dest_port, 0, 0, ethernet->gateway_ip);
-
-//                                tcp_client_t test_client;
-//
-//                                init_tcp_client(&test_client, tcp_src_port, tcp_dest_port);
-//
-//                                ether_tcp_handshake(ethernet, (uint8_t*)network_hardware, &test_client, ethernet->gateway_ip);
-
-
                             }
                             if(strncmp(udp_data, "off", 2) == 0)
                             {
 
                                 ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "switched off", 12);
-
-                                ether_send_tcp_psh_ack(ethernet, tcp_src_port, tcp_dest_port, ack_num, seq_num,
-                                                       ethernet->gateway_ip, "switched off", 12);
 
                             }
 #endif
@@ -401,93 +431,12 @@ int main(void)
 
                     case IP_TCP:
 
-                        tcp_ack_type = ether_get_tcp_server_ack(ethernet, &seq_num, &ack_num, tcp_dest_port,
-                                                                tcp_src_port, ethernet->gateway_ip);
-
-                        switch(tcp_ack_type)
-                        {
-
-                        case TCP_SYN_ACK:
-
-                            /* Increment the sequence number and pass it as acknowledgment number*/
-                            seq_num += 1;
-
-                            ether_send_tcp_ack(ethernet, tcp_src_port, tcp_dest_port, ack_num, seq_num, ethernet->gateway_ip, TCP_ACK);
-
-                            break;
-
-
-                        case TCP_PSH_ACK:
-
-                            /* Read TCP data */
-
-                            tcp_data_length = 0;
-
-                            tcp_data_length = ether_get_tcp_psh_ack(ethernet, tcp_data, 40);
-
-                            seq_num += tcp_data_length;
-
-                            ether_send_tcp_ack(ethernet, tcp_src_port, tcp_dest_port, ack_num, seq_num, ethernet->gateway_ip, TCP_ACK);
-
-                            break;
-
-
-                        case TCP_FIN_ACK:
-
-                            /* Increment the sequence number and pass it as acknowledgment number*/
-                            seq_num += 1;
-
-                            ether_send_tcp_ack(ethernet, tcp_src_port, tcp_dest_port, ack_num, seq_num, ethernet->gateway_ip, TCP_FIN_ACK);
-
-                            break;
-
-
-                        case TCP_ACK:
-
-                            /* Do nothing */
-
-                            break;
-
-
-                        default:
-
-                            break;
-
-                        }
-
                         break;
 
 
                         default:
 
                             break;
-
-                    }
-
-                }
-                if(retval == 2)
-                {
-                    /* Get transport layer protocol type */
-                    switch(get_ip_protocol_type(ethernet))
-                    {
-
-                    case IP_UDP:
-
-                        /* Handle UDP packets */
-                        if (ether_get_udp_data(ethernet, (uint8_t*)udp_data, APP_BUFF_SIZE))
-                        {
-                            RED_LED = 1;
-                            waitMicrosecond(50000);
-                            RED_LED = 0;
-
-                        }
-
-                        break;
-
-
-                    default:
-
-                        break;
 
                     }
 
@@ -502,9 +451,9 @@ int main(void)
 
             }
 
+            memset(data, 0, sizeof(data));
         }
 
-        memset(data, 0, sizeof(data));
     }
 
     return 0;

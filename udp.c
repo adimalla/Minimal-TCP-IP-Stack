@@ -439,7 +439,6 @@ uint8_t ether_read_udp(ethernet_handle_t *ethernet, uint8_t *network_data, char 
 
 
 
-
 /**************************************************************
  * @brief  Function to send UPD packets
  *         UDP data dependent upon total data allocated to
@@ -532,7 +531,6 @@ int8_t ether_send_udp(ethernet_handle_t *ethernet, uint8_t *destination_ip, uint
 
 
 
-
 /**************************************************************
  * @brief  Function to read UDP packet
  * @param  *ethernet         : reference to the Ethernet handle
@@ -602,9 +600,6 @@ uint16_t ether_read_udp_raw(ethernet_handle_t *ethernet, uint8_t *network_data, 
 
     return func_retval;
 }
-
-
-
 
 
 

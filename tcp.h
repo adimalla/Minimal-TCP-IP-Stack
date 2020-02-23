@@ -65,88 +65,7 @@
 
 
 
-#define TCP_FRAME_SIZE 20
-
-
-/**/
-typedef struct _net_tcp
-{
-    uint16_t source_port;
-    uint16_t destination_port;
-    uint32_t sequence_number;
-    uint32_t ack_number;
-    uint8_t  data_offset;
-    uint8_t  control_bits;
-    uint16_t window;
-    uint16_t checksum;
-    uint16_t urgent_pointer;
-    uint8_t  data;
-
-}net_tcp_t;
-
-
-/**/
-typedef enum _tcp_option_kinds
-{
-    TCP_NO_OPERATION     = 1,
-    TCP_MAX_SEGMENT_SIZE = 2,
-    TCP_WINDOW_SCALING   = 3,
-    TCP_SACK_PERMITTED   = 4,
-    TCP_TIMESTAMPS       = 8,
-
-}tcp_opts_kind;
-
-
-/**/
-typedef struct tcp_max_segment_size
-{
-    uint8_t  option_kind;
-    uint8_t  length;
-    uint16_t value;
-
-}tcp_mss_t;
-
-
-/**/
-typedef struct tcp_sack_permitted_size
-{
-    uint8_t option_kind;
-    uint8_t length;
-
-}tcp_sack_t;
-
-
-/**/
-typedef struct tcp_no_operation
-{
-    uint8_t option_kind;
-
-}tcp_nop_t;
-
-
-/**/
-typedef struct tcp_window_scaling
-{
-    uint8_t option_kind;
-    uint8_t length;
-    uint8_t value;
-
-}tcp_win_scale_t;
-
-
-/**/
-typedef struct _tcp_syn_options
-{
-    tcp_mss_t       mss;
-    tcp_sack_t      sack;
-    tcp_nop_t       nop;
-    tcp_nop_t       nop1;
-    tcp_nop_t       nop2;
-    tcp_win_scale_t window_scale;
-
-}tcp_syn_opts_t;
-
-
+/* TCP ACK flags */
 typedef enum _tcp_control_flags
 {
 
@@ -163,7 +82,7 @@ typedef enum _tcp_control_flags
 }tcp_ctl_flags_t;
 
 
-
+/* TCP client handle flags */
 typedef struct _tcp_client_flags
 {
     uint8_t connect_request     : 1;
@@ -177,12 +96,14 @@ typedef struct _tcp_client_flags
 }tcp_client_flags_t;
 
 
+/* TCP client handle */
 typedef struct _tcp_client
 {
     uint16_t source_port;
     uint16_t destination_port;
     uint32_t sequence_number;
     uint32_t acknowledgement_number;
+    uint8_t  server_ip[4];
 
     tcp_client_flags_t client_flags;
 
@@ -199,39 +120,71 @@ typedef struct _tcp_client
 
 
 
-int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
-                              uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip);
+/********************************************************************
+ * @brief  Function to create TCP client object (STATIC)
+ * @param  source_port      : TCP source port
+ * @param  destination_port : TCP destination port
+ * @param  *server_ip       : Server IP
+ * @retval int8_t           : Error = 0, Success = TCP client object
+ ********************************************************************/
+tcp_client_t* tcp_create_client(uint16_t source_port, uint16_t destination_port, uint8_t *server_ip);
+
+
+
+
+/*****************************************************************
+ * @brief  Function to initialize TCP values to TCP client object
+ * @param  *client          : Reference to TCP client handle
+ * @param  source_port      : TCP source port
+ * @param  destination_port : TCP destination port
+ * @param  *server_ip       : Server IP
+ * @retval int8_t           : Error = 0, Success = 1
+ *****************************************************************/
+uint8_t tcp_init_client(tcp_client_t *client, uint16_t source_port, uint16_t destination_port, uint8_t *server_ip);
+
+
+
+
+/**********************************************************
+ * @brief  Function to establish connection to TCP server
+ * @param  *ethernet     : Reference to Ethernet handle
+ * @param  *network_data : Network data
+ * @param  *client       : reference to TCP client handle
+ * @retval int8_t        : Error = -11, Success = 1
+ **********************************************************/
+int8_t ether_tcp_handshake(ethernet_handle_t *ethernet, uint8_t *network_data ,tcp_client_t *client);
 
 
 
 
 
-tcp_ctl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  uint32_t *sequence_number, uint32_t *ack_number,
-                                 uint16_t server_src_port, uint16_t client_src_port, uint8_t *sender_src_ip);
+/*****************************************************************
+ * @brief  Function for sending TCP data
+ * @param  *ethernet         : Reference to the Ethernet Handle
+ * @param  *network_data     : Network data
+ * @param  *client           : Reference to TCP client handle
+ * @param  *application_data : application_data
+ * @param  data_length       : application data length
+ * @retval int8_t            : Error = -12, Success = 1
+ *****************************************************************/
+int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client, char *application_data,
+                           uint16_t data_length);
 
 
 
 
-uint8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
-                           uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip, tcp_ctl_flags_t ack_type);
+/*****************************************************************
+ * @brief  Function for reading TCP data
+ * @param  *ethernet         : Reference to the Ethernet Handle
+ * @param  *network_data     : Network data
+ * @param  *client           : Reference to TCP client handle
+ * @param  *application_data : application_data
+ * @param  data_length       : application data length
+ * @retval int8_t            : Error = -12, Success = 1
+ *****************************************************************/
+int16_t ether_read_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client,
+                            char *application_data, uint16_t data_length);
 
-
-
-
-uint16_t ether_get_tcp_psh_ack(ethernet_handle_t *ethernet, char *tcp_data, uint16_t data_buffer_length);
-
-
-
-int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
-                              uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip, char *tcp_data, uint16_t data_length);
-
-
-
-
-uint8_t init_tcp_client(tcp_client_t *client, uint16_t source_port, uint16_t destination_port);
-
-
-int8_t ether_tcp_handshake(ethernet_handle_t *ethernet, uint8_t *network_data ,tcp_client_t *client, uint8_t *server_ip);
 
 
 

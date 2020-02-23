@@ -176,6 +176,7 @@ int16_t get_random_port(ethernet_handle_t *ethernet, uint16_t lower_bound)
 {
     int16_t func_retval    = 0;
 
+    uint16_t random_seed   = 0;
     uint16_t random_number = 0;
 
     if(ethernet->ether_obj == NULL)
@@ -184,9 +185,16 @@ int16_t get_random_port(ethernet_handle_t *ethernet, uint16_t lower_bound)
     }
     else
     {
-        srand(ethernet->ether_commands->random_gen_seed());
+
+        random_seed = ethernet->ether_commands->random_gen_seed();
+
+        srand(random_seed);
+
+        lower_bound += random_seed;
 
         random_number  = ( rand() % (UINT16_MAX - lower_bound) ) + lower_bound;
+
+        random_number += ethernet->ether_commands->random_gen_seed();
 
         func_retval = random_number;
     }
@@ -208,6 +216,7 @@ int32_t get_random_port_l(ethernet_handle_t *ethernet, uint32_t lower_bound)
 {
     int32_t func_retval    = 0;
 
+    uint16_t random_seed   = 0;
     uint32_t random_number = 0;
 
     if(ethernet->ether_obj == NULL)
@@ -216,7 +225,11 @@ int32_t get_random_port_l(ethernet_handle_t *ethernet, uint32_t lower_bound)
     }
     else
     {
+        random_seed = ethernet->ether_commands->random_gen_seed();
+
         srand(ethernet->ether_commands->random_gen_seed());
+
+        lower_bound += (uint32_t)random_seed;
 
         random_number  = ( rand() % (UINT32_MAX - lower_bound) ) + lower_bound;
 
