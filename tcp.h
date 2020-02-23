@@ -231,6 +231,8 @@ int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t source_port,
 uint8_t init_tcp_client(tcp_client_t *client, uint16_t source_port, uint16_t destination_port);
 
 
+tcp_client_t* tcp_create_client(uint16_t source_port, uint16_t destination_port);
+
 int8_t ether_tcp_handshake(ethernet_handle_t *ethernet, uint8_t *network_data ,tcp_client_t *client, uint8_t *server_ip);
 
 

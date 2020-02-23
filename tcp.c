@@ -259,7 +259,7 @@ tcp_ctl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  uint32_t 
 
     validate = validate_tcp_checksum(ip, tcp);
 
-    if(validate)
+    if(validate && ( memcmp(sender_src_ip, ip->source_ip, 4) == 0 ) )
     {
         sender_src_port  = ntohs(tcp->source_port);
         sender_dest_port = ntohs(tcp->destination_port);
@@ -505,8 +505,26 @@ uint8_t init_tcp_client(tcp_client_t *client, uint16_t source_port, uint16_t des
     client->sequence_number        = 0;
     client->acknowledgement_number = 0;
 
+    client->client_flags.client_blocking = 1;
 
     return func_retval;
+}
+
+
+tcp_client_t* tcp_create_client(uint16_t source_port, uint16_t destination_port)
+{
+
+    static tcp_client_t tcp_client;
+
+    tcp_client.source_port      = source_port;
+    tcp_client.destination_port = destination_port;
+
+    tcp_client.sequence_number        = 0;
+    tcp_client.acknowledgement_number = 0;
+
+    tcp_client.client_flags.client_blocking = 1;
+
+    return &tcp_client;
 }
 
 
