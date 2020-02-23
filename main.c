@@ -276,10 +276,6 @@ int main(void)
 
     char tcp_data[50] = {0};
 
-    uint16_t tcp_data_length = 0;
-
-    tcp_ctl_flags_t tcp_ack_type;
-
     tcp_dest_port = 7788;
 
     tcp_src_port  = get_random_port(ethernet, 6534);
@@ -294,16 +290,16 @@ int main(void)
 
     loop = 1 ;
 
-    do
+    test_client = tcp_create_client(tcp_src_port, tcp_dest_port, ethernet->gateway_ip);
+
+    ether_tcp_handshake(ethernet, (uint8_t*)network_hardware, test_client);
+
+    while(loop)
     {
         switch(app_state)
         {
 
         case APP_INIT:
-
-            test_client = tcp_create_client(tcp_src_port, tcp_dest_port, ethernet->gateway_ip);
-
-            ether_tcp_handshake(ethernet, (uint8_t*)network_hardware, test_client);
 
             app_state = APP_READ;
 
@@ -329,7 +325,8 @@ int main(void)
 
             waitMicrosecond(1000);
 
-            tcp_retval = ether_send_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, "switched on", 11);
+            tcp_retval = ether_send_tcp_data(ethernet, (uint8_t*)network_hardware, test_client,
+                                             "Hello from client, whatsup ?,jkshdkjashdkcdahgfakdjsgfyrbagfkcdashgfcashdfgbafgcasbjkdgfcabksdjgfrtcgbf0", 104);
 
 
             if(tcp_retval < 0)
@@ -341,7 +338,7 @@ int main(void)
 
         }
 
-    }while(loop);
+    }
 
 
     /* State machine */
