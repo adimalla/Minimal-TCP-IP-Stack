@@ -238,8 +238,13 @@ tcp_client_t* tcp_create_client(uint16_t source_port, uint16_t destination_port,
 int8_t ether_tcp_handshake(ethernet_handle_t *ethernet, uint8_t *network_data ,tcp_client_t *client);
 
 
-int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client,
-                           char *application_data, uint16_t data_length);
+int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, tcp_client_t *client, char *application_data,
+                           uint16_t data_length);
+
+
+
+uint16_t ether_read_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client,
+                            char *application_data, uint16_t data_length);
 
 
 #endif /* TCP_H_ */

@@ -271,12 +271,6 @@ int main(void)
     uint16_t tcp_src_port =  0;
     uint16_t tcp_dest_port = 0;
 
-
-
-    uint32_t seq_num = 0;
-    uint32_t ack_num = 0;
-
-
     char tcp_data[40] = {0};
 
     uint16_t tcp_data_length = 0;
@@ -295,8 +289,9 @@ int main(void)
     ether_tcp_handshake(ethernet, (uint8_t*)network_hardware, test_client);
 
 
+    ether_read_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 20);
 
-
+    ether_send_tcp_data(ethernet, test_client, "switched on", 11);
 
 
     /* State machine */
@@ -376,7 +371,7 @@ int main(void)
                                 ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "switched on", 11);
 
                                 /* trigger tcp test */
-                                ether_send_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, "switched on", 11);
+                                ether_send_tcp_data(ethernet, test_client, "switched on", 11);
 
 
                             }
@@ -386,7 +381,7 @@ int main(void)
                                 ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "switched off", 12);
 
                                 /* trigger tcp test */
-                                ether_send_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, "switched off", 12);
+                                ether_send_tcp_data(ethernet, test_client, "switched off", 12);
 
                             }
 #endif
