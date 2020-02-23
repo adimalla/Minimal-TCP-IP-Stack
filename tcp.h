@@ -238,8 +238,11 @@ int8_t ether_tcp_handshake(ethernet_handle_t *ethernet, uint8_t *network_data ,t
 
 
 
+
 int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client, char *application_data,
                            uint16_t data_length);
+
+
 
 
 

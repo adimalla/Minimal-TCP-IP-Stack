@@ -784,6 +784,15 @@ int8_t ether_tcp_handshake(ethernet_handle_t *ethernet, uint8_t *network_data ,t
 
 
 
+/*****************************************************************
+ * @brief  Function to initialize TCP values to TCP client object
+ * @param  *ethernet         : Reference to the Ethernet Handle
+ * @param  *network_data     : Network data
+ * @param  *client           : Reference to TCP client handle
+ * @param  *application_data : application_data
+ * @param  data_length       : application data length
+ * @retval int8_t            : Error = 0, Success = 1
+ *****************************************************************/
 int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client, char *application_data,
                            uint16_t data_length)
 {
@@ -791,60 +800,69 @@ int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, t
 
     tcp_ctl_flags_t ack_type;
 
-    uint8_t tcp_read_loop = 1;
 
-    while(tcp_read_loop && ether_get_data(ethernet, network_data, ETHER_MTU_SIZE))
+    if(ethernet->ether_obj == NULL || client == NULL || data_length > UINT16_MAX || data_length > ETHER_MTU_SIZE)
     {
-        if(get_ether_protocol_type(ethernet) == ETHER_IPV4 && (get_ip_communication_type(ethernet) == 1) \
-                && get_ip_protocol_type(ethernet) == IP_TCP)
+        func_retval = NET_TCP_SEND_ERROR;
+    }
+    else
+    {
+        uint8_t tcp_read_loop = 1;
+
+        while(tcp_read_loop && ether_get_data(ethernet, network_data, ETHER_MTU_SIZE))
         {
-
-            /* Read ACK from the TCP server */
-            ack_type = ether_get_tcp_server_ack(ethernet, &client->sequence_number, &client->acknowledgement_number,
-                                                client->destination_port, client->source_port, client->server_ip);
-
-            switch(ack_type)
+            if(get_ether_protocol_type(ethernet) == ETHER_IPV4 && (get_ip_communication_type(ethernet) == 1) \
+                    && get_ip_protocol_type(ethernet) == IP_TCP)
             {
-            case TCP_FIN_ACK:
 
-                /* Increment the sequence number and pass it as acknowledgment number*/
-                client->sequence_number += 1;
+                /* Read ACK from the TCP server */
+                ack_type = ether_get_tcp_server_ack(ethernet, &client->sequence_number, &client->acknowledgement_number,
+                                                    client->destination_port, client->source_port, client->server_ip);
 
-                ether_send_tcp_ack(ethernet, client->source_port, client->destination_port, client->acknowledgement_number,
-                                   client->sequence_number, ethernet->gateway_ip, TCP_FIN_ACK);
+                switch(ack_type)
+                {
+                case TCP_FIN_ACK:
 
-                tcp_read_loop = 0;
+                    /* Increment the sequence number and pass it as acknowledgment number*/
+                    client->sequence_number += 1;
 
-                func_retval = -1;
+                    ether_send_tcp_ack(ethernet, client->source_port, client->destination_port, client->acknowledgement_number,
+                                       client->sequence_number, ethernet->gateway_ip, TCP_FIN_ACK);
+
+                    tcp_read_loop = 0;
+
+                    func_retval = -1;
+
+                    break;
+
+
+                default:
+
+                    tcp_read_loop = 0;
+
+                    break;
+
+                }
+
+            }
+            /* Handle ARP packets */
+            else if(get_ether_protocol_type(ethernet) == ETHER_IPV4 && (get_ip_communication_type(ethernet) == 1) \
+                    && get_ip_protocol_type(ethernet) == IP_ICMP)
+            {
+                ether_send_icmp_reply(ethernet);
 
                 break;
-
-
-            default:
-
-                tcp_read_loop = 0;
-
-                break;
-
             }
 
         }
-        else if(get_ether_protocol_type(ethernet) == ETHER_IPV4 && (get_ip_communication_type(ethernet) == 1) \
-                && get_ip_protocol_type(ethernet) == IP_ICMP)
+
+        /* Don't send PSH ACK packet if server has terminated connection */
+        if(func_retval >= 0)
         {
-            ether_send_icmp_reply(ethernet);
-
-            break;
+            /* Send PSH ACK packet to the server (SEQ and ACK numbers swapped) */
+            ether_send_tcp_psh_ack(ethernet, client->source_port, client->destination_port,client->acknowledgement_number,
+                                   client->sequence_number, client->server_ip, application_data, data_length);
         }
-
-    }
-
-    /* Don't send PSH ACK packet if server has terminated connection */
-    if(func_retval >= 0)
-    {
-        /* Send PSH ACK packet to the server (SEQ and ACK numbers swapped) */
-        ether_send_tcp_psh_ack(ethernet, client->source_port, client->destination_port,
-                               client->acknowledgement_number, client->sequence_number, client->server_ip, application_data, data_length);
     }
 
     return func_retval;

@@ -219,6 +219,7 @@ typedef enum _network_error_codes
     NET_UDP_RAW_SEND_ERROR = -9,  /*!< */
     NET_UDP_SEND_ERROR     = -10, /*!< */
     NET_TCP_CONNECT_ERROR  = -11, /*!< */
+    NET_TCP_SEND_ERROR     = -12, /*!< */
 
 }network_erro_codes_t;
 
