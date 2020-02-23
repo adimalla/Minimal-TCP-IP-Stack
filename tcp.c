@@ -129,7 +129,7 @@ static uint16_t get_tcp_checksum(net_ip_t *ip, net_tcp_t *tcp, uint16_t data_len
 
 
 
-/*******************************************************
+/******************************************************
  * @brief  Static function to validate TCP checksum
  * @param  *ip     : Reference to IP frame structure
  * @param  *udp    : Reference to TCP frame structure
@@ -180,9 +180,21 @@ static uint8_t validate_tcp_checksum(net_ip_t *ip, net_tcp_t *tcp)
 
 
 
-int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
-                          uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip)
+/***********************************************************
+ * @brief  Static function for sending TCP SYN packet
+ * @param  *ethernet        : Reference to Ethernet handle
+ * @param  source_port      : TCP source port
+ * @param  destination_port : TCP destination port
+ * @param  sequence_number  : TCP sequence number
+ * @param  ack_number       : TCP acknowledgment number
+ * @param  *destination_ip  : Destination server IP
+ * @retval uint8_t          : Error = 0, Success = 1
+ **********************************************************/
+static int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
+                                 uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip)
 {
+
+    int8_t func_retval = 0;
 
     net_ip_t  *ip;
     net_tcp_t *tcp;
@@ -191,64 +203,70 @@ int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_port, uin
     /* Ethernet Frame related variables */
     uint8_t  destination_mac[ETHER_MAC_SIZE] = {0};
 
-    ip  = (void*)&ethernet->ether_obj->data;
+    if(ethernet->ether_obj == NULL || destination_ip == NULL)
+    {
+        func_retval = 0;
+    }
+    else
+    {
 
-    tcp = (void*)( (uint8_t*)ip + IP_HEADER_SIZE );
+        ip  = (void*)&ethernet->ether_obj->data;
 
+        tcp = (void*)( (uint8_t*)ip + IP_HEADER_SIZE );
 
-    /* Fill TCP frame */
-    tcp->source_port      = htons(source_port);
-    tcp->destination_port = htons(destination_port);
+        /* Fill TCP frame */
+        tcp->source_port      = htons(source_port);
+        tcp->destination_port = htons(destination_port);
 
-    tcp->sequence_number  = htonl(sequence_number);
-    tcp->ack_number       = htonl(ack_number);
+        tcp->sequence_number  = htonl(sequence_number);
+        tcp->ack_number       = htonl(ack_number);
 
-    /* Shift data offset to Big-Endian MSB (4 bits) */
-    tcp->data_offset      = ((TCP_FRAME_SIZE + 12) >> 2) << 4;
-    tcp->control_bits     = TCP_SYN;
+        /* Shift data offset to Big-Endian MSB (4 bits) */
+        tcp->data_offset      = ((TCP_FRAME_SIZE + 12) >> 2) << 4;
+        tcp->control_bits     = TCP_SYN;
 
-    tcp->window           = ntohs(1);
-    tcp->urgent_pointer   = 0;
+        tcp->window           = ntohs(1);
+        tcp->urgent_pointer   = 0;
 
-    /* Configure TCP options */
-    syn_option = (void*)&tcp->data;
+        /* Configure TCP options */
+        syn_option = (void*)&tcp->data;
 
-    syn_option->mss.option_kind = TCP_MAX_SEGMENT_SIZE;
-    syn_option->mss.length      = 4;
-    syn_option->mss.value       = ntohs(ETHER_MTU_SIZE);
+        syn_option->mss.option_kind = TCP_MAX_SEGMENT_SIZE;
+        syn_option->mss.length      = 4;
+        syn_option->mss.value       = ntohs(ETHER_MTU_SIZE);
 
-    syn_option->sack.option_kind = TCP_SACK_PERMITTED;
-    syn_option->sack.length      = 2;
+        syn_option->sack.option_kind = TCP_SACK_PERMITTED;
+        syn_option->sack.length      = 2;
 
-    syn_option->nop.option_kind  = TCP_NO_OPERATION;
-    syn_option->nop1.option_kind = TCP_NO_OPERATION;
-    syn_option->nop2.option_kind = TCP_NO_OPERATION;
+        syn_option->nop.option_kind  = TCP_NO_OPERATION;
+        syn_option->nop1.option_kind = TCP_NO_OPERATION;
+        syn_option->nop2.option_kind = TCP_NO_OPERATION;
 
-    syn_option->window_scale.option_kind = TCP_WINDOW_SCALING;
-    syn_option->window_scale.length      = 3;
-    syn_option->window_scale.value       = 7;
-
-
-    /* fill IP frame before TCP checksum calculation */
-    fill_ip_frame(ip, &ethernet->ip_identifier, destination_ip, ethernet->host_ip, IP_TCP, TCP_FRAME_SIZE + TCP_SYN_OPTS_SIZE);
-
-    /*Get TCP checksum */
-    tcp->checksum = get_tcp_checksum(ip, tcp, 12);
-
-
-    /* Get MAC address from ARP table */
-    ether_arp_resolve_address(ethernet, destination_mac, destination_ip);
+        syn_option->window_scale.option_kind = TCP_WINDOW_SCALING;
+        syn_option->window_scale.length      = 3;
+        syn_option->window_scale.value       = 7;
 
 
-    /* Fill Ethernet frame */
-    fill_ether_frame(ethernet, destination_mac, ethernet->host_mac, ETHER_IPV4);
+        /* fill IP frame before TCP checksum calculation */
+        fill_ip_frame(ip, &ethernet->ip_identifier, destination_ip, ethernet->host_ip, IP_TCP, TCP_FRAME_SIZE + TCP_SYN_OPTS_SIZE);
+
+        /*Get TCP checksum */
+        tcp->checksum = get_tcp_checksum(ip, tcp, 12);
 
 
-    /*Send TCP data */
-    ether_send_data(ethernet,(uint8_t*)ethernet->ether_obj, ETHER_FRAME_SIZE + htons(ip->total_length));
+        /* Get MAC address from ARP table */
+        ether_arp_resolve_address(ethernet, destination_mac, destination_ip);
 
 
-    return 0;
+        /* Fill Ethernet frame */
+        fill_ether_frame(ethernet, destination_mac, ethernet->host_mac, ETHER_IPV4);
+
+
+        /*Send TCP data */
+        ether_send_data(ethernet,(uint8_t*)ethernet->ether_obj, ETHER_FRAME_SIZE + htons(ip->total_length));
+    }
+
+    return func_retval;
 }
 
 

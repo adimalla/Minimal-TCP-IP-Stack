@@ -200,12 +200,6 @@ typedef struct _tcp_client
 
 
 
-int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
-                              uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip);
-
-
-
-
 
 tcp_ctl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  uint32_t *sequence_number, uint32_t *ack_number,
                                  uint16_t server_src_port, uint16_t client_src_port, uint8_t *sender_src_ip);
