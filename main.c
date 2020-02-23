@@ -420,18 +420,11 @@ int main(void)
                             {
                                 ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "switched on", 11);
 
-                                /* trigger tcp test */
-                                //ether_send_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, "switched on", 11);
-
-
                             }
                             if(strncmp(udp_data, "off", 2) == 0)
                             {
 
                                 ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "switched off", 12);
-
-                                /* trigger tcp test */
-                                //ether_send_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, "switched off", 12);
 
                             }
 #endif
@@ -441,63 +434,6 @@ int main(void)
 
 
                     case IP_TCP:
-
-                        tcp_ack_type = ether_get_tcp_server_ack(ethernet, &test_client->sequence_number, &test_client->acknowledgement_number, tcp_dest_port,
-                                                                tcp_src_port, ethernet->gateway_ip);
-
-                        switch(tcp_ack_type)
-                        {
-
-                        case TCP_SYN_ACK:
-
-                            /* Increment the sequence number and pass it as acknowledgment number*/
-                            test_client->sequence_number += 1;
-
-                            ether_send_tcp_ack(ethernet, tcp_src_port, tcp_dest_port, test_client->acknowledgement_number,
-                                               test_client->sequence_number, ethernet->gateway_ip, TCP_ACK);
-
-                            break;
-
-
-                        case TCP_PSH_ACK:
-
-                            /* Read TCP data */
-
-                            tcp_data_length = 0;
-
-                            tcp_data_length = ether_get_tcp_psh_ack(ethernet, tcp_data, 40);
-
-                            test_client->sequence_number += tcp_data_length;
-
-                            ether_send_tcp_ack(ethernet, tcp_src_port, tcp_dest_port, test_client->acknowledgement_number,
-                                               test_client->sequence_number, ethernet->gateway_ip, TCP_ACK);
-
-                            break;
-
-
-                        case TCP_FIN_ACK:
-
-                            /* Increment the sequence number and pass it as acknowledgment number*/
-                            test_client->sequence_number += 1;
-
-                            ether_send_tcp_ack(ethernet, tcp_src_port, tcp_dest_port, test_client->acknowledgement_number,
-                                               test_client->sequence_number, ethernet->gateway_ip, TCP_FIN_ACK);
-
-                            break;
-
-
-                        case TCP_ACK:
-
-                            /* Do nothing */
-
-                            break;
-
-
-                        default:
-
-                            break;
-
-                        }
 
                         break;
 
