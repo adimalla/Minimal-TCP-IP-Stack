@@ -239,11 +239,11 @@ int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_port, uin
 
 
 
-tcp_cl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  uint32_t *sequence_number, uint32_t *ack_number,
-                                        uint16_t server_src_port, uint16_t client_src_port, uint8_t *sender_src_ip)
+tcp_ctl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  uint32_t *sequence_number, uint32_t *ack_number,
+                                         uint16_t server_src_port, uint16_t client_src_port, uint8_t *sender_src_ip)
 {
 
-    tcp_cl_flags_t func_retval =  (tcp_cl_flags_t)0;
+    tcp_ctl_flags_t func_retval =  (tcp_ctl_flags_t)0;
 
     net_ip_t  *ip;
     net_tcp_t *tcp;
@@ -269,7 +269,7 @@ tcp_cl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  uint32_t *
             *sequence_number = ntohl(tcp->sequence_number);
             *ack_number      = ntohl(tcp->ack_number);
 
-            func_retval = (tcp_cl_flags_t)tcp->control_bits;
+            func_retval = (tcp_ctl_flags_t)tcp->control_bits;
         }
 
     }
@@ -282,7 +282,7 @@ tcp_cl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  uint32_t *
 
 
 uint8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
-                           uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip, tcp_cl_flags_t ack_type)
+                           uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip, tcp_ctl_flags_t ack_type)
 {
 
     net_ip_t  *ip;
@@ -437,4 +437,163 @@ int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t source_port,
 
     return func_retval;
 }
+
+
+
+uint8_t ether_is_tcp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t network_data_length)
+{
+    uint8_t func_retval = 0;
+    uint8_t block_loop  = 0;
+
+    int16_t comm_type = 0;
+
+    if(ethernet->ether_obj == NULL || network_data == NULL || network_data_length == 0 || network_data_length > UINT16_MAX)
+    {
+        func_retval = 0;
+    }
+    else
+    {
+
+        /* Wait for data */
+        block_loop = ethernet->status.mode_read_blocking;
+
+        do
+        {
+            if(ether_get_data(ethernet, network_data, network_data_length))
+            {
+                /* Check if protocol is IPV4 */
+                if(get_ether_protocol_type(ethernet) == ETHER_IPV4)
+                {
+
+                    /* Checks if UNICAST, validates checksum */
+                    comm_type = get_ip_communication_type(ethernet);
+
+                    /* UNICAST */
+                    if(comm_type == 1)
+                    {
+                        /* Check if protocol is TCP */
+                        if(get_ip_protocol_type(ethernet) == IP_TCP)
+                        {
+                            func_retval = 1;
+
+                            break;
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }while(block_loop);
+
+    }
+
+    return func_retval;
+}
+
+
+
+uint8_t init_tcp_client(tcp_client_t *client, uint16_t source_port, uint16_t destination_port)
+{
+
+    uint8_t func_retval = 0;
+
+    client->source_port      = source_port;
+    client->destination_port = destination_port;
+
+    client->sequence_number        = 0;
+    client->acknowledgement_number = 0;
+
+
+    return func_retval;
+}
+
+
+
+
+int8_t ether_tcp_handshake(ethernet_handle_t *ethernet, uint8_t *network_data ,tcp_client_t *client, uint8_t *server_ip)
+{
+    int8_t func_retval = 0;
+
+    int8_t api_retval  = 0;
+
+    uint8_t tcp_read_loop = 1;
+
+    tcp_ctl_flags_t ack_type;
+
+    /* Send TCP SYN packet */
+    ether_send_tcp_syn(ethernet, client->source_port, client->destination_port, client->sequence_number,
+                       client->acknowledgement_number, server_ip);
+
+    client->client_flags.connect_request = 1;
+
+    /* Read response message from the TCP server */
+    api_retval = ether_is_tcp(ethernet, network_data, ETHER_MTU_SIZE);
+
+    if(api_retval)
+    {
+        do
+        {
+            ack_type = ether_get_tcp_server_ack(ethernet, &client->sequence_number, &client->acknowledgement_number,
+                                                client->destination_port, client->source_port, server_ip);
+
+            switch(ack_type)
+            {
+
+            case TCP_SYN_ACK:
+
+                /* Increment the sequence number and pass it as acknowledgment number*/
+                client->sequence_number += 1;
+
+                ether_send_tcp_ack(ethernet, client->source_port, client->destination_port,
+                                   client->acknowledgement_number, client->sequence_number, server_ip, TCP_ACK);
+
+                /* Set flags */
+                client->client_flags.connect_request     = 0;
+                client->client_flags.connect_established = 1;
+
+                tcp_read_loop = 0;
+
+                break;
+
+
+            case TCP_FIN_ACK:
+
+                /* Increment the sequence number and pass it as acknowledgment number*/
+                client->sequence_number += 1;
+
+                ether_send_tcp_ack(ethernet, client->source_port, client->destination_port,
+                                   client->acknowledgement_number, client->sequence_number, server_ip, TCP_FIN_ACK);
+
+                tcp_read_loop = 0;
+
+                break;
+
+
+            case TCP_RST_ACK:
+
+                tcp_read_loop = 0;
+
+                /* Start retransmission timer */
+
+                break;
+
+
+            default:
+
+                tcp_read_loop = 0;
+
+                break;
+
+            }
+
+        }while(client->client_flags.client_blocking == 1 && tcp_read_loop);
+
+    }
+
+
+    return func_retval;
+}
+
 

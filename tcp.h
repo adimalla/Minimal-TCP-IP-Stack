@@ -152,13 +152,42 @@ typedef enum _tcp_control_flags
 
     TCP_FIN     = 0x01,
     TCP_SYN     = 0x02,
+    TCP_RST     = 0x04,
     TCP_PSH     = 0x08,
     TCP_ACK     = 0x10,
     TCP_FIN_ACK = 0x11,
     TCP_SYN_ACK = 0x12,
+    TCP_RST_ACK = 0x14,
     TCP_PSH_ACK = 0x18,
 
-}tcp_cl_flags_t;
+}tcp_ctl_flags_t;
+
+
+
+typedef struct _tcp_client_flags
+{
+    uint8_t connect_request     : 1;
+    uint8_t connect_established : 1;
+    uint8_t server_tcp_reset    : 1;
+    uint8_t server_close        : 1;
+    uint8_t client_close        : 1;
+    uint8_t client_blocking     : 1;
+    uint8_t reserved            : 2;
+
+}tcp_client_flags_t;
+
+
+typedef struct _tcp_client
+{
+    uint16_t source_port;
+    uint16_t destination_port;
+    uint32_t sequence_number;
+    uint32_t acknowledgement_number;
+
+    tcp_client_flags_t client_flags;
+
+
+}tcp_client_t;
 
 
 
@@ -177,14 +206,14 @@ int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_port, uin
 
 
 
-tcp_cl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  uint32_t *sequence_number, uint32_t *ack_number,
+tcp_ctl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  uint32_t *sequence_number, uint32_t *ack_number,
                                  uint16_t server_src_port, uint16_t client_src_port, uint8_t *sender_src_ip);
 
 
 
 
 uint8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
-                           uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip, tcp_cl_flags_t ack_type);
+                           uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip, tcp_ctl_flags_t ack_type);
 
 
 
@@ -195,6 +224,17 @@ uint16_t ether_get_tcp_psh_ack(ethernet_handle_t *ethernet, char *tcp_data, uint
 
 int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
                               uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip, char *tcp_data, uint16_t data_length);
+
+
+
+
+uint8_t init_tcp_client(tcp_client_t *client, uint16_t source_port, uint16_t destination_port);
+
+
+int8_t ether_tcp_handshake(ethernet_handle_t *ethernet, uint8_t *network_data ,tcp_client_t *client, uint8_t *server_ip);
+
+
+
 
 
 #endif /* TCP_H_ */

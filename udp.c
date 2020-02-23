@@ -363,6 +363,7 @@ uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_
                     /* Checks if UNICAST, validates checksum */
                     comm_type = get_ip_communication_type(ethernet);
 
+                    /* UNICAST */
                     if(comm_type == 1)
                     {
                         /* Check if protocol is UDP */
@@ -374,6 +375,7 @@ uint8_t ether_is_udp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_
                         }
 
                     }
+                    /* BROADCAST */
                     else if(comm_type == 2)
                     {
                         /* Check if protocol is UDP */

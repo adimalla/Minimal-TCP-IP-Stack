@@ -282,9 +282,19 @@ int main(void)
 
     uint16_t tcp_data_length = 0;
 
-    tcp_cl_flags_t tcp_ack_type;
+    tcp_ctl_flags_t tcp_ack_type;
 
     tcp_dest_port = 7788;
+
+
+    tcp_src_port  = get_random_port(ethernet, 6534);
+
+    tcp_client_t test_client;
+
+    init_tcp_client(&test_client, tcp_src_port, tcp_dest_port);
+
+    ether_tcp_handshake(ethernet, (uint8_t*)network_hardware, &test_client, ethernet->gateway_ip);
+
 
     /* State machine */
 
@@ -363,10 +373,14 @@ int main(void)
                                 ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "switched on", 11);
 
                                 /* trigger tcp test */
-                                /* get random port number */
-                                tcp_src_port  = get_random_port(ethernet, 6534);
 
-                                ether_send_tcp_syn(ethernet, tcp_src_port, tcp_dest_port, 0, 0, ethernet->gateway_ip);
+                               //ether_send_tcp_syn(ethernet, tcp_src_port, tcp_dest_port, 0, 0, ethernet->gateway_ip);
+
+//                                tcp_client_t test_client;
+//
+//                                init_tcp_client(&test_client, tcp_src_port, tcp_dest_port);
+//
+//                                ether_tcp_handshake(ethernet, (uint8_t*)network_hardware, &test_client, ethernet->gateway_ip);
 
 
                             }
