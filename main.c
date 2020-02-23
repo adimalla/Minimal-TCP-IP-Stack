@@ -165,13 +165,19 @@ uint8_t ether_open(uint8_t *mac_address)
 
 
 
+typedef enum _app_state
+{
+    APP_INIT  = 0,
+    APP_READ  = 1,
+    APP_WRITE = 2,
+
+}app_state_t;
 
 
 
 
-
-#define TEST1  1
-#define TEST2 1
+#define TEST1 0
+#define TEST2 0
 
 
 
@@ -221,7 +227,6 @@ int main(void)
     waitMicrosecond(500000);
 
     //ether_control(ethernet, ETHER_READ_NONBLOCK);
-
 
 
 #if TEST1
@@ -277,16 +282,13 @@ int main(void)
 
     tcp_dest_port = 7788;
 
-
     tcp_src_port  = get_random_port(ethernet, 6534);
 
     tcp_client_t *test_client;
 
 
-
     /* APP state machine */
-
-    uint8_t app_state = 0;
+    app_state_t app_state = APP_INIT;
 
     int16_t tcp_retval = 0;
 
@@ -297,23 +299,23 @@ int main(void)
         switch(app_state)
         {
 
-        case 0:
+        case APP_INIT:
 
             test_client = tcp_create_client(tcp_src_port, tcp_dest_port, ethernet->gateway_ip);
 
             ether_tcp_handshake(ethernet, (uint8_t*)network_hardware, test_client);
 
-            app_state = 2;
+            app_state = APP_WRITE;
 
             break;
 
-        case 1:
 
+        case APP_READ:
 
             tcp_retval = ether_read_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 50);
 
             if(strncmp(tcp_data, "hi", 2) == 0 || strncmp(tcp_data, "Connection Accepted, Hello from Server", 38) == 0)
-                app_state = 2;
+                app_state = APP_WRITE;
 
             if(tcp_retval < 0)
                 loop = 0;
@@ -322,15 +324,15 @@ int main(void)
 
             break;
 
-        case 2:
+
+        case APP_WRITE:
 
             waitMicrosecond(1000000);
             ether_send_tcp_data(ethernet, test_client, "switched on", 11);
 
-            app_state = 1;
+            app_state = APP_READ;
 
             break;
-
 
         }
 
@@ -338,7 +340,6 @@ int main(void)
 
 
     /* State machine */
-
 
     loop = 1;
 
@@ -499,33 +500,6 @@ int main(void)
                         default:
 
                             break;
-
-                    }
-
-                }
-                if(retval == 2)
-                {
-                    /* Get transport layer protocol type */
-                    switch(get_ip_protocol_type(ethernet))
-                    {
-
-                    case IP_UDP:
-
-                        /* Handle UDP packets */
-                        if (ether_get_udp_data(ethernet, (uint8_t*)udp_data, APP_BUFF_SIZE))
-                        {
-                            RED_LED = 1;
-                            waitMicrosecond(50000);
-                            RED_LED = 0;
-
-                        }
-
-                        break;
-
-
-                    default:
-
-                        break;
 
                     }
 
