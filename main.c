@@ -224,16 +224,14 @@ int main(void)
 
 
 
-#if TEST
+#if 1
 
     /* Test ARP packets */
-    uint8_t gateway_ip[4] = {0};
-
     uint8_t sequence_no = 1;
 
-    set_ip_address(gateway_ip, "192.168.1.196");
+    set_ip_address(ethernet->gateway_ip, "192.168.1.196");
 
-    ether_send_arp_req(ethernet, ethernet->host_ip, gateway_ip);
+    ether_send_arp_req(ethernet, ethernet->host_ip, ethernet->gateway_ip);
 
     if(ether_is_arp(ethernet, (uint8_t*)network_hardware, 128))
     {
@@ -247,14 +245,14 @@ int main(void)
 
 
     /* Test ICMP packets */
-    ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, gateway_ip, &sequence_no, \
+    ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, ethernet->gateway_ip, &sequence_no, \
                         ethernet->arp_table[0].mac_address, ethernet->host_mac);
 
 
 #endif
 
     /* test DHCP */
-    ether_dhcp_enable(ethernet, (uint8_t*)network_hardware, DHCP_INIT_STATE);
+    //ether_dhcp_enable(ethernet, (uint8_t*)network_hardware, DHCP_INIT_STATE);
 
 
 #if TEST2
@@ -285,6 +283,7 @@ int main(void)
     tcp_client_t *test_client;
 
     test_client = tcp_create_client(tcp_src_port, tcp_dest_port, ethernet->gateway_ip);
+
 
     ether_tcp_handshake(ethernet, (uint8_t*)network_hardware, test_client);
 
