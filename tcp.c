@@ -180,6 +180,60 @@ static uint8_t validate_tcp_checksum(net_ip_t *ip, net_tcp_t *tcp)
 
 
 
+
+/***************************************************************
+ * @brief  Static function to check if Packet is TCP (UNICAST)
+ * @param  *ethernet           : Reference to Ethernet handle
+ * @param  *network_data       : Network data
+ * @param  network_data_length : network data length
+ * @retval int8_t              : Error = 0, Success = 1
+ ***************************************************************/
+static uint8_t ether_is_tcp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t network_data_length)
+{
+    uint8_t func_retval = 0;
+    uint8_t block_loop  = 0;
+
+    int16_t comm_type = 0;
+
+    if(ethernet->ether_obj == NULL || network_data == NULL || network_data_length == 0 || network_data_length > UINT16_MAX)
+    {
+        func_retval = 0;
+    }
+    else
+    {
+
+        /* Wait for data */
+        block_loop = ethernet->status.mode_read_blocking;
+
+        do
+        {
+            /* Get network data and check if protocol is IPV4 */
+            if(ether_get_data(ethernet, network_data, network_data_length) && (get_ether_protocol_type(ethernet) == ETHER_IPV4))
+            {
+                /* Checks if UNICAST, validates checksum */
+                comm_type = get_ip_communication_type(ethernet);
+
+                /* UNICAST and if protocol is TCP */
+                if(comm_type == 1 && (get_ip_protocol_type(ethernet) == IP_TCP))
+                {
+
+                    func_retval = 1;
+
+                    break;
+
+                }
+
+            }
+
+        }while(block_loop);
+
+    }
+
+    return func_retval;
+}
+
+
+
 /**********************************************************
  * @brief  Static function for sending TCP SYN packet
  * @param  *ethernet        : Reference to Ethernet handle
@@ -552,93 +606,74 @@ int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t source_port,
 
 
 
-uint8_t ether_is_tcp(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t network_data_length)
+
+/*****************************************************************
+ * @brief  Function to initialize TCP values to TCP client object
+ * @param  *client          : Reference to TCP client handle
+ * @param  source_port      : TCP source port
+ * @param  destination_port : TCP destination port
+ * @param  *server_ip       : Server IP
+ * @retval int8_t           : Error = 0, Success = 1
+ *****************************************************************/
+uint8_t tcp_init_client(tcp_client_t *client, uint16_t source_port, uint16_t destination_port, uint8_t *server_ip)
 {
+
     uint8_t func_retval = 0;
-    uint8_t block_loop  = 0;
 
-    int16_t comm_type = 0;
-
-    if(ethernet->ether_obj == NULL || network_data == NULL || network_data_length == 0 || network_data_length > UINT16_MAX)
+    if(server_ip == NULL)
     {
         func_retval = 0;
     }
     else
     {
 
-        /* Wait for data */
-        block_loop = ethernet->status.mode_read_blocking;
+        client->source_port      = source_port;
+        client->destination_port = destination_port;
 
-        do
-        {
-            if(ether_get_data(ethernet, network_data, network_data_length))
-            {
-                /* Check if protocol is IPV4 */
-                if(get_ether_protocol_type(ethernet) == ETHER_IPV4)
-                {
+        client->sequence_number        = 0;
+        client->acknowledgement_number = 0;
 
-                    /* Checks if UNICAST, validates checksum */
-                    comm_type = get_ip_communication_type(ethernet);
+        /* Not tested */
+        client->client_flags.client_blocking = 1;
 
-                    /* UNICAST */
-                    if(comm_type == 1)
-                    {
-                        /* Check if protocol is TCP */
-                        if(get_ip_protocol_type(ethernet) == IP_TCP)
-                        {
-                            func_retval = 1;
-
-                            break;
-                        }
-
-                    }
-
-                }
-
-            }
-
-        }while(block_loop);
+        memcpy(client->server_ip, server_ip, ETHER_IPV4_SIZE);
 
     }
-
     return func_retval;
 }
 
 
 
-uint8_t init_tcp_client(tcp_client_t *client, uint16_t source_port, uint16_t destination_port, uint8_t *server_ip)
-{
 
-    uint8_t func_retval = 0;
-
-    client->source_port      = source_port;
-    client->destination_port = destination_port;
-
-    client->sequence_number        = 0;
-    client->acknowledgement_number = 0;
-
-    client->client_flags.client_blocking = 1;
-
-    memcpy((char*)client->server_ip, (char*)server_ip, ETHER_IPV4_SIZE);
-
-    return func_retval;
-}
-
-
+/********************************************************************
+ * @brief  Function to create TCP client object (STATIC)
+ * @param  source_port      : TCP source port
+ * @param  destination_port : TCP destination port
+ * @param  *server_ip       : Server IP
+ * @retval int8_t           : Error = 0, Success = TCP client object
+ ********************************************************************/
 tcp_client_t* tcp_create_client(uint16_t source_port, uint16_t destination_port, uint8_t *server_ip)
 {
 
     static tcp_client_t tcp_client;
 
-    tcp_client.source_port      = source_port;
-    tcp_client.destination_port = destination_port;
+    if(server_ip == NULL)
+    {
+        return NULL;
+    }
+    else
+    {
+        tcp_client.source_port      = source_port;
+        tcp_client.destination_port = destination_port;
 
-    tcp_client.sequence_number        = 0;
-    tcp_client.acknowledgement_number = 0;
+        tcp_client.sequence_number        = 0;
+        tcp_client.acknowledgement_number = 0;
 
-    tcp_client.client_flags.client_blocking = 1;
+        /* Not tested */
+        tcp_client.client_flags.client_blocking = 1;
 
-    memcpy((char*)tcp_client.server_ip, (char*)server_ip, ETHER_IPV4_SIZE);
+        memcpy((char*)tcp_client.server_ip, (char*)server_ip, ETHER_IPV4_SIZE);
+    }
 
     return &tcp_client;
 }
@@ -797,7 +832,6 @@ int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, t
 
     return func_retval;
 }
-
 
 
 
