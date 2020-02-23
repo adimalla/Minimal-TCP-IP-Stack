@@ -200,6 +200,56 @@ typedef struct _tcp_client
 
 
 
+/********************************************************************
+ * @brief  Function to create TCP client object (STATIC)
+ * @param  source_port      : TCP source port
+ * @param  destination_port : TCP destination port
+ * @param  *server_ip       : Server IP
+ * @retval int8_t           : Error = 0, Success = TCP client object
+ ********************************************************************/
+tcp_client_t* tcp_create_client(uint16_t source_port, uint16_t destination_port, uint8_t *server_ip);
+
+
+
+
+/*****************************************************************
+ * @brief  Function to initialize TCP values to TCP client object
+ * @param  *client          : Reference to TCP client handle
+ * @param  source_port      : TCP source port
+ * @param  destination_port : TCP destination port
+ * @param  *server_ip       : Server IP
+ * @retval int8_t           : Error = 0, Success = 1
+ *****************************************************************/
+uint8_t tcp_init_client(tcp_client_t *client, uint16_t source_port, uint16_t destination_port, uint8_t *server_ip);
+
+
+
+
+/**********************************************************
+ * @brief  Function to establish connection to TCP server
+ * @param  *ethernet     : Reference to Ethernet handle
+ * @param  *network_data : Network data
+ * @param  *client       : reference to TCP client handle
+ * @retval int8_t        : Error = 0, Success = 1
+ **********************************************************/
+int8_t ether_tcp_handshake(ethernet_handle_t *ethernet, uint8_t *network_data ,tcp_client_t *client);
+
+
+
+
+
+int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client, char *application_data,
+                           uint16_t data_length);
+
+
+
+int16_t ether_read_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client,
+                            char *application_data, uint16_t data_length);
+
+
+
+
+
 /*****************************************************************
  * @brief  Function for getting TCP sever ACK packets
  *         (validates TCP checksum)
@@ -248,7 +298,6 @@ uint16_t ether_get_tcp_psh_ack(ethernet_handle_t *ethernet, char *tcp_data, uint
 
 
 
-
 /****************************************************************
  * @brief  Function for sending TCP PSH ACK packet (data packet)
  *         sequence number and ACK number are swapped,
@@ -267,41 +316,6 @@ int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t source_port,
                               uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip, char *tcp_data, uint16_t data_length);
 
 
-
-
-
-/*****************************************************************
- * @brief  Function to initialize TCP values to TCP client object
- * @param  *client          : Reference to TCP client handle
- * @param  source_port      : TCP source port
- * @param  destination_port : TCP destination port
- * @param  *server_ip       : Server IP
- * @retval int8_t           : Error = 0, Success = 1
- *****************************************************************/
-uint8_t tcp_init_client(tcp_client_t *client, uint16_t source_port, uint16_t destination_port, uint8_t *server_ip);
-
-
-
-/********************************************************************
- * @brief  Function to create TCP client object (STATIC)
- * @param  source_port      : TCP source port
- * @param  destination_port : TCP destination port
- * @param  *server_ip       : Server IP
- * @retval int8_t           : Error = 0, Success = TCP client object
- ********************************************************************/
-tcp_client_t* tcp_create_client(uint16_t source_port, uint16_t destination_port, uint8_t *server_ip);
-
-
-
-int8_t ether_tcp_handshake(ethernet_handle_t *ethernet, uint8_t *network_data ,tcp_client_t *client);
-
-
-int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client, char *application_data,
-                           uint16_t data_length);
-
-
-int16_t ether_read_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client,
-                            char *application_data, uint16_t data_length);
 
 
 #endif /* TCP_H_ */

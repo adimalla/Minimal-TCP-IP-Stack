@@ -218,6 +218,7 @@ typedef enum _network_error_codes
     NET_ICMP_REQ_ERROR     = -8,  /*!< */
     NET_UDP_RAW_SEND_ERROR = -9,  /*!< */
     NET_UDP_SEND_ERROR     = -10, /*!< */
+    NET_TCP_CONNECT_ERROR  = -11, /*!< */
 
 }network_erro_codes_t;
 

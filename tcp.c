@@ -171,16 +171,6 @@ static uint8_t validate_tcp_checksum(net_ip_t *ip, net_tcp_t *tcp)
 
 
 
-
-/******************************************************************************/
-/*                                                                            */
-/*                               TCP Functions                                */
-/*                                                                            */
-/******************************************************************************/
-
-
-
-
 /***************************************************************
  * @brief  Static function to check if Packet is TCP (UNICAST)
  * @param  *ethernet           : Reference to Ethernet handle
@@ -322,6 +312,16 @@ static int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_po
 
     return func_retval;
 }
+
+
+
+
+
+/******************************************************************************/
+/*                                                                            */
+/*                               TCP Functions                                */
+/*                                                                            */
+/******************************************************************************/
 
 
 
@@ -607,6 +607,43 @@ int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t source_port,
 
 
 
+
+/********************************************************************
+ * @brief  Function to create TCP client object (STATIC)
+ * @param  source_port      : TCP source port
+ * @param  destination_port : TCP destination port
+ * @param  *server_ip       : Server IP
+ * @retval int8_t           : Error = 0, Success = TCP client object
+ ********************************************************************/
+tcp_client_t* tcp_create_client(uint16_t source_port, uint16_t destination_port, uint8_t *server_ip)
+{
+
+    static tcp_client_t tcp_client;
+
+    if(server_ip == NULL)
+    {
+        return NULL;
+    }
+    else
+    {
+        tcp_client.source_port      = source_port;
+        tcp_client.destination_port = destination_port;
+
+        tcp_client.sequence_number        = 0;
+        tcp_client.acknowledgement_number = 0;
+
+        /* Not tested */
+        tcp_client.client_flags.client_blocking = 1;
+
+        memcpy((char*)tcp_client.server_ip, (char*)server_ip, ETHER_IPV4_SIZE);
+    }
+
+    return &tcp_client;
+}
+
+
+
+
 /*****************************************************************
  * @brief  Function to initialize TCP values to TCP client object
  * @param  *client          : Reference to TCP client handle
@@ -645,120 +682,100 @@ uint8_t tcp_init_client(tcp_client_t *client, uint16_t source_port, uint16_t des
 
 
 
-/********************************************************************
- * @brief  Function to create TCP client object (STATIC)
- * @param  source_port      : TCP source port
- * @param  destination_port : TCP destination port
- * @param  *server_ip       : Server IP
- * @retval int8_t           : Error = 0, Success = TCP client object
- ********************************************************************/
-tcp_client_t* tcp_create_client(uint16_t source_port, uint16_t destination_port, uint8_t *server_ip)
-{
 
-    static tcp_client_t tcp_client;
-
-    if(server_ip == NULL)
-    {
-        return NULL;
-    }
-    else
-    {
-        tcp_client.source_port      = source_port;
-        tcp_client.destination_port = destination_port;
-
-        tcp_client.sequence_number        = 0;
-        tcp_client.acknowledgement_number = 0;
-
-        /* Not tested */
-        tcp_client.client_flags.client_blocking = 1;
-
-        memcpy((char*)tcp_client.server_ip, (char*)server_ip, ETHER_IPV4_SIZE);
-    }
-
-    return &tcp_client;
-}
-
-
-
-
+/**********************************************************
+ * @brief  Function to establish connection to TCP server
+ * @param  *ethernet     : Reference to Ethernet handle
+ * @param  *network_data : Network data
+ * @param  *client       : reference to TCP client handle
+ * @retval int8_t        : Error = 0, Success = 1
+ **********************************************************/
 int8_t ether_tcp_handshake(ethernet_handle_t *ethernet, uint8_t *network_data ,tcp_client_t *client)
 {
     int8_t func_retval = 0;
-
-    uint8_t api_retval  = 0;
+    uint8_t api_retval = 0;
 
     uint8_t tcp_read_loop = 1;
 
     tcp_ctl_flags_t ack_type;
 
-    /* Send TCP SYN packet */
-    ether_send_tcp_syn(ethernet, client->source_port, client->destination_port, client->sequence_number,
-                       client->acknowledgement_number, client->server_ip);
-
-    client->client_flags.connect_request = 1;
-
-    /* Read response message from the TCP server */
-    api_retval = ether_is_tcp(ethernet, network_data, ETHER_MTU_SIZE);
-
-    if(api_retval)
+    if(ethernet->ether_obj == NULL || client == NULL)
     {
-        do
+        func_retval = NET_TCP_CONNECT_ERROR;
+    }
+    else
+    {
+
+        /* Send TCP SYN packet */
+        ether_send_tcp_syn(ethernet, client->source_port, client->destination_port, client->sequence_number,
+                           client->acknowledgement_number, client->server_ip);
+
+        client->client_flags.connect_request = 1;
+
+        /* Read response message from the TCP server */
+        api_retval = ether_is_tcp(ethernet, network_data, ETHER_MTU_SIZE);
+
+        if(api_retval)
         {
-            ack_type = ether_get_tcp_server_ack(ethernet, &client->sequence_number, &client->acknowledgement_number,
-                                                client->destination_port, client->source_port, client->server_ip);
-
-            switch(ack_type)
+            do
             {
+                ack_type = ether_get_tcp_server_ack(ethernet, &client->sequence_number, &client->acknowledgement_number,
+                                                    client->destination_port, client->source_port, client->server_ip);
 
-            case TCP_SYN_ACK:
+                switch(ack_type)
+                {
 
-                /* Increment the sequence number and pass it as acknowledgment number*/
-                client->sequence_number += 1;
+                case TCP_SYN_ACK:
 
-                ether_send_tcp_ack(ethernet, client->source_port, client->destination_port,
-                                   client->acknowledgement_number, client->sequence_number, client->server_ip, TCP_ACK);
+                    /* Increment the sequence number and pass it as acknowledgment number*/
+                    client->sequence_number += 1;
 
-                /* Set flags */
-                client->client_flags.connect_request     = 0;
-                client->client_flags.connect_established = 1;
+                    ether_send_tcp_ack(ethernet, client->source_port, client->destination_port,
+                                       client->acknowledgement_number, client->sequence_number, client->server_ip, TCP_ACK);
 
-                tcp_read_loop = 0;
+                    /* Set flags */
+                    client->client_flags.connect_request     = 0;
+                    client->client_flags.connect_established = 1;
 
-                break;
+                    tcp_read_loop = 0;
 
-
-            case TCP_FIN_ACK:
-
-                /* Increment the sequence number and pass it as acknowledgment number*/
-                client->sequence_number += 1;
-
-                ether_send_tcp_ack(ethernet, client->source_port, client->destination_port,
-                                   client->acknowledgement_number, client->sequence_number, client->server_ip, TCP_FIN_ACK);
-
-                tcp_read_loop = 0;
-
-                break;
+                    break;
 
 
-            case TCP_RST_ACK:
+                case TCP_FIN_ACK:
 
-                tcp_read_loop = 0;
+                    /* Increment the sequence number and pass it as acknowledgment number*/
+                    client->sequence_number += 1;
 
-                /* Start retransmission timer */
+                    ether_send_tcp_ack(ethernet, client->source_port, client->destination_port,
+                                       client->acknowledgement_number, client->sequence_number, client->server_ip, TCP_FIN_ACK);
 
-                break;
+                    tcp_read_loop = 0;
+
+                    break;
 
 
-            default:
+                case TCP_RST_ACK:
 
-                tcp_read_loop = 0;
+                    /* TODO Implementation pending */
 
-                break;
+                    /* Start retransmission timer */
+                    tcp_read_loop = 0;
 
-            }
+                    break;
 
-        }while(client->client_flags.client_blocking == 1 && tcp_read_loop);
 
+                default:
+
+                    tcp_read_loop = 0;
+
+                    break;
+
+                }
+
+            }while(client->client_flags.client_blocking == 1 && tcp_read_loop);
+
+        }
     }
 
     return func_retval;
