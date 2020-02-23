@@ -305,7 +305,7 @@ int main(void)
 
             ether_tcp_handshake(ethernet, (uint8_t*)network_hardware, test_client);
 
-            app_state = APP_WRITE;
+            app_state = APP_READ;
 
             break;
 
@@ -327,7 +327,7 @@ int main(void)
 
         case APP_WRITE:
 
-            waitMicrosecond(1000000);
+            waitMicrosecond(1000);
 
             tcp_retval = ether_send_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, "switched on", 11);
 
@@ -346,7 +346,7 @@ int main(void)
 
     /* State machine */
 
-    loop = 0;
+    loop = 1;
 
     while(loop)
     {
