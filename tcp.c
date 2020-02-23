@@ -63,6 +63,86 @@
 /******************************************************************************/
 
 
+#define TCP_FRAME_SIZE 20
+#define TCP_SYN_OPTS_SIZE 12
+
+/**/
+typedef struct _net_tcp
+{
+    uint16_t source_port;
+    uint16_t destination_port;
+    uint32_t sequence_number;
+    uint32_t ack_number;
+    uint8_t  data_offset;
+    uint8_t  control_bits;
+    uint16_t window;
+    uint16_t checksum;
+    uint16_t urgent_pointer;
+    uint8_t  data;
+
+}net_tcp_t;
+
+
+/**/
+typedef enum _tcp_option_kinds
+{
+    TCP_NO_OPERATION     = 1,
+    TCP_MAX_SEGMENT_SIZE = 2,
+    TCP_WINDOW_SCALING   = 3,
+    TCP_SACK_PERMITTED   = 4,
+    TCP_TIMESTAMPS       = 8,
+
+}tcp_opts_kind;
+
+
+/**/
+typedef struct tcp_max_segment_size
+{
+    uint8_t  option_kind;
+    uint8_t  length;
+    uint16_t value;
+
+}tcp_mss_t;
+
+
+/**/
+typedef struct tcp_sack_permitted_size
+{
+    uint8_t option_kind;
+    uint8_t length;
+
+}tcp_sack_t;
+
+
+/**/
+typedef struct tcp_no_operation
+{
+    uint8_t option_kind;
+
+}tcp_nop_t;
+
+
+/**/
+typedef struct tcp_window_scaling
+{
+    uint8_t option_kind;
+    uint8_t length;
+    uint8_t value;
+
+}tcp_win_scale_t;
+
+
+/**/
+typedef struct _tcp_syn_options
+{
+    tcp_mss_t       mss;
+    tcp_sack_t      sack;
+    tcp_nop_t       nop;
+    tcp_nop_t       nop1;
+    tcp_nop_t       nop2;
+    tcp_win_scale_t window_scale;
+
+}tcp_syn_opts_t;
 
 
 
