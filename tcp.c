@@ -274,6 +274,7 @@ static int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_po
 
 /*****************************************************************
  * @brief  Function for getting TCP sever ACK packets
+ *         (validates TCP checksum)
  * @param  *ethernet        : Reference to Ethernet handle
  * @param  *sequence_number : Reference to TCP sequence number
  * @param  *ack_number      : Reference to acknowledgment number
@@ -413,10 +414,16 @@ int8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_port, uin
 
 
 
+/***************************************************************
+ * @brief  Function to get PSH ACK packet (TCP data packet)
+ * @param  *ethernet          : Reference to Ethernet handle
+ * @param  *tcp_data          : TCP data / payload
+ * @param  data_buffer_length : Data buffer length
+ * @retval int8_t             : Error = 0, Success = bytes read
+ ***************************************************************/
 uint16_t ether_get_tcp_psh_ack(ethernet_handle_t *ethernet, char *tcp_data, uint16_t data_buffer_length)
 {
     uint16_t func_retval = 0;
-
 
     net_ip_t  *ip;
     net_tcp_t *tcp;
@@ -424,22 +431,27 @@ uint16_t ether_get_tcp_psh_ack(ethernet_handle_t *ethernet, char *tcp_data, uint
     uint16_t tcp_packet_length = 0;
     uint16_t tcp_data_length   = 0;
 
-    ip  = (void*)&ethernet->ether_obj->data;
+    if(ethernet->ether_obj == NULL || tcp_data == NULL || data_buffer_length > UINT16_MAX)
+    {
+        func_retval = 0;
+    }
+    else
+    {
+        ip  = (void*)&ethernet->ether_obj->data;
 
-    tcp = (void*)( (uint8_t*)ip + IP_HEADER_SIZE );
+        tcp = (void*)( (uint8_t*)ip + IP_HEADER_SIZE );
 
-    tcp_packet_length = ( ntohs(ip->total_length) - IP_HEADER_SIZE );
+        tcp_packet_length = ( ntohs(ip->total_length) - IP_HEADER_SIZE );
 
-    tcp_data_length = abs(tcp_packet_length - TCP_FRAME_SIZE);
+        tcp_data_length = abs(tcp_packet_length - TCP_FRAME_SIZE);
 
-    if(data_buffer_length > tcp_data_length)
-        data_buffer_length = tcp_data_length;
+        if(data_buffer_length > tcp_data_length)
+            data_buffer_length = tcp_data_length;
 
+        memcpy(tcp_data, &tcp->data, data_buffer_length);
 
-    memcpy(tcp_data, &tcp->data, data_buffer_length);
-
-
-    func_retval = tcp_data_length;
+        func_retval = tcp_data_length;
+    }
 
     return func_retval;
 }

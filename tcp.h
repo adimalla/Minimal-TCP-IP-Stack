@@ -202,6 +202,7 @@ typedef struct _tcp_client
 
 /*****************************************************************
  * @brief  Function for getting TCP sever ACK packets
+ *         (validates TCP checksum)
  * @param  *ethernet        : Reference to Ethernet handle
  * @param  *sequence_number : Reference to TCP sequence number
  * @param  *ack_number      : Reference to acknowledgment number
@@ -235,6 +236,13 @@ int8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_port, uin
 
 
 
+/***************************************************************
+ * @brief  Function to get PSH ACK packet (TCP data packet)
+ * @param  *ethernet          : Reference to Ethernet handle
+ * @param  *tcp_data          : TCP data / payload
+ * @param  data_buffer_length : Data buffer length
+ * @retval int8_t             : Error = 0, Success = bytes read
+ ***************************************************************/
 uint16_t ether_get_tcp_psh_ack(ethernet_handle_t *ethernet, char *tcp_data, uint16_t data_buffer_length);
 
 
