@@ -627,11 +627,11 @@ int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, t
 {
     int8_t func_retval = 0;
 
-    int8_t api_retval = 0;
-
-    uint8_t tcp_read_loop = 1;
-
-    tcp_ctl_flags_t ack_type;
+//    int8_t api_retval = 0;
+//
+//    uint8_t tcp_read_loop = 1;
+//
+//    tcp_ctl_flags_t ack_type;
 
     /* Send PSH ACK packet to the server (SEQ and ACK numbers swapped) */
     ether_send_tcp_psh_ack(ethernet, client->source_port, client->destination_port,
@@ -667,6 +667,8 @@ int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, t
 //            default:
 //
 //                /* Start retransmission timer */
+//
+//                tcp_read_loop = 0;
 //
 //                break;
 //
