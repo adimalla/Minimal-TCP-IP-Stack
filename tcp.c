@@ -77,53 +77,19 @@
 
 
 
+/*******************************************************
+ * @brief  Static function to calculate TCP checksum
+ * @param  *ip     : Reference to IP frame structure
+ * @param  *udp    : Reference to TCP frame structure
+ * @retval uint8_t : Error = 0, Success = TCP checksum
+ ******************************************************/
 static uint16_t get_tcp_checksum(net_ip_t *ip, net_tcp_t *tcp, uint16_t data_length)
 {
-    uint16_t func_retval = 0;
-
+    uint16_t func_retval     = 0;
     uint32_t sum             = 0;
     uint16_t pseudo_protocol = 0;
     uint16_t tcp_length      = 0;
 
-    /* TCP Pseudo Header checksum calculation */
-    sum = 0;
-
-    ether_sum_words(&sum, ip->source_ip, 8);
-
-    pseudo_protocol = ip->protocol;
-
-    /* create space for reserved bits */
-    sum += ( (pseudo_protocol & 0xFF) << 8 );
-
-    /* TCP data_length = options + data to checksum */
-    tcp_length = htons(TCP_FRAME_SIZE + data_length);
-
-    sum += tcp_length;
-
-    /* TCP header checksum */
-    ether_sum_words(&sum, tcp, 12);
-
-    ether_sum_words(&sum, &tcp->data_offset, 4);
-
-    /* TCP data_length = options + data to checksum */
-    ether_sum_words(&sum, &tcp->data, data_length);
-
-    func_retval = ether_get_checksum(sum);
-
-    return func_retval;
-
-}
-
-
-
-static uint8_t validate_tcp_checksum(net_ip_t *ip, net_tcp_t *tcp)
-{
-    uint8_t func_retval = 0;
-
-    uint32_t sum = 0;
-    uint16_t pseudo_protocol = 0;
-
-    uint16_t tcp_length;
 
     if(ip == NULL || tcp == NULL)
     {
@@ -131,7 +97,57 @@ static uint8_t validate_tcp_checksum(net_ip_t *ip, net_tcp_t *tcp)
     }
     else
     {
+        /* TCP Pseudo Header checksum calculation */
+        sum = 0;
 
+        ether_sum_words(&sum, ip->source_ip, 8);
+
+        pseudo_protocol = ip->protocol;
+
+        /* create space for reserved bits */
+        sum += ( (pseudo_protocol & 0xFF) << 8 );
+
+        /* TCP data_length = options + data to checksum */
+        tcp_length = htons(TCP_FRAME_SIZE + data_length);
+
+        sum += tcp_length;
+
+        /* TCP header checksum */
+        ether_sum_words(&sum, tcp, 12);
+
+        ether_sum_words(&sum, &tcp->data_offset, 4);
+
+        /* TCP data_length = options + data to checksum */
+        ether_sum_words(&sum, &tcp->data, data_length);
+
+        func_retval = ether_get_checksum(sum);
+    }
+
+    return func_retval;
+
+}
+
+
+
+/*******************************************************
+ * @brief  Static function to validate TCP checksum
+ * @param  *ip     : Reference to IP frame structure
+ * @param  *udp    : Reference to TCP frame structure
+ * @retval uint8_t : Error = 0, Success = 1
+ ******************************************************/
+static uint8_t validate_tcp_checksum(net_ip_t *ip, net_tcp_t *tcp)
+{
+    uint8_t func_retval      = 0;
+    uint32_t sum             = 0;
+    uint16_t pseudo_protocol = 0;
+    uint16_t tcp_length      = 0;
+
+    if(ip == NULL || tcp == NULL)
+    {
+        func_retval = 0;
+    }
+    else
+    {
         /* validate TCP checksum */
         sum = 0;
 
@@ -665,6 +681,13 @@ int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, t
 
             }
 
+        }
+        else if(get_ether_protocol_type(ethernet) == ETHER_IPV4 && (get_ip_communication_type(ethernet) == 1) \
+                && get_ip_protocol_type(ethernet) == IP_ICMP)
+        {
+            ether_send_icmp_reply(ethernet);
+
+            break;
         }
 
     }
