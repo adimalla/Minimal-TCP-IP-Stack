@@ -785,7 +785,7 @@ int8_t ether_tcp_handshake(ethernet_handle_t *ethernet, uint8_t *network_data ,t
 
 
 /*****************************************************************
- * @brief  Function to initialize TCP values to TCP client object
+ * @brief  Function for sending TCP data
  * @param  *ethernet         : Reference to the Ethernet Handle
  * @param  *network_data     : Network data
  * @param  *client           : Reference to TCP client handle
@@ -844,6 +844,8 @@ int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, t
 
                 }
 
+                memset(network_data, 0, sizeof(ETHER_MTU_SIZE));
+
             }
             /* Handle ARP packets */
             else if(get_ether_protocol_type(ethernet) == ETHER_IPV4 && (get_ip_communication_type(ethernet) == 1) \
@@ -871,12 +873,20 @@ int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, t
 
 
 
+
+/*****************************************************************
+ * @brief  Function for reading TCP data
+ * @param  *ethernet         : Reference to the Ethernet Handle
+ * @param  *network_data     : Network data
+ * @param  *client           : Reference to TCP client handle
+ * @param  *application_data : application_data
+ * @param  data_length       : application data length
+ * @retval int8_t            : Error = -12, Success = 1
+ *****************************************************************/
 int16_t ether_read_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client,
                             char *application_data, uint16_t data_length)
 {
     int16_t func_retval = 0;
-
-    uint8_t api_retval = 0;
 
     uint8_t tcp_read_loop = 1;
 
@@ -885,22 +895,24 @@ int16_t ether_read_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
     uint16_t tcp_data_length = 0;
 
 
-    while(tcp_read_loop && ether_get_data(ethernet, network_data, ETHER_MTU_SIZE))
+    if(ethernet->ether_obj == NULL || client == NULL || data_length > UINT16_MAX || data_length > ETHER_MTU_SIZE)
     {
-        /* Handle ARP requests */
-        if(get_ether_protocol_type(ethernet) == ETHER_ARP)
+        func_retval = NET_TCP_SEND_ERROR;
+    }
+    else
+    {
+
+        while(tcp_read_loop && ether_get_data(ethernet, network_data, ETHER_MTU_SIZE))
         {
+            /* Handle ARP requests */
+            if(get_ether_protocol_type(ethernet) == ETHER_ARP)
+            {
 
-            ether_handle_arp_resp_req(ethernet);
+                ether_handle_arp_resp_req(ethernet);
 
-        }
-        else if(get_ether_protocol_type(ethernet) == ETHER_IPV4)
-        {
-            /* Checks if UNICAST, validates checksum */
-            api_retval = get_ip_communication_type(ethernet);
-
-            /* Get transport layer protocol type */
-            if(api_retval == 1)
+            }
+            /* handle transport layer protocol type packets */
+            else if(get_ether_protocol_type(ethernet) == ETHER_IPV4 && (get_ip_communication_type(ethernet) == 1))
             {
                 /* Handle ICMP packets */
                 if(get_ip_protocol_type(ethernet) == IP_ICMP)
@@ -950,6 +962,7 @@ int16_t ether_read_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
 
                         break;
 
+
                     case TCP_ACK:
 
 
@@ -968,13 +981,13 @@ int16_t ether_read_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
 
                 } /* IP is TCP condition */
 
-            } /* UNICAST Packets */
+            } /* ETHER is IP packet condition */
 
-        } /* ETHER is IP packet condition */
+            memset(network_data, 0, sizeof(ETHER_MTU_SIZE));
 
-    }/* while loop */
+        }/* while loop */
 
-    memset(network_data, 0, sizeof(ETHER_MTU_SIZE));
+    }
 
     return func_retval;
 }

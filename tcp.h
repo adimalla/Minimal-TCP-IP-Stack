@@ -239,7 +239,7 @@ int8_t ether_tcp_handshake(ethernet_handle_t *ethernet, uint8_t *network_data ,t
 
 
 /*****************************************************************
- * @brief  Function to initialize TCP values to TCP client object
+ * @brief  Function for sending TCP data
  * @param  *ethernet         : Reference to the Ethernet Handle
  * @param  *network_data     : Network data
  * @param  *client           : Reference to TCP client handle
@@ -253,7 +253,15 @@ int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, t
 
 
 
-
+/*****************************************************************
+ * @brief  Function for reading TCP data
+ * @param  *ethernet         : Reference to the Ethernet Handle
+ * @param  *network_data     : Network data
+ * @param  *client           : Reference to TCP client handle
+ * @param  *application_data : application_data
+ * @param  data_length       : application data length
+ * @retval int8_t            : Error = -12, Success = 1
+ *****************************************************************/
 int16_t ether_read_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client,
                             char *application_data, uint16_t data_length);
 
