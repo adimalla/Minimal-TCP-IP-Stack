@@ -180,7 +180,7 @@ static uint8_t validate_tcp_checksum(net_ip_t *ip, net_tcp_t *tcp)
 
 
 
-/***********************************************************
+/**********************************************************
  * @brief  Static function for sending TCP SYN packet
  * @param  *ethernet        : Reference to Ethernet handle
  * @param  source_port      : TCP source port
@@ -253,14 +253,11 @@ static int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_po
         /*Get TCP checksum */
         tcp->checksum = get_tcp_checksum(ip, tcp, 12);
 
-
         /* Get MAC address from ARP table */
         ether_arp_resolve_address(ethernet, destination_mac, destination_ip);
 
-
         /* Fill Ethernet frame */
         fill_ether_frame(ethernet, destination_mac, ethernet->host_mac, ETHER_IPV4);
-
 
         /*Send TCP data */
         ether_send_data(ethernet,(uint8_t*)ethernet->ether_obj, ETHER_FRAME_SIZE + htons(ip->total_length));
@@ -272,12 +269,21 @@ static int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_po
 
 
 
-
+/*****************************************************************
+ * @brief  Function for getting TCP sever ACK packets
+ * @param  *ethernet        : Reference to Ethernet handle
+ * @param  *sequence_number : Reference to TCP sequence number
+ * @param  *ack_number      : Reference to acknowledgment number
+ * @param  server_src_port  : TCP destination /server port
+ * @param  client_src_port  : TCP client source port
+ * @param  *sever_ip        : Destination server IP
+ * @retval uint8_t          : Error = 0, Success = TCP ACK number
+ *****************************************************************/
 tcp_ctl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  uint32_t *sequence_number, uint32_t *ack_number,
-                                         uint16_t server_src_port, uint16_t client_src_port, uint8_t *sender_src_ip)
+                                         uint16_t server_src_port, uint16_t client_src_port, uint8_t *sever_ip)
 {
 
-    tcp_ctl_flags_t func_retval =  (tcp_ctl_flags_t)0;
+    tcp_ctl_flags_t func_retval = (tcp_ctl_flags_t)0;
 
     net_ip_t  *ip;
     net_tcp_t *tcp;
@@ -287,25 +293,32 @@ tcp_ctl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  uint32_t 
     uint16_t sender_src_port  = 0;
     uint16_t sender_dest_port = 0;
 
-    ip  = (void*)&ethernet->ether_obj->data;
-
-    tcp = (void*)( (uint8_t*)ip + IP_HEADER_SIZE );
-
-    validate = validate_tcp_checksum(ip, tcp);
-
-    if(validate && ( memcmp(sender_src_ip, ip->source_ip, 4) == 0 ) )
+    if(ethernet->ether_obj == NULL || sever_ip == NULL)
     {
-        sender_src_port  = ntohs(tcp->source_port);
-        sender_dest_port = ntohs(tcp->destination_port);
+        func_retval = (tcp_ctl_flags_t)0;
+    }
+    else
+    {
+        ip  = (void*)&ethernet->ether_obj->data;
 
-        if(server_src_port == sender_src_port && client_src_port == sender_dest_port)
+        tcp = (void*)( (uint8_t*)ip + IP_HEADER_SIZE );
+
+        validate = validate_tcp_checksum(ip, tcp);
+
+        if(validate && ( memcmp(sever_ip, ip->source_ip, 4) == 0 ) )
         {
-            *sequence_number = ntohl(tcp->sequence_number);
-            *ack_number      = ntohl(tcp->ack_number);
+            sender_src_port  = ntohs(tcp->source_port);
+            sender_dest_port = ntohs(tcp->destination_port);
 
-            func_retval = (tcp_ctl_flags_t)tcp->control_bits;
+            if(server_src_port == sender_src_port && client_src_port == sender_dest_port)
+            {
+                *sequence_number = ntohl(tcp->sequence_number);
+                *ack_number      = ntohl(tcp->ack_number);
+
+                func_retval = (tcp_ctl_flags_t)tcp->control_bits;
+            }
+
         }
-
     }
 
     return func_retval;
@@ -710,6 +723,7 @@ int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, t
 
     }
 
+    /* Don't send PSH ACK packet if server has terminated connection */
     if(func_retval >= 0)
     {
         /* Send PSH ACK packet to the server (SEQ and ACK numbers swapped) */

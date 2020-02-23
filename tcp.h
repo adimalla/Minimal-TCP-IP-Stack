@@ -200,7 +200,16 @@ typedef struct _tcp_client
 
 
 
-
+/*****************************************************************
+ * @brief  Function for getting TCP sever ACK packets
+ * @param  *ethernet        : Reference to Ethernet handle
+ * @param  *sequence_number : Reference to TCP sequence number
+ * @param  *ack_number      : Reference to acknowledgment number
+ * @param  server_src_port  : TCP destination /server port
+ * @param  client_src_port  : TCP client source port
+ * @param  *sever_ip        : Destination server IP
+ * @retval uint8_t          : Error = 0, Success = TCP ACK number
+ *****************************************************************/
 tcp_ctl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  uint32_t *sequence_number, uint32_t *ack_number,
                                  uint16_t server_src_port, uint16_t client_src_port, uint8_t *sender_src_ip);
 
