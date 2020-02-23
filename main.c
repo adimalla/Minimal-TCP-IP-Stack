@@ -328,7 +328,12 @@ int main(void)
         case APP_WRITE:
 
             waitMicrosecond(1000000);
-            ether_send_tcp_data(ethernet, test_client, "switched on", 11);
+
+            tcp_retval = ether_send_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, "switched on", 11);
+
+
+            if(tcp_retval < 0)
+                loop = 0;
 
             app_state = APP_READ;
 
@@ -341,7 +346,7 @@ int main(void)
 
     /* State machine */
 
-    loop = 1;
+    loop = 0;
 
     while(loop)
     {
@@ -416,7 +421,7 @@ int main(void)
                                 ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "switched on", 11);
 
                                 /* trigger tcp test */
-                                ether_send_tcp_data(ethernet, test_client, "switched on", 11);
+                                ether_send_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, "switched on", 11);
 
 
                             }
@@ -426,7 +431,7 @@ int main(void)
                                 ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "switched off", 12);
 
                                 /* trigger tcp test */
-                                ether_send_tcp_data(ethernet, test_client, "switched off", 12);
+                                ether_send_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, "switched off", 12);
 
                             }
 #endif
