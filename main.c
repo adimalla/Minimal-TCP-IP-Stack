@@ -170,8 +170,8 @@ uint8_t ether_open(uint8_t *mac_address)
 
 
 
-#define TEST  0
-#define TEST2 0
+#define TEST1  1
+#define TEST2 1
 
 
 
@@ -224,7 +224,7 @@ int main(void)
 
 
 
-#if 1
+#if TEST1
 
     /* Test ARP packets */
     uint8_t sequence_no = 1;
@@ -252,7 +252,7 @@ int main(void)
 #endif
 
     /* test DHCP */
-    //ether_dhcp_enable(ethernet, (uint8_t*)network_hardware, DHCP_INIT_STATE);
+    ether_dhcp_enable(ethernet, (uint8_t*)network_hardware, DHCP_INIT_STATE);
 
 
 #if TEST2
@@ -269,7 +269,7 @@ int main(void)
     uint16_t tcp_src_port =  0;
     uint16_t tcp_dest_port = 0;
 
-    char tcp_data[40] = {0};
+    char tcp_data[50] = {0};
 
     uint16_t tcp_data_length = 0;
 
@@ -282,18 +282,63 @@ int main(void)
 
     tcp_client_t *test_client;
 
-    test_client = tcp_create_client(tcp_src_port, tcp_dest_port, ethernet->gateway_ip);
 
 
-    ether_tcp_handshake(ethernet, (uint8_t*)network_hardware, test_client);
+    /* APP state machine */
+
+    uint8_t app_state = 0;
+
+    int16_t tcp_retval = 0;
+
+    loop = 1 ;
+
+    do
+    {
+        switch(app_state)
+        {
+
+        case 0:
+
+            test_client = tcp_create_client(tcp_src_port, tcp_dest_port, ethernet->gateway_ip);
+
+            ether_tcp_handshake(ethernet, (uint8_t*)network_hardware, test_client);
+
+            app_state = 2;
+
+            break;
+
+        case 1:
 
 
-    ether_read_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 20);
+            tcp_retval = ether_read_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 50);
 
-    ether_send_tcp_data(ethernet, test_client, "switched on", 11);
+            if(strncmp(tcp_data, "hi", 2) == 0 || strncmp(tcp_data, "Connection Accepted, Hello from Server", 38) == 0)
+                app_state = 2;
+
+            if(tcp_retval < 0)
+                loop = 0;
+
+            memset(tcp_data, 0, 40);
+
+            break;
+
+        case 2:
+
+            waitMicrosecond(1000000);
+            ether_send_tcp_data(ethernet, test_client, "switched on", 11);
+
+            app_state = 1;
+
+            break;
+
+
+        }
+
+    }while(loop);
 
 
     /* State machine */
+
 
     loop = 1;
 
@@ -495,9 +540,9 @@ int main(void)
 
             }
 
+            memset(data, 0, sizeof(data));
         }
 
-        memset(data, 0, sizeof(data));
     }
 
     return 0;
