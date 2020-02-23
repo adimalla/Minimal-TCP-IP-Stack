@@ -65,7 +65,7 @@
 
 
 
-/**/
+/* TCP ACK flags */
 typedef enum _tcp_control_flags
 {
 
@@ -82,7 +82,7 @@ typedef enum _tcp_control_flags
 }tcp_ctl_flags_t;
 
 
-/**/
+/* TCP client handle flags */
 typedef struct _tcp_client_flags
 {
     uint8_t connect_request     : 1;
@@ -96,6 +96,7 @@ typedef struct _tcp_client_flags
 }tcp_client_flags_t;
 
 
+/* TCP client handle */
 typedef struct _tcp_client
 {
     uint16_t source_port;
