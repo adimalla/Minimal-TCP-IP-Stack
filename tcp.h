@@ -66,7 +66,7 @@
 
 
 #define TCP_FRAME_SIZE 20
-
+#define TCP_SYN_OPTS_SIZE 12
 
 /**/
 typedef struct _net_tcp
@@ -183,6 +183,7 @@ typedef struct _tcp_client
     uint16_t destination_port;
     uint32_t sequence_number;
     uint32_t acknowledgement_number;
+    uint8_t  server_ip[4];
 
     tcp_client_flags_t client_flags;
 
@@ -228,15 +229,17 @@ int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t source_port,
 
 
 
-uint8_t init_tcp_client(tcp_client_t *client, uint16_t source_port, uint16_t destination_port);
+uint8_t init_tcp_client(tcp_client_t *client, uint16_t source_port, uint16_t destination_port, uint8_t *server_ip);
 
 
-tcp_client_t* tcp_create_client(uint16_t source_port, uint16_t destination_port);
-
-int8_t ether_tcp_handshake(ethernet_handle_t *ethernet, uint8_t *network_data ,tcp_client_t *client, uint8_t *server_ip);
+tcp_client_t* tcp_create_client(uint16_t source_port, uint16_t destination_port, uint8_t *server_ip);
 
 
+int8_t ether_tcp_handshake(ethernet_handle_t *ethernet, uint8_t *network_data ,tcp_client_t *client);
 
+
+int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client,
+                           char *application_data, uint16_t data_length);
 
 
 #endif /* TCP_H_ */
