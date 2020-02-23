@@ -243,7 +243,7 @@ int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, tcp_client_t *client, ch
 
 
 
-uint16_t ether_read_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client,
+int16_t ether_read_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client,
                             char *application_data, uint16_t data_length);
 
 
