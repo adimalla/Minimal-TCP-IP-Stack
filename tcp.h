@@ -247,6 +247,22 @@ uint16_t ether_get_tcp_psh_ack(ethernet_handle_t *ethernet, char *tcp_data, uint
 
 
 
+
+
+/****************************************************************
+ * @brief  Function for sending TCP PSH ACK packet (data packet)
+ *         sequence number and ACK number are swapped,
+ *         then passed as parameters by user.
+ * @param  *ethernet        : Reference to Ethernet handle
+ * @param  source_port      : TCP source port
+ * @param  destination_port : TCP destination port
+ * @param  sequence_number  : TCP sequence number
+ * @param  ack_number       : TCP acknowledgment number
+ * @param  *destination_ip  : Destination server IP
+ * @param  *tcp_data        : TCP data / payload
+ * @param  data_length      : TCP data length
+ * @retval int8_t           : Error = 0, Success = 1
+ ****************************************************************/
 int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
                               uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip, char *tcp_data, uint16_t data_length);
 
