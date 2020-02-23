@@ -325,8 +325,7 @@ int main(void)
 
             waitMicrosecond(1000);
 
-            tcp_retval = ether_send_tcp_data(ethernet, (uint8_t*)network_hardware, test_client,
-                                             "Hello from client, whatsup ?,jkshdkjashdkcdahgfakdjsgfyrbagfkcdashgfcashdfgbafgcasbjkdgfcabksdjgfrtcgbf0", 104);
+            tcp_retval = ether_send_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, "Hello", 5);
 
 
             if(tcp_retval < 0)

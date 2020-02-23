@@ -68,7 +68,7 @@
 #define ETHER_IPV4_SIZE   4     /*!< IP protocol version 4 size */
 #define ARP_TABLE_SIZE    5     /*!< ARP Table size define      */
 #define ETHER_MTU_SIZE    1460  /*!< MAX MTU size               */
-#define APP_BUFF_SIZE     350   /*!< Application buffer size    */
+#define APP_BUFF_SIZE     500   /*!< Application buffer size    */
 
 
 /* Function define for random number generator function */
