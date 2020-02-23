@@ -532,7 +532,6 @@ int8_t ether_send_udp(ethernet_handle_t *ethernet, uint8_t *destination_ip, uint
 
 
 
-
 /**************************************************************
  * @brief  Function to read UDP packet
  * @param  *ethernet         : reference to the Ethernet handle
