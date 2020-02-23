@@ -53,7 +53,7 @@
 
 #include "tcp.h"
 
-
+#include "icmp.h"
 
 
 /******************************************************************************/
@@ -686,8 +686,9 @@ int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, tcp_client_t *client, ch
 
 
 
+
 uint16_t ether_read_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client,
-                            char *application_data, uint16_t data_length)
+                             char *application_data, uint16_t data_length)
 {
     uint16_t func_retval = 0;
 
@@ -699,60 +700,95 @@ uint16_t ether_read_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data,
 
     uint16_t tcp_data_length = 0;
 
-    /* Read ACK from the TCP server */
-    api_retval = ether_is_tcp(ethernet, network_data, ETHER_MTU_SIZE);
 
-    if(api_retval)
+    while(tcp_read_loop)
     {
-        do
-        {
-            ack_type = ether_get_tcp_server_ack(ethernet, &client->sequence_number, &client->acknowledgement_number,
-                                                client->destination_port, client->source_port, client->server_ip);
 
-            switch(ack_type)
+        if (ether_get_data(ethernet, network_data, ETHER_MTU_SIZE))
+        {
+
+            /* Handle ARP requests */
+            if(get_ether_protocol_type(ethernet) == ETHER_ARP)
             {
 
-            case TCP_ACK:
-
-
-                break;
-
-
-            case TCP_PSH_ACK:
-
-                tcp_data_length = ether_get_tcp_psh_ack(ethernet, application_data, data_length);
-
-                client->sequence_number += tcp_data_length;
-
-                ether_send_tcp_ack(ethernet, client->source_port, client->destination_port, client->acknowledgement_number,
-                                   client->sequence_number, ethernet->gateway_ip, TCP_ACK);
-
-                tcp_read_loop = 0;
-
-                func_retval = tcp_data_length;
-
-                break;
-
-
-            default:
-
-                /* Start retransmission timer */
-
-                tcp_read_loop = 0;
-
-                break;
+                ether_handle_arp_resp_req(ethernet);
 
             }
+            else if(get_ether_protocol_type(ethernet) == ETHER_IPV4)
+            {
+                /* Checks if UNICAST, validates checksum */
+                api_retval = get_ip_communication_type(ethernet);
 
-        }while(client->client_flags.client_blocking == 1 && tcp_read_loop);
+                /* Get transport layer protocol type */
+                if(api_retval == 1)
+                {
+                    /* Handle ICMP packets */
+                    if(get_ip_protocol_type(ethernet) == IP_ICMP)
+                    {
 
-    }
+                        ether_send_icmp_reply(ethernet);
 
+                    }
+                    /* Handle TCP packets */
+                    else if(get_ip_protocol_type(ethernet) == IP_TCP)
+                    {
+
+                        /* Read ACK from the TCP server */
+                        ack_type = ether_get_tcp_server_ack(ethernet, &client->sequence_number, &client->acknowledgement_number,
+                                                            client->destination_port, client->source_port, client->server_ip);
+
+                        switch(ack_type)
+                        {
+
+                        case TCP_PSH_ACK:
+
+                            tcp_data_length = ether_get_tcp_psh_ack(ethernet, application_data, data_length);
+
+                            client->sequence_number += tcp_data_length;
+
+                            ether_send_tcp_ack(ethernet, client->source_port, client->destination_port, client->acknowledgement_number,
+                                               client->sequence_number, ethernet->gateway_ip, TCP_ACK);
+
+                            tcp_read_loop = 0;
+
+                            func_retval = tcp_data_length;
+
+                            break;
+
+
+                        case TCP_FIN_ACK:
+
+                            /* Increment the sequence number and pass it as acknowledgment number*/
+                            client->sequence_number += 1;
+
+                            ether_send_tcp_ack(ethernet, client->source_port, client->destination_port, client->acknowledgement_number,
+                                               client->sequence_number, ethernet->gateway_ip, TCP_FIN_ACK);
+
+                            break;
+
+
+                        default:
+
+                            /* NOP */
+
+                            break;
+
+                        }
+
+                        break;
+
+                    } /* IP is TCP condition */
+
+                } /* UNICAST Packets */
+
+            } /* ETHER is IP packet condition */
+
+        } /* Network data read */
+
+    }/* while loop */
 
     return func_retval;
 }
-
-
 
 
 
