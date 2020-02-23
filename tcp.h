@@ -216,7 +216,20 @@ tcp_ctl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  uint32_t 
 
 
 
-uint8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
+/**********************************************************
+ * @brief  Function for sending TCP ACK packet
+ *         sequence number and ACK number are swapped,
+ *         then passed as parameters by user.
+ * @param  *ethernet        : Reference to Ethernet handle
+ * @param  source_port      : TCP source port
+ * @param  destination_port : TCP destination port
+ * @param  sequence_number  : TCP sequence number
+ * @param  ack_number       : TCP acknowledgment number
+ * @param  *destination_ip  : Destination server IP
+ * @param  ack_type         : TCP ACK value
+ * @retval int8_t           : Error = 0, Success = 1
+ **********************************************************/
+int8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
                            uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip, tcp_ctl_flags_t ack_type);
 
 
