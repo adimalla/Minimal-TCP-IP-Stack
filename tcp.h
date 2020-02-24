@@ -69,17 +69,26 @@
 typedef enum _tcp_control_flags
 {
 
-    TCP_FIN     = 0x01,
-    TCP_SYN     = 0x02,
-    TCP_RST     = 0x04,
-    TCP_PSH     = 0x08,
-    TCP_ACK     = 0x10,
-    TCP_FIN_ACK = 0x11,
-    TCP_SYN_ACK = 0x12,
-    TCP_RST_ACK = 0x14,
-    TCP_PSH_ACK = 0x18,
+    TCP_FIN         = 0x01,
+    TCP_SYN         = 0x02,
+    TCP_RST         = 0x04,
+    TCP_PSH         = 0x08,
+    TCP_ACK         = 0x10,
+    TCP_FIN_ACK     = 0x11,
+    TCP_SYN_ACK     = 0x12,
+    TCP_RST_ACK     = 0x14,
+    TCP_PSH_ACK     = 0x18,
+    TCP_FIN_PSH_ACK = 0x19,
 
 }tcp_ctl_flags_t;
+
+
+typedef enum _tcp_read_state
+{
+    TCP_READ_BLOCKING  = 1,
+    TCP_READ_NONBLOCK  = 2,
+
+}tcp_read_state_t;
 
 
 /* TCP client handle flags */
@@ -152,21 +161,33 @@ uint8_t tcp_init_client(tcp_client_t *client, uint16_t source_port, uint16_t des
  * @param  *client       : reference to TCP client handle
  * @retval int8_t        : Error = -11, Success = 1
  **********************************************************/
-int8_t ether_tcp_handshake(ethernet_handle_t *ethernet, uint8_t *network_data ,tcp_client_t *client);
-
+int8_t ether_tcp_connect(ethernet_handle_t *ethernet, uint8_t *network_data ,tcp_client_t *client);
 
 
 
 
 /*****************************************************************
+ * @brief  Function to control TCP read behavior
+ * @param  *client     : Reference to TCP handle
+ * @param  app_state   : TCP read type (blocking or non blocking)
+ * @retval int8_t      : Error = 0, Success = 1
+ ****************************************************************/
+int8_t tcp_control(tcp_client_t *client, tcp_read_state_t app_state);
+
+
+
+
+/***************************************************************
  * @brief  Function for sending TCP data
  * @param  *ethernet         : Reference to the Ethernet Handle
  * @param  *network_data     : Network data
  * @param  *client           : Reference to TCP client handle
  * @param  *application_data : application_data
  * @param  data_length       : application data length
- * @retval int8_t            : Error = -12, Success = 1
- *****************************************************************/
+ * @retval int8_t            : Error   = -12,
+ *                             Success =  1
+ *                                        2 (Connection closed)
+ ***************************************************************/
 int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client, char *application_data,
                            uint16_t data_length);
 

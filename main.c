@@ -176,9 +176,9 @@ typedef enum _app_state
 
 
 
-#define TEST1 0
-#define TEST2 0
-
+#define STATIC   0
+#define UDP_TEST 0
+#define TCP_TEST 1
 
 
 int main(void)
@@ -226,10 +226,8 @@ int main(void)
     RED_LED = 0;
     waitMicrosecond(500000);
 
-    //ether_control(ethernet, ETHER_READ_NONBLOCK);
 
-
-#if TEST1
+#if STATIC
 
     /* Test ARP packets */
     uint8_t sequence_no = 1;
@@ -253,14 +251,15 @@ int main(void)
     ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, ethernet->gateway_ip, &sequence_no, \
                         ethernet->arp_table[0].mac_address, ethernet->host_mac);
 
-
-#endif
+#else
 
     /* test DHCP */
     ether_dhcp_enable(ethernet, (uint8_t*)network_hardware, DHCP_INIT_STATE);
 
+#endif
 
-#if TEST2
+
+#if UDP_TEST
 
     ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "Hello", 5);
 
@@ -271,28 +270,21 @@ int main(void)
 
 #endif
 
-    uint16_t tcp_src_port =  0;
+
+    /* Test TCP application */
+    uint16_t tcp_src_port  = 0;
     uint16_t tcp_dest_port = 0;
+    uint8_t  test_flag     = 1;
+    int16_t  tcp_retval    = 0;
 
     char tcp_data[50] = {0};
 
-    tcp_dest_port = 7788;
-
-    tcp_src_port  = get_random_port(ethernet, 6534);
-
     tcp_client_t *test_client;
-
 
     /* APP state machine */
     app_state_t app_state = APP_INIT;
 
-    int16_t tcp_retval = 0;
-
     loop = 1 ;
-
-    test_client = tcp_create_client(tcp_src_port, tcp_dest_port, ethernet->gateway_ip);
-
-    ether_tcp_handshake(ethernet, (uint8_t*)network_hardware, test_client);
 
     while(loop)
     {
@@ -301,6 +293,15 @@ int main(void)
 
         case APP_INIT:
 
+            tcp_dest_port = 7788;
+            tcp_src_port  = get_random_port(ethernet, 6534);
+
+            test_client = tcp_create_client(tcp_src_port, tcp_dest_port, ethernet->gateway_ip);
+
+            ether_tcp_connect(ethernet, (uint8_t*)network_hardware, test_client);
+
+            tcp_control(test_client, TCP_READ_NONBLOCK);
+
             app_state = APP_READ;
 
             break;
@@ -308,7 +309,7 @@ int main(void)
 
         case APP_READ:
 
-            tcp_retval = ether_read_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 50);
+            ether_read_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 50);
 
             if(strncmp(tcp_data, "hi", 2) == 0 || strncmp(tcp_data, "Connection Accepted, Hello from Server", 38) == 0)
                 app_state = APP_WRITE;
@@ -317,6 +318,13 @@ int main(void)
                 loop = 0;
 
             memset(tcp_data, 0, 40);
+
+//            if(test_flag == 1)
+//            {
+//                app_state = APP_WRITE;
+//
+//                test_flag = 0;
+//            }
 
             break;
 
@@ -327,11 +335,11 @@ int main(void)
 
             tcp_retval = ether_send_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, "Hello", 5);
 
-
-            if(tcp_retval < 0)
+            if(tcp_retval == 0)
                 loop = 0;
 
             app_state = APP_READ;
+
 
             break;
 
@@ -341,7 +349,6 @@ int main(void)
 
 
     /* State machine */
-
     loop = 1;
 
     while(loop)
