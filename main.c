@@ -176,7 +176,7 @@ typedef enum _app_state
 
 
 
-#define STATIC   0
+#define STATIC   1
 #define UDP_TEST 0
 #define TCP_TEST 1
 
@@ -215,7 +215,7 @@ int main(void)
     };
 
     /* Create Ethernet handle */
-    ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:50:60:48", "192.168.1.197", &ether_ops);
+    ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:50:60:48", "192.168.1.195", &ether_ops);
 
 
     // flash phy leds
@@ -294,6 +294,7 @@ int main(void)
         case APP_INIT:
 
             tcp_dest_port = 7788;
+
             tcp_src_port  = get_random_port(ethernet, 6534);
 
             test_client = tcp_create_client(tcp_src_port, tcp_dest_port, ethernet->gateway_ip);
@@ -302,29 +303,22 @@ int main(void)
 
             tcp_control(test_client, TCP_READ_NONBLOCK);
 
-            app_state = APP_READ;
+            app_state = APP_WRITE;
 
             break;
 
 
         case APP_READ:
 
-            ether_read_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 50);
+            tcp_retval = ether_read_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 50);
 
-            if(strncmp(tcp_data, "hi", 2) == 0 || strncmp(tcp_data, "Connection Accepted, Hello from Server", 38) == 0)
+
+            //if(tcp_retval > 0 || tcp_retval == -1)
                 app_state = APP_WRITE;
 
-            if(tcp_retval < 0)
-                loop = 0;
 
             memset(tcp_data, 0, 40);
 
-//            if(test_flag == 1)
-//            {
-//                app_state = APP_WRITE;
-//
-//                test_flag = 0;
-//            }
 
             break;
 
