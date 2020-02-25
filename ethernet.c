@@ -256,7 +256,7 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
 
     static ethernet_handle_t ethernet;
 
-    static uint8_t application_buffer[APP_BUFF_SIZE] = {0};
+    static char application_buffer[APP_BUFF_SIZE] = {0};
 
     int8_t api_retval = 0;
 
@@ -275,10 +275,10 @@ ethernet_handle_t* create_ethernet_handle(uint8_t *network_data, char *mac_addre
         api_retval = set_ip_address(ethernet.host_ip, ip_address);
 
         /* Set default modes */
-        ethernet.status.mode_static      = 1;
-        ethernet.status.mode_dynamic     = 0;
-        ethernet.status.mode_dhcp_init   = 0;
-        ethernet.status.mode_read_blocking  = ETHER_READ_BLOCK;
+        ethernet.status.mode_static        = 1;
+        ethernet.status.mode_dynamic       = 0;
+        ethernet.status.mode_dhcp_init     = 0;
+        ethernet.status.mode_read_blocking = ETHER_READ_BLOCK;
 
         /* Configure broadcast addresses */
         set_broadcast_address(ethernet.broadcast_mac, ETHER_MAC_SIZE);

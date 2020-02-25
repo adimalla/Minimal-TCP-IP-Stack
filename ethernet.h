@@ -156,20 +156,22 @@ struct _ethernet_handle
     ether_operations_t *ether_commands;            /*!< Network Operations                              */
     arp_table_t        arp_table[ARP_TABLE_SIZE];  /*!< ARP Table                                       */
 
-    uint16_t ip_identifier;                   /*!< */
-    uint16_t source_port;                     /*!< Ethernet source port, gets random source port value  */
-    uint8_t  *net_application_data;           /*!< Network application data, allocated by create handle */
-    uint8_t  host_mac[ETHER_MAC_SIZE];        /*!< Host MAC address, given by handle                    */
-    uint8_t  host_ip[ETHER_IPV4_SIZE];        /*!< Host IP address, static or dynamic                   */
-    uint8_t  broadcast_mac[ETHER_MAC_SIZE];   /*!< Broadcast MAC address                                */
-    uint8_t  broadcast_ip[ETHER_IPV4_SIZE];   /*!< Broadcast IP address                                 */
-    uint8_t  subnet_mask[ETHER_IPV4_SIZE];    /*!< SUBNET mask, gets value from DHCP sever              */
-    uint8_t  gateway_ip[ETHER_IPV4_SIZE];     /*!< Gateway or DHCP Server IP, from DHCP server          */
-    uint32_t lease_time;                      /*!< IP lease time, from DHCP server                      */
+    uint16_t ip_identifier;                  /*!< */
+    uint16_t source_port;                    /*!< Ethernet source port, gets random source port value  */
+    char     *net_application_data;          /*!< Network application data, allocated by create handle */
+    uint16_t net_app_data_length;            /*!< */
+    uint8_t  host_mac[ETHER_MAC_SIZE];       /*!< Host MAC address, given by handle                    */
+    uint8_t  host_ip[ETHER_IPV4_SIZE];       /*!< Host IP address, static or dynamic                   */
+    uint8_t  broadcast_mac[ETHER_MAC_SIZE];  /*!< Broadcast MAC address                                */
+    uint8_t  broadcast_ip[ETHER_IPV4_SIZE];  /*!< Broadcast IP address                                 */
+    uint8_t  subnet_mask[ETHER_IPV4_SIZE];   /*!< SUBNET mask, gets value from DHCP sever              */
+    uint8_t  gateway_ip[ETHER_IPV4_SIZE];    /*!< Gateway or DHCP Server IP, from DHCP server          */
+    uint32_t lease_time;                     /*!< IP lease time, from DHCP server                      */
 
 };
 
 
+/**/
 typedef enum _ether_control_modes
 {
     ETHER_READ_NONBLOCK = 0,
@@ -178,7 +180,6 @@ typedef enum _ether_control_modes
     ETHER_IP_DYNAMIC    = 3,
 
 }ether_control_t;
-
 
 
 
@@ -220,6 +221,8 @@ typedef enum _network_error_codes
     NET_UDP_SEND_ERROR     = -10, /*!< */
     NET_TCP_CONNECT_ERROR  = -11, /*!< */
     NET_TCP_SEND_ERROR     = -12, /*!< */
+    NET_TCP_READ_ERROR     = -13,
+    NET_CONNEC_TERMINATED  = -14,
 
 }network_erro_codes_t;
 
