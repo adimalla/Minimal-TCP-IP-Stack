@@ -1167,7 +1167,6 @@ int8_t ether_tcp_send_data_dep(ethernet_handle_t *ethernet, uint8_t *network_dat
 
 
 
-
 /***************************************************************
  * @brief  Function for sending TCP data
  * @param  *ethernet         : Reference to the Ethernet Handle
@@ -1212,7 +1211,7 @@ int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
 
         tcp_read_loop = 1;
 
-        while(tcp_read_loop)
+        do
         {
             if(ether_get_data(ethernet, network_data, ETHER_MTU_SIZE))
             {
@@ -1327,7 +1326,7 @@ int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
                 } /* ETHER is IP packet condition */
             }
 
-        }/* while loop */
+        }while(tcp_read_loop);/* while loop */
 
     }
 

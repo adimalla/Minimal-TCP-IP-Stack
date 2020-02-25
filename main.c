@@ -330,6 +330,7 @@ int main(void)
 
         case APP_WRITE:
 
+            /* Mimic User input behavior */
             //waitMicrosecond(100 * get_random_port(ethernet, 1000));
 
             tcp_retval = ether_tcp_send_data(ethernet, (uint8_t*)network_hardware, test_client, "Hello", 5);
