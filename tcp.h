@@ -136,7 +136,8 @@ typedef struct _tcp_client
  * @param  *server_ip       : Server IP
  * @retval int8_t           : Error = 0, Success = TCP client object
  ********************************************************************/
-tcp_client_t* tcp_create_client(uint16_t source_port, uint16_t destination_port, uint8_t *server_ip);
+tcp_client_t* ether_tcp_create_client(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t source_port,
+                                      uint16_t destination_port, uint8_t *server_ip);
 
 
 
@@ -188,7 +189,7 @@ int8_t tcp_control(tcp_client_t *client, tcp_read_state_t app_state);
  *                             Success =  1
  *                                        2 (Connection closed)
  ***************************************************************/
-int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client, char *application_data,
+int8_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client, char *application_data,
                            uint16_t data_length);
 
 
@@ -201,14 +202,18 @@ int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, t
  * @param  *client           : Reference to TCP client handle
  * @param  *application_data : application_data
  * @param  data_length       : application data length
- * @retval int8_t            : Error = -12, Success = 1
+ * @retval int32_t            : Error = 0, Success = 1
  *****************************************************************/
-int16_t ether_read_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client,
+int32_t ether_tcp_read_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client,
                             char *application_data, uint16_t data_length);
 
 
 
+int32_t ether_tcp_send_data_1(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client, char *application_data,
+                             uint16_t data_length);
 
+
+int32_t ether_tcp_read_data_1(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client, char *tcp_data, uint16_t data_length);
 
 
 #endif /* TCP_H_ */
