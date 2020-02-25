@@ -211,20 +211,16 @@ static int8_t search_arp_table(ethernet_handle_t *ethernet, uint8_t *mac_address
     for(index=0; index < ARP_TABLE_SIZE; index++)
     {
 
-        if(strncmp((char*)ethernet->arp_table[index].ip_address, (char*)ip_address , ETHER_IPV4_SIZE) == 0)
+        if(memcmp(ethernet->arp_table[index].ip_address, ip_address , ETHER_IPV4_SIZE) == 0)
         {
 
-            strncpy((char*)mac_address, (char*)ethernet->arp_table[index].mac_address, ETHER_MAC_SIZE);
+            memcpy(mac_address, ethernet->arp_table[index].mac_address, ETHER_MAC_SIZE);
 
             found = 1;
 
             func_retval = found;
 
             break;
-        }
-        else
-        {
-            index++;
         }
 
     }
@@ -455,28 +451,6 @@ uint8_t ether_arp_resolve_address(ethernet_handle_t *ethernet, uint8_t *destinat
     /* Search arp table to find MAC address of the associated IP */
     func_retval = search_arp_table(ethernet, destination_mac, destination_ip);
 
-#if 0
-
-    int8_t api_retval = 0;
-
-    /* ARP related variables */
-    uint8_t arp_data[100] = {0};
-
-    /* Send ARP request if not found */
-    if(api_retval == 0)
-    {
-        ether_send_arp_req(ethernet, ethernet->host_ip, destination_ip);
-
-        if(ether_is_arp(ethernet, arp_data, 48))
-        {
-            ether_handle_arp_resp_req(ethernet);
-
-            /* Search table again */
-            search_arp_table(ethernet, destination_mac, destination_ip);
-        }
-
-    }
-#endif
 
     return func_retval;
 }
