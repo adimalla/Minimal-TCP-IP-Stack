@@ -176,7 +176,7 @@ typedef enum _app_state
 
 
 
-#define STATIC   0
+#define STATIC   1
 #define UDP_TEST 0
 #define TCP_TEST 1
 
@@ -184,25 +184,24 @@ typedef enum _app_state
 int main(void)
 {
 
+    enc28j60_frame_t  *network_hardware;
+    ethernet_handle_t *ethernet;
+
     uint8_t data[ETHER_MTU_SIZE] = {0};
+
+    network_hardware = (void*)data;
 
     /* For UDP packets */
     char udp_data[APP_BUFF_SIZE] = {0};
 
-
-    uint8_t loop = 0;
-
+    uint8_t loop   = 0;
     int16_t retval = 0;
 
-    // init controller
+    /* init controller */
     initHw();
 
     init_adc();
 
-    enc28j60_frame_t  *network_hardware;
-    ethernet_handle_t *ethernet;
-
-    network_hardware = (void*)data;
 
     /* Link network operation functions */
     ether_operations_t ether_ops =
@@ -217,7 +216,6 @@ int main(void)
     /* Create Ethernet handle */
     ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:50:60:48", "192.168.1.195", &ether_ops);
 
-
     // flash phy leds
     etherWritePhy(PHLCON, 0x0880);
     RED_LED = 1;
@@ -229,10 +227,17 @@ int main(void)
 
 #if STATIC
 
+    set_ip_address(ethernet->gateway_ip, "192.168.1.196");
+
+#else
+
+    /* test DHCP */
+    ether_dhcp_enable(ethernet, (uint8_t*)network_hardware, DHCP_INIT_STATE);
+
+#endif
+
     /* Test ARP packets */
     uint8_t sequence_no = 1;
-
-    set_ip_address(ethernet->gateway_ip, "192.168.1.196");
 
     ether_send_arp_req(ethernet, ethernet->host_ip, ethernet->gateway_ip);
 
@@ -250,13 +255,6 @@ int main(void)
     /* Test ICMP packets */
     ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, ethernet->gateway_ip, &sequence_no, \
                         ethernet->arp_table[0].mac_address, ethernet->host_mac);
-
-#else
-
-    /* test DHCP */
-    ether_dhcp_enable(ethernet, (uint8_t*)network_hardware, DHCP_INIT_STATE);
-
-#endif
 
 
 #if UDP_TEST
@@ -315,33 +313,31 @@ int main(void)
 
         case APP_READ:
 
-            tcp_retval = ether_tcp_read_data_1(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 50);
-
+            tcp_retval = ether_tcp_read_data(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 50);
 
             if(tcp_retval > 0)
                 app_state = APP_WRITE;
-
-            memset(tcp_data, 0, 40);
 
             if(count > 10)
             {
                 ether_tcp_close(ethernet, (uint8_t*)network_hardware, test_client);
                 loop = 0;
+                count = 0;
             }
-
 
             break;
 
 
         case APP_WRITE:
 
-            //waitMicrosecond(1000000);
+            //waitMicrosecond(100 * get_random_port(ethernet, 1000));
 
-            tcp_retval = ether_tcp_send_data_1(ethernet, (uint8_t*)network_hardware, test_client, "Hello", 5);
+            tcp_retval = ether_tcp_send_data(ethernet, (uint8_t*)network_hardware, test_client, "Hello", 5);
 
             app_state = APP_READ;
 
-            count++;
+            if(tcp_retval > 0)
+                count++;
 
             break;
 
@@ -443,9 +439,9 @@ int main(void)
                         break;
 
 
-                        default:
+                    default:
 
-                            break;
+                        break;
 
                     }
 
