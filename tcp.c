@@ -690,11 +690,11 @@ int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t source_port,
  * @param  *server_ip       : Server IP
  * @retval int8_t           : Error = 0, Success = TCP client object
  ********************************************************************/
-tcp_client_t* ether_tcp_create_client(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t source_port,
+tcp_handle_t* ether_tcp_create_client(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t source_port,
                                       uint16_t destination_port, uint8_t *server_ip)
 {
 
-    static tcp_client_t tcp_client;
+    static tcp_handle_t tcp_client;
 
     if(server_ip == NULL)
     {
@@ -736,7 +736,7 @@ tcp_client_t* ether_tcp_create_client(ethernet_handle_t *ethernet, uint8_t *netw
  * @param  *server_ip       : Server IP
  * @retval int8_t           : Error = 0, Success = 1
  *****************************************************************/
-uint8_t tcp_init_client(tcp_client_t *client, uint16_t source_port, uint16_t destination_port, uint8_t *server_ip)
+uint8_t tcp_init_client(tcp_handle_t *client, uint16_t source_port, uint16_t destination_port, uint8_t *server_ip)
 {
 
     uint8_t func_retval = 0;
@@ -774,7 +774,7 @@ uint8_t tcp_init_client(tcp_client_t *client, uint16_t source_port, uint16_t des
  * @param  *client       : reference to TCP client handle
  * @retval int8_t        : Error = -11, Success = 1
  **********************************************************/
-int8_t ether_tcp_connect(ethernet_handle_t *ethernet, uint8_t *network_data ,tcp_client_t *client)
+int8_t ether_tcp_connect(ethernet_handle_t *ethernet, uint8_t *network_data ,tcp_handle_t *client)
 {
     int8_t func_retval = 0;
     uint8_t api_retval = 0;
@@ -874,7 +874,7 @@ int8_t ether_tcp_connect(ethernet_handle_t *ethernet, uint8_t *network_data ,tcp
  * @param  app_state   : TCP read type (blocking or non blocking)
  * @retval int8_t      : Error = 0, Success = 1
  ****************************************************************/
-int8_t tcp_control(tcp_client_t *client, tcp_read_state_t app_state)
+int8_t tcp_control(tcp_handle_t *client, tcp_read_state_t app_state)
 {
     int8_t func_retval = 0;
 
@@ -907,7 +907,7 @@ int8_t tcp_control(tcp_client_t *client, tcp_read_state_t app_state)
  *                             Success =  1
  *                                        2 (Connection closed)
  ***************************************************************/
-int8_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client, char *application_data,
+int8_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client, char *application_data,
                            uint16_t data_length)
 {
     int8_t func_retval = 0;
@@ -1024,7 +1024,7 @@ int8_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, t
  * @retval uint16_t          : Error = 0, Success = number of bytes read
  *                                             -1 = ACK received
  ************************************************************************/
-int32_t ether_tcp_read_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client,
+int32_t ether_tcp_read_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client,
                             char *application_data, uint16_t data_length)
 {
     int32_t func_retval = 0;
@@ -1042,9 +1042,10 @@ int32_t ether_tcp_read_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
     }
     else
     {
-        tcp_read_loop = client->client_flags.client_blocking;
 
-        do
+        tcp_read_loop = 1;
+
+        while(tcp_read_loop)
         {
             if(ether_get_data(ethernet, network_data, ETHER_MTU_SIZE) && client->client_flags.connect_established == 1)
             {
@@ -1080,7 +1081,7 @@ int32_t ether_tcp_read_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
 
                         case TCP_ACK:
 
-                            func_retval = 0;
+                            func_retval = 1;
 
                             break;
 
@@ -1151,7 +1152,9 @@ int32_t ether_tcp_read_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
 
             memset(network_data, 0, sizeof(ETHER_MTU_SIZE));
 
-        }while(tcp_read_loop);/* while loop */
+            tcp_read_loop = client->client_flags.client_blocking;
+
+        }/* while loop */
 
     }
 
@@ -1162,8 +1165,8 @@ int32_t ether_tcp_read_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
 
 
 
-int32_t ether_tcp_send_data_1(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client, char *application_data,
-                             uint16_t data_length)
+int32_t ether_tcp_send_data_1(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client, char *application_data,
+                              uint16_t data_length)
 {
     int32_t func_retval = 0;
 
@@ -1322,42 +1325,121 @@ int32_t ether_tcp_send_data_1(ethernet_handle_t *ethernet, uint8_t *network_data
 
 
 
-int32_t ether_tcp_read_data_1(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client, char *tcp_data, uint16_t data_length)
+int32_t ether_tcp_read_data_1(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client, char *tcp_data, uint16_t data_length)
 {
     int32_t func_retval     = 0;
     uint16_t tcp_data_length = 0;
 
-    if(ethernet->status.net_app_data_rdy == 1)
+    if(ethernet->ether_obj == NULL || client == NULL || data_length > UINT16_MAX || data_length > ETHER_MTU_SIZE)
     {
-        /* Clear user data buffer */
-        memset(tcp_data, 0, data_length);
-
-        /* Check if user data buffer length size is not greater than network application data size */
-        if(data_length > ethernet->net_app_data_length)
-            data_length = ethernet->net_app_data_length;
-
-        /* Copy data to user buffer */
-        memcpy(tcp_data, ethernet->net_application_data, data_length);
-
-        /* Specify available data size from data read by network */
-        tcp_data_length = ethernet->net_app_data_length;
-
-        /* Clear network application buffer and length */
-        memset(ethernet->net_application_data, 0, ethernet->net_app_data_length);
-
-        ethernet->net_app_data_length = 0;
-
-        /* Clear associated flags */
-        ethernet->status.net_app_data_rdy = 0;
-
-        func_retval = tcp_data_length;
-
+        func_retval = NET_TCP_READ_ERROR;
     }
     else
     {
-       func_retval = ether_tcp_read_data(ethernet, network_data, client, tcp_data, data_length);
+
+        if(ethernet->status.net_app_data_rdy == 1)
+        {
+            /* Clear user data buffer */
+            memset(tcp_data, 0, data_length);
+
+            /* Check if user data buffer length size is not greater than network application data size */
+            if(data_length > ethernet->net_app_data_length)
+                data_length = ethernet->net_app_data_length;
+
+            /* Copy data to user buffer */
+            memcpy(tcp_data, ethernet->net_application_data, data_length);
+
+            /* Specify available data size from data read by network */
+            tcp_data_length = ethernet->net_app_data_length;
+
+            /* Clear network application buffer and length */
+            memset(ethernet->net_application_data, 0, ethernet->net_app_data_length);
+
+            ethernet->net_app_data_length = 0;
+
+            /* Clear associated flags */
+            ethernet->status.net_app_data_rdy = 0;
+
+            func_retval = tcp_data_length;
+
+        }
+        else
+        {
+            func_retval = ether_tcp_read_data(ethernet, network_data, client, tcp_data, data_length);
+        }
     }
 
+    return func_retval;
+}
+
+
+
+
+
+/***************************************************************
+ * @brief  Function for close socket
+ * @param  *ethernet         : Reference to the Ethernet Handle
+ * @param  *network_data     : Network data
+ * @param  *client           : Reference to TCP handle
+ * @retval uint16_t          : Error = 0, Success = 1;
+ ***************************************************************/
+uint8_t ether_tcp_close(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client)
+{
+
+    uint8_t func_retval = 0;
+
+    tcp_ctl_flags_t ack_type;
+    uint8_t tcp_read_loop = 1;
+
+    if(ethernet->ether_obj == NULL || client == NULL)
+    {
+        func_retval = 0;
+    }
+    else
+    {
+
+        if(client->client_flags.connect_established == 1)
+        {
+            /* Send PSH ACK packet to the server (SEQ and ACK numbers swapped) */
+            ether_send_tcp_ack(ethernet, client->source_port, client->destination_port, client->acknowledgement_number,
+                               client->sequence_number, ethernet->gateway_ip, TCP_FIN_ACK);
+
+            client->client_flags.client_close = 1;
+
+            func_retval = 1;
+        }
+
+        while(tcp_read_loop)
+        {
+
+            if(ether_get_data(ethernet, network_data, ETHER_MTU_SIZE) && \
+                    get_ether_protocol_type(ethernet) == ETHER_IPV4 && (get_ip_communication_type(ethernet) == 1))
+            {
+                /* Read ACK from the TCP server */
+                ack_type = ether_get_tcp_server_ack(ethernet, &client->sequence_number, &client->acknowledgement_number,
+                                                    client->destination_port, client->source_port, client->server_ip);
+
+                if(ack_type == TCP_FIN_ACK)
+                {
+
+                    /* Increment the sequence number and pass it as acknowledgment number*/
+                    client->sequence_number += 1;
+
+                    ether_send_tcp_ack(ethernet, client->source_port, client->destination_port, client->acknowledgement_number,
+                                       client->sequence_number, ethernet->gateway_ip, TCP_ACK);
+
+
+                    client->client_flags.server_close = 1;
+                    client->client_flags.connect_established = 0;
+
+                    tcp_read_loop = 0;
+
+                    memset(client, 0, sizeof(tcp_handle_t));
+                }
+
+            }
+        }
+    }
 
     return func_retval;
 }

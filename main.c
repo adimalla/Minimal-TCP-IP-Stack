@@ -176,7 +176,7 @@ typedef enum _app_state
 
 
 
-#define STATIC   1
+#define STATIC   0
 #define UDP_TEST 0
 #define TCP_TEST 1
 
@@ -275,16 +275,21 @@ int main(void)
     uint16_t tcp_src_port  = 0;
     uint16_t tcp_dest_port = 0;
     uint8_t  test_flag     = 1;
-    int16_t  tcp_retval    = 0;
+    int32_t  tcp_retval    = 0;
 
     char tcp_data[50] = {0};
+    uint8_t destination_ip[4] = {0};
 
-    tcp_client_t *test_client;
+    set_ip_address(destination_ip, "192.168.1.196");
+
+    tcp_handle_t *test_client;
 
     /* APP state machine */
     app_state_t app_state = APP_INIT;
 
     loop = 1 ;
+
+    uint16_t count = 0;
 
     while(loop)
     {
@@ -297,11 +302,11 @@ int main(void)
 
             tcp_src_port  = get_random_port(ethernet, 6534);
 
-            test_client = tcp_create_client(tcp_src_port, tcp_dest_port, ethernet->gateway_ip);
+            test_client = ether_tcp_create_client(ethernet, (uint8_t*)network_hardware, tcp_src_port, tcp_dest_port, destination_ip);
 
             ether_tcp_connect(ethernet, (uint8_t*)network_hardware, test_client);
 
-            tcp_control(test_client, TCP_READ_NONBLOCK);
+            //tcp_control(test_client, TCP_READ_NONBLOCK);
 
             app_state = APP_WRITE;
 
@@ -310,14 +315,19 @@ int main(void)
 
         case APP_READ:
 
-            tcp_retval = ether_read_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 50);
+            tcp_retval = ether_tcp_read_data_1(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 50);
 
 
-            //if(tcp_retval > 0 || tcp_retval == -1)
+            if(tcp_retval > 0)
                 app_state = APP_WRITE;
 
-
             memset(tcp_data, 0, 40);
+
+            if(count > 10)
+            {
+                ether_tcp_close(ethernet, (uint8_t*)network_hardware, test_client);
+                loop = 0;
+            }
 
 
             break;
@@ -325,15 +335,13 @@ int main(void)
 
         case APP_WRITE:
 
-            waitMicrosecond(1000);
+            //waitMicrosecond(1000000);
 
-            tcp_retval = ether_send_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, "Hello", 5);
-
-            if(tcp_retval == 0)
-                loop = 0;
+            tcp_retval = ether_tcp_send_data_1(ethernet, (uint8_t*)network_hardware, test_client, "Hello", 5);
 
             app_state = APP_READ;
 
+            count++;
 
             break;
 
