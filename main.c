@@ -285,6 +285,15 @@ int main(void)
     init_adc();
 
 
+    /* Console definitions */
+    cl_term_t         *my_console;
+    char    serial_buffer[MAX_INPUT_SIZE] = {0};
+
+    my_console = console_open(&myUartOperations, 115200, serial_buffer, CONSOLE_STATIC);
+
+    console_print(my_console, CONSOLE_CLEAR_SCREEN);
+
+
     /* Link network operation functions */
     ether_operations_t ether_ops =
     {
@@ -360,10 +369,6 @@ int main(void)
 
     uint16_t count = 0;
 
-    /* Console definitions */
-    cl_term_t         *my_console;
-    char    serial_buffer[MAX_INPUT_SIZE] = {0};
-
 
     char tcp_data[50] = {0};
     uint8_t destination_ip[4] = {0};
@@ -377,11 +382,6 @@ int main(void)
 
     loop = 1 ;
 
-
-
-    my_console = console_open(&myUartOperations, 115200, serial_buffer, CONSOLE_STATIC);
-
-    console_print(my_console, CONSOLE_CLEAR_SCREEN);
 
     while(loop)
     {
@@ -431,7 +431,7 @@ int main(void)
         case APP_WRITE:
 
             console_print(my_console, "Write State \n");
-#if 0
+#if 1
             input_length = 0;
 
             input_length = console_get_string(my_console, MAX_INPUT_SIZE);
