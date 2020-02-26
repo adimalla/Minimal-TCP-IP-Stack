@@ -37,6 +37,7 @@
 #include "tcp.h"
 
 #include "cl_term.h"
+#include "mqtt_client.h"
 
 
 #define RED_LED      (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 1*4)))
@@ -408,6 +409,8 @@ int main(void)
 
             tcp_retval = 0;
 
+            console_print(my_console, "Read State \n");
+
             while(ether_tcp_read_data(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 50) <= 0);
 
             app_state = APP_WRITE;
@@ -419,14 +422,16 @@ int main(void)
                 count = 0;
             }
 
+            console_print(my_console,tcp_data);
+            console_print(my_console, "\n");
+
             break;
 
 
         case APP_WRITE:
 
-            /* Mimic User input behavior */
-            //waitMicrosecond(100 * get_random_port(ethernet, 1000));
-#if 1
+            console_print(my_console, "Write State \n");
+#if 0
             input_length = 0;
 
             input_length = console_get_string(my_console, MAX_INPUT_SIZE);
