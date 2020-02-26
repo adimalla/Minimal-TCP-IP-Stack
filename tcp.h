@@ -106,7 +106,7 @@ typedef struct _tcp_client_flags
 
 
 /* TCP client handle */
-typedef struct _tcp_client
+typedef struct _tcp_handle
 {
     uint16_t source_port;
     uint16_t destination_port;
@@ -117,7 +117,7 @@ typedef struct _tcp_client
     tcp_client_flags_t client_flags;
 
 
-}tcp_client_t;
+}tcp_handle_t;
 
 
 
@@ -136,7 +136,8 @@ typedef struct _tcp_client
  * @param  *server_ip       : Server IP
  * @retval int8_t           : Error = 0, Success = TCP client object
  ********************************************************************/
-tcp_client_t* tcp_create_client(uint16_t source_port, uint16_t destination_port, uint8_t *server_ip);
+tcp_handle_t* ether_tcp_create_client(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t source_port,
+                                      uint16_t destination_port, uint8_t *server_ip);
 
 
 
@@ -149,7 +150,7 @@ tcp_client_t* tcp_create_client(uint16_t source_port, uint16_t destination_port,
  * @param  *server_ip       : Server IP
  * @retval int8_t           : Error = 0, Success = 1
  *****************************************************************/
-uint8_t tcp_init_client(tcp_client_t *client, uint16_t source_port, uint16_t destination_port, uint8_t *server_ip);
+uint8_t tcp_init_client(tcp_handle_t *client, uint16_t source_port, uint16_t destination_port, uint8_t *server_ip);
 
 
 
@@ -161,7 +162,7 @@ uint8_t tcp_init_client(tcp_client_t *client, uint16_t source_port, uint16_t des
  * @param  *client       : reference to TCP client handle
  * @retval int8_t        : Error = -11, Success = 1
  **********************************************************/
-int8_t ether_tcp_connect(ethernet_handle_t *ethernet, uint8_t *network_data ,tcp_client_t *client);
+int8_t ether_tcp_connect(ethernet_handle_t *ethernet, uint8_t *network_data ,tcp_handle_t *client);
 
 
 
@@ -172,7 +173,8 @@ int8_t ether_tcp_connect(ethernet_handle_t *ethernet, uint8_t *network_data ,tcp
  * @param  app_state   : TCP read type (blocking or non blocking)
  * @retval int8_t      : Error = 0, Success = 1
  ****************************************************************/
-int8_t tcp_control(tcp_client_t *client, tcp_read_state_t app_state);
+int8_t tcp_control(tcp_handle_t *client, tcp_read_state_t app_state);
+
 
 
 
@@ -186,27 +188,39 @@ int8_t tcp_control(tcp_client_t *client, tcp_read_state_t app_state);
  * @param  data_length       : application data length
  * @retval int8_t            : Error   = -12,
  *                             Success =  1
- *                                        2 (Connection closed)
+ *                                       -14(Connection closed)
  ***************************************************************/
-int8_t ether_send_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client, char *application_data,
-                           uint16_t data_length);
+int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client, char *application_data,
+                             uint16_t data_length);
 
 
 
 
-/*****************************************************************
- * @brief  Function for reading TCP data
+
+/************************************************************************
+ * @brief  helper function for reading TCP data
  * @param  *ethernet         : Reference to the Ethernet Handle
  * @param  *network_data     : Network data
  * @param  *client           : Reference to TCP client handle
  * @param  *application_data : application_data
  * @param  data_length       : application data length
- * @retval int8_t            : Error = -12, Success = 1
- *****************************************************************/
-int16_t ether_read_tcp_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_client_t *client,
-                            char *application_data, uint16_t data_length);
+ * @retval uint16_t          : Error = 0, Success = number of bytes read
+ *                                              1 = ACK received
+ ************************************************************************/
+int32_t ether_tcp_read_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client, char *tcp_data, uint16_t data_length);
 
 
+
+
+
+/***************************************************************
+ * @brief  Function for close socket
+ * @param  *ethernet         : Reference to the Ethernet Handle
+ * @param  *network_data     : Network data
+ * @param  *client           : Reference to TCP handle
+ * @retval uint16_t          : Error = 0, Success = 1;
+ ***************************************************************/
+uint8_t ether_tcp_close(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client);
 
 
 

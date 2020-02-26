@@ -36,6 +36,9 @@
 #include "dhcp.h"
 #include "tcp.h"
 
+#include "cl_term.h"
+#include "mqtt_client.h"
+
 
 #define RED_LED      (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 1*4)))
 #define GREEN_LED    (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 3*4)))
@@ -121,6 +124,59 @@ void initHw()
 }
 
 
+void init_uart0(void)
+{
+
+    // Enable GPIO port F peripherals
+    SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOA;
+
+    // Configure UART0 pins
+    SYSCTL_RCGCUART_R  |= SYSCTL_RCGCUART_R0;                       // Turn-on UART0, leave other uarts in same status
+    GPIO_PORTA_DEN_R   |= 3;                                        // Turn on Digital Operations on PA0 and PA1
+    GPIO_PORTA_AFSEL_R |= 3;                                        // Select Alternate Functionality on PA0 and PA1
+    GPIO_PORTA_PCTL_R  |= GPIO_PCTL_PA1_U0TX | GPIO_PCTL_PA0_U0RX;  // Select UART0 Module
+
+    // Configure UART0 to 115200 baud, 8N1 format (must be 3 clocks from clock enable and config writes)
+    UART0_CTL_R   = 0;                                              // turn-off UART0 to allow safe programming
+    UART0_CC_R   |= UART_CC_CS_SYSCLK;                              // use system clock (40 MHz)
+    UART0_IBRD_R  = 21;                                             // r = 40 MHz / (Nx115.2kHz), set floor(r)=21, where N=16
+    UART0_FBRD_R  = 45;                                             // round(fract(r)*64)=45
+    UART0_LCRH_R |= UART_LCRH_WLEN_8 | UART_LCRH_FEN;               // configure for 8N1 w/ 16-level FIFO
+    UART0_CTL_R  |= UART_CTL_TXE | UART_CTL_RXE | UART_CTL_UARTEN;  // enable TX, RX, and module
+
+}
+
+
+
+// Blocking function that writes a serial character when the UART buffer is not full
+void putcUart0(const char c)
+{
+    while(UART0_FR_R & UART_FR_TXFF);
+    UART0_DR_R = c;
+
+}
+
+
+// Blocking function that returns with serial data once the buffer is not empty
+char getcUart0(void)
+{
+    while (UART0_FR_R & UART_FR_RXFE);
+    return UART0_DR_R & 0xFF;
+}
+
+
+
+// Blocking function that writes a string when the UART buffer is not full
+void putsUart0(const char* str)
+{
+    uint8_t i;
+
+    for (i = 0; i < strlen(str); i++)
+        putcUart0(str[i]);
+}
+
+
+
 
 void init_adc(void)
 {
@@ -156,27 +212,53 @@ uint16_t readAdc0Ss3()
 uint8_t ether_open(uint8_t *mac_address)
 {
 
-    // init ethernet interface
     etherInit(ETHER_UNICAST | ETHER_BROADCAST | ETHER_HALFDUPLEX, mac_address);
 
     return 0;
 }
 
 
+uint8_t myUartOpen(uint32_t baud_rate)
+{
+    init_uart0();
+
+    //return 1 for success, here
+    return 1;
+}
+
+
+uint8_t myPutChar(char data)
+{
+    putcUart0(data);
+
+    return 0;
+}
+
+
+console_ops_t myUartOperations =
+{
+
+ .open       = myUartOpen,
+ .print_char = myPutChar,
+ .read_char  = getcUart0,
+
+};
+
 
 
 typedef enum _app_state
 {
-    APP_INIT  = 0,
-    APP_READ  = 1,
-    APP_WRITE = 2,
+    APP_INIT   = 0,
+    APP_READ   = 1,
+    APP_WRITE  = 2,
+    USER_INPUT = 3,
 
 }app_state_t;
 
 
 
 
-#define STATIC   1
+#define STATIC   0
 #define UDP_TEST 0
 #define TCP_TEST 1
 
@@ -184,25 +266,24 @@ typedef enum _app_state
 int main(void)
 {
 
+    enc28j60_frame_t  *network_hardware;
+    ethernet_handle_t *ethernet;
+
     uint8_t data[ETHER_MTU_SIZE] = {0};
+
+    network_hardware = (void*)data;
 
     /* For UDP packets */
     char udp_data[APP_BUFF_SIZE] = {0};
 
-
-    uint8_t loop = 0;
-
+    uint8_t loop   = 0;
     int16_t retval = 0;
 
-    // init controller
+    /* init controller */
     initHw();
 
     init_adc();
 
-    enc28j60_frame_t  *network_hardware;
-    ethernet_handle_t *ethernet;
-
-    network_hardware = (void*)data;
 
     /* Link network operation functions */
     ether_operations_t ether_ops =
@@ -215,8 +296,7 @@ int main(void)
     };
 
     /* Create Ethernet handle */
-    ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:50:60:48", "192.168.1.195", &ether_ops);
-
+    ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:50:60:48", "192.168.1.199", &ether_ops);
 
     // flash phy leds
     etherWritePhy(PHLCON, 0x0880);
@@ -229,10 +309,17 @@ int main(void)
 
 #if STATIC
 
+    set_ip_address(ethernet->gateway_ip, "192.168.1.196");
+
+#else
+
+    /* test DHCP */
+    ether_dhcp_enable(ethernet, (uint8_t*)network_hardware, DHCP_INIT_STATE);
+
+#endif
+
     /* Test ARP packets */
     uint8_t sequence_no = 1;
-
-    set_ip_address(ethernet->gateway_ip, "192.168.1.196");
 
     ether_send_arp_req(ethernet, ethernet->host_ip, ethernet->gateway_ip);
 
@@ -251,13 +338,6 @@ int main(void)
     ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, ethernet->gateway_ip, &sequence_no, \
                         ethernet->arp_table[0].mac_address, ethernet->host_mac);
 
-#else
-
-    /* test DHCP */
-    ether_dhcp_enable(ethernet, (uint8_t*)network_hardware, DHCP_INIT_STATE);
-
-#endif
-
 
 #if UDP_TEST
 
@@ -275,16 +355,33 @@ int main(void)
     uint16_t tcp_src_port  = 0;
     uint16_t tcp_dest_port = 0;
     uint8_t  test_flag     = 1;
-    int16_t  tcp_retval    = 0;
+    int32_t  tcp_retval    = 0;
+    int16_t  input_length  = 0;
+
+    uint16_t count = 0;
+
+    /* Console definitions */
+    cl_term_t         *my_console;
+    char    serial_buffer[MAX_INPUT_SIZE] = {0};
+
 
     char tcp_data[50] = {0};
+    uint8_t destination_ip[4] = {0};
 
-    tcp_client_t *test_client;
+    set_ip_address(destination_ip, "192.168.1.196");
+
+    tcp_handle_t *test_client;
 
     /* APP state machine */
     app_state_t app_state = APP_INIT;
 
     loop = 1 ;
+
+
+
+    my_console = console_open(&myUartOperations, 115200, serial_buffer, CONSOLE_STATIC);
+
+    console_print(my_console, CONSOLE_CLEAR_SCREEN);
 
     while(loop)
     {
@@ -297,7 +394,7 @@ int main(void)
 
             tcp_src_port  = get_random_port(ethernet, 6534);
 
-            test_client = tcp_create_client(tcp_src_port, tcp_dest_port, ethernet->gateway_ip);
+            test_client = ether_tcp_create_client(ethernet, (uint8_t*)network_hardware, tcp_src_port, tcp_dest_port, destination_ip);
 
             ether_tcp_connect(ethernet, (uint8_t*)network_hardware, test_client);
 
@@ -310,30 +407,50 @@ int main(void)
 
         case APP_READ:
 
-            tcp_retval = ether_read_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 50);
+            tcp_retval = 0;
 
+            console_print(my_console, "Read State \n");
 
-            //if(tcp_retval > 0 || tcp_retval == -1)
-                app_state = APP_WRITE;
+            while(ether_tcp_read_data(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 50) <= 0);
 
+            app_state = APP_WRITE;
 
-            memset(tcp_data, 0, 40);
+            if(count > 100)
+            {
+                ether_tcp_close(ethernet, (uint8_t*)network_hardware, test_client);
+                loop = 0;
+                count = 0;
+            }
 
+            console_print(my_console,tcp_data);
+            console_print(my_console, "\n");
 
             break;
 
 
         case APP_WRITE:
 
-            waitMicrosecond(1000);
+            console_print(my_console, "Write State \n");
+#if 0
+            input_length = 0;
 
-            tcp_retval = ether_send_tcp_data(ethernet, (uint8_t*)network_hardware, test_client, "Hello", 5);
+            input_length = console_get_string(my_console, MAX_INPUT_SIZE);
 
-            if(tcp_retval == 0)
-                loop = 0;
+            if(input_length)
+            {
+                tcp_retval = ether_tcp_send_data(ethernet, (uint8_t*)network_hardware, test_client, serial_buffer, input_length);
+            }
+#else
+
+            tcp_retval = ether_tcp_send_data(ethernet, (uint8_t*)network_hardware, test_client, "hey", 3);
+
+
+#endif
+
+            if(tcp_retval > 0)
+                count++;
 
             app_state = APP_READ;
-
 
             break;
 
@@ -435,9 +552,9 @@ int main(void)
                         break;
 
 
-                        default:
+                    default:
 
-                            break;
+                        break;
 
                     }
 
