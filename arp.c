@@ -316,6 +316,8 @@ uint8_t ether_is_arp(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data_l
     uint8_t func_retval = 0;
     uint8_t block_loop  = 0;
 
+    net_arp_t *arp;
+
     if(ethernet->ether_obj == NULL || data == NULL || data_length == 0 || data_length > UINT16_MAX)
     {
         func_retval = 0;
@@ -325,20 +327,26 @@ uint8_t ether_is_arp(ethernet_handle_t *ethernet, uint8_t *data, uint16_t data_l
         /* Wait for data */
         block_loop = 1;
 
-        while(block_loop)
+        do
         {
             if(ether_get_data(ethernet, data, data_length))
             {
                 /* Check if protocol is ARP */
                 if(ntohs(ethernet->ether_obj->type) == ETHER_ARP)
                 {
-                    func_retval = 1;
+                    arp = (void*)&ethernet->ether_obj->data;
 
-                    break;
+                    if(memcmp(arp->target_hw_addr, ethernet->host_mac, ETHER_MAC_SIZE) == 0)
+                    {
+
+                        func_retval = 1;
+
+                        break;
+                    }
                 }
             }
 
-        }
+        }while(block_loop);
 
     }
 

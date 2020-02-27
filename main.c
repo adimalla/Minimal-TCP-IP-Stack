@@ -258,7 +258,7 @@ typedef enum _app_state
 
 
 
-#define STATIC   0
+#define STATIC   1
 #define UDP_TEST 0
 #define TCP_TEST 1
 
@@ -424,6 +424,11 @@ int main(void)
 
             console_print(my_console,tcp_data);
             console_print(my_console, "\n");
+
+            if(test_client->client_flags.server_close == 1)
+            {
+                loop = 0;
+            }
 
             break;
 

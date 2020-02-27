@@ -714,14 +714,14 @@ static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet, uint8_t *netw
             {
 
                 /* Handle ARP requests */
-//                if(get_ether_protocol_type(ethernet) == ETHER_ARP)
-//                {
-//
-//                    ether_handle_arp_resp_req(ethernet);
-//
-//                }
+                if(get_ether_protocol_type(ethernet) == ETHER_ARP)
+                {
+
+                    ether_handle_arp_resp_req(ethernet);
+
+                }
                 /* handle transport layer protocol type packets */
-                if(get_ether_protocol_type(ethernet) == ETHER_IPV4 && (get_ip_communication_type(ethernet) == 1))
+                else if(get_ether_protocol_type(ethernet) == ETHER_IPV4 && (get_ip_communication_type(ethernet) == 1))
                 {
                     /* Handle ICMP packets */
                     if(get_ip_protocol_type(ethernet) == IP_ICMP)
