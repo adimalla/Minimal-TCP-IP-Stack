@@ -1141,7 +1141,7 @@ int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
                         case TCP_PSH_ACK:
 
                             /* Read PSH ACK */
-                            tcp_data_length = ether_get_tcp_psh_ack(ethernet, ethernet->net_application_data, data_length);
+                            tcp_data_length = ether_get_tcp_psh_ack(ethernet, ethernet->net_application_data, APP_BUFF_SIZE);
 
                             ethernet->status.net_app_data_rdy = 1;
 
