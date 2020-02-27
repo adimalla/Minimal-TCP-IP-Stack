@@ -221,8 +221,8 @@ typedef enum _network_error_codes
     NET_UDP_SEND_ERROR     = -10, /*!< */
     NET_TCP_CONNECT_ERROR  = -11, /*!< */
     NET_TCP_SEND_ERROR     = -12, /*!< */
-    NET_TCP_READ_ERROR     = -13,
-    NET_FUNC_NO_RDWR       = -14,
+    NET_TCP_READ_ERROR     = -13, /*!< */
+    NET_FUNC_NO_RDWR       = -14, /*!< */
 
 }network_erro_codes_t;
 

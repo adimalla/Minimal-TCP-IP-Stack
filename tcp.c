@@ -468,7 +468,7 @@ static tcp_ctl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  ui
  * @retval int8_t           : Error = 0, Success = 1
  **********************************************************/
 static int8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
-                          uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip, tcp_ctl_flags_t ack_type)
+                                 uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip, tcp_ctl_flags_t ack_type)
 {
 
     int8_t func_retval = 0;
@@ -597,8 +597,8 @@ static uint16_t ether_get_tcp_psh_ack(ethernet_handle_t *ethernet, char *tcp_dat
  * @retval int8_t           : Error = 0, Success = 1
  ****************************************************************/
 static int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
-                              uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip,
-                              char *tcp_data, uint16_t data_length)
+                                     uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip,
+                                     char *tcp_data, uint16_t data_length)
 {
     int8_t func_retval = 0;
 
@@ -688,7 +688,7 @@ static int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t sourc
  *                                              1 = ACK received
  ************************************************************************/
 static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client,
-                            char *application_data, uint16_t data_length)
+                                      char *application_data, uint16_t data_length)
 {
     int32_t func_retval = NET_FUNC_NO_RDWR;
 
@@ -710,6 +710,9 @@ static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet, uint8_t *netw
 
         while(tcp_read_loop)
         {
+            /* Set loop state if blocking or non block read */
+            tcp_read_loop = client->client_flags.client_blocking;
+
             if(ether_get_data(ethernet, network_data, ETHER_MTU_SIZE) && client->client_flags.connect_established == 1)
             {
 
@@ -759,8 +762,7 @@ static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet, uint8_t *netw
                                                client->sequence_number, client->server_ip, TCP_ACK);
 
                             tcp_read_loop = 0;
-
-                            func_retval = tcp_data_length;
+                            func_retval   = tcp_data_length;
 
                             break;
 
@@ -773,12 +775,11 @@ static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet, uint8_t *netw
                             ether_send_tcp_ack(ethernet, client->source_port, client->destination_port, client->acknowledgement_number,
                                                client->sequence_number, client->server_ip, TCP_FIN_ACK);
 
-                            tcp_read_loop = 0;
-
-                            client->client_flags.server_close = 1;
+                            client->client_flags.server_close        = 1;
                             client->client_flags.connect_established = 0;
 
-                            func_retval = 0;
+                            tcp_read_loop = 0;
+                            func_retval   = 0;
 
                             break;
 
@@ -792,12 +793,11 @@ static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet, uint8_t *netw
                             ether_send_tcp_ack(ethernet, client->source_port, client->destination_port, client->acknowledgement_number,
                                                client->sequence_number, client->server_ip, TCP_FIN_ACK);
 
-                            tcp_read_loop = 0;
-
-                            client->client_flags.server_close = 1;
+                            client->client_flags.server_close        = 1;
                             client->client_flags.connect_established = 0;
 
-                            func_retval = 0;
+                            tcp_read_loop = 0;
+                            func_retval   = 0;
 
                             break;
 
@@ -817,8 +817,6 @@ static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet, uint8_t *netw
             }
 
             //memset(network_data, 0, sizeof(ETHER_MTU_SIZE));
-
-            tcp_read_loop = client->client_flags.client_blocking;
 
         }/* while loop */
 
@@ -1065,7 +1063,7 @@ int8_t tcp_control(tcp_handle_t *client, tcp_read_state_t app_state)
  *                                       -14(Connection closed)
  ***************************************************************/
 int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client, char *application_data,
-                              uint16_t data_length)
+                            uint16_t data_length)
 {
     int32_t func_retval = NET_FUNC_NO_RDWR;
 
@@ -1329,7 +1327,7 @@ uint8_t ether_tcp_close(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_
                                        client->sequence_number, ethernet->gateway_ip, TCP_ACK);
 
 
-                    client->client_flags.server_close = 1;
+                    client->client_flags.server_close        = 1;
                     client->client_flags.connect_established = 0;
 
                     tcp_read_loop = 0;
@@ -1339,17 +1337,15 @@ uint8_t ether_tcp_close(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_
 
             }
 
+            /* Send FIN ACK and Read server FIN ACK in next iteration */
             if(client->client_flags.connect_established == 1)
             {
                 /* Send PSH ACK packet to the server (SEQ and ACK numbers swapped) */
                 ether_send_tcp_ack(ethernet, client->source_port, client->destination_port, client->acknowledgement_number,
                                    client->sequence_number, ethernet->gateway_ip, TCP_FIN_ACK);
 
-                client->client_flags.client_close = 1;
-
+                client->client_flags.client_close        = 1;
                 client->client_flags.connect_established = 0;
-
-                tcp_read_loop = 0;
 
                 func_retval = 1;
             }

@@ -411,22 +411,19 @@ int main(void)
 
             console_print(my_console, "Read State \n");
 
-            ether_tcp_read_data(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 50);
+            while(ether_tcp_read_data(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 50) < 0);
 
             app_state = APP_WRITE;
 
-            if(count > 100)
+            if(count > 20)
             {
                 ether_tcp_close(ethernet, (uint8_t*)network_hardware, test_client);
                 loop = 0;
                 count = 0;
             }
 
-            if(tcp_retval > 0)
-            {
-                console_print(my_console,tcp_data);
-                console_print(my_console, "\n");
-            }
+            console_print(my_console,tcp_data);
+            console_print(my_console, "\n");
 
             if(test_client->client_flags.connect_established == 0)
             {
@@ -541,13 +538,10 @@ int main(void)
                             if(strncmp(udp_data, "on", 2) == 0)
                             {
                                 ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "switched on", 11);
-
                             }
                             if(strncmp(udp_data, "off", 2) == 0)
                             {
-
                                 ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "switched off", 12);
-
                             }
 #endif
                         }
