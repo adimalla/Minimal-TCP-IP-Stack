@@ -363,7 +363,6 @@ int main(void)
     /* Test TCP application */
     uint16_t tcp_src_port  = 0;
     uint16_t tcp_dest_port = 0;
-    uint8_t  test_flag     = 1;
     int32_t  tcp_retval    = 0;
     int16_t  input_length  = 0;
 
@@ -373,7 +372,7 @@ int main(void)
     char tcp_data[50] = {0};
     uint8_t destination_ip[4] = {0};
 
-    set_ip_address(destination_ip, "192.168.1.196");
+    set_ip_address(destination_ip, "192.168.1.13");
 
     tcp_handle_t *test_client;
 
@@ -392,7 +391,7 @@ int main(void)
 
             tcp_dest_port = 7788;
 
-            tcp_src_port  = get_random_port(ethernet, 6534);
+            tcp_src_port = get_random_port(ethernet, 6534);
 
             test_client = ether_tcp_create_client(ethernet, (uint8_t*)network_hardware, tcp_src_port, tcp_dest_port, destination_ip);
 
@@ -411,19 +410,21 @@ int main(void)
 
             console_print(my_console, "Read State \n");
 
-            while(ether_tcp_read_data(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 50) < 0);
+            ether_tcp_read_data(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 50);
 
             app_state = APP_WRITE;
 
-            if(count > 20)
+            console_print(my_console,tcp_data);
+            console_print(my_console, "\n");
+
+            if(count > 10000)
             {
+                console_print(my_console,"Connection Closed");
+
                 ether_tcp_close(ethernet, (uint8_t*)network_hardware, test_client);
                 loop = 0;
                 count = 0;
             }
-
-            console_print(my_console,tcp_data);
-            console_print(my_console, "\n");
 
             if(test_client->client_flags.connect_established == 0)
             {
@@ -436,7 +437,7 @@ int main(void)
         case APP_WRITE:
 
             console_print(my_console, "Write State \n");
-#if 1
+#if 0
             input_length = 0;
 
             input_length = console_get_string(my_console, MAX_INPUT_SIZE);
@@ -448,7 +449,6 @@ int main(void)
 #else
 
             tcp_retval = ether_tcp_send_data(ethernet, (uint8_t*)network_hardware, test_client, "hey", 3);
-
 
 #endif
 
