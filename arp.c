@@ -151,7 +151,8 @@ static uint8_t update_arp_table(ethernet_handle_t *ethernet, uint8_t *ip_address
 
     uint8_t func_retval = 0;
 
-    uint8_t index = 0;
+    uint8_t index      = 0;
+    uint8_t copy_index = 0;
 
     uint8_t found = 0;
 
@@ -164,19 +165,27 @@ static uint8_t update_arp_table(ethernet_handle_t *ethernet, uint8_t *ip_address
 
         for(index = 0; index < ARP_TABLE_SIZE; index++)
         {
-            if( (strncmp((char*)ethernet->arp_table[index].ip_address, (char*)ip_address, ETHER_IPV4_SIZE) == 0) )
+            if( (memcmp(ethernet->arp_table[index].ip_address, ip_address, ETHER_IPV4_SIZE) == 0) )
             {
                 found = 1;
 
                 break;
             }
-            else if( (strncmp((char*)ethernet->arp_table[index].ip_address, NULL, ETHER_IPV4_SIZE) == 0) )
+            else if( (strncmp((char*)ethernet->arp_table[index].ip_address, 0, ETHER_IPV4_SIZE) == 0) )
             {
                 found = 0;
 
-                strncpy((char*)ethernet->arp_table[index].ip_address, (char*)ip_address, ETHER_IPV4_SIZE);
+                /* Copy IP address */
+                for(copy_index = 0; copy_index < ETHER_IPV4_SIZE; copy_index++)
+                {
+                    ethernet->arp_table[index].ip_address[copy_index] = ip_address[copy_index];
+                }
 
-                strncpy((char*)ethernet->arp_table[index].mac_address, (char*)mac_address, ETHER_MAC_SIZE);
+                /* Copy MAC address */
+                for(copy_index = 0; copy_index < ETHER_MAC_SIZE; copy_index++)
+                {
+                    ethernet->arp_table[index].mac_address[copy_index] = mac_address[copy_index];
+                }
 
                 break;
             }

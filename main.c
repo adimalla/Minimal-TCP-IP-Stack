@@ -22,6 +22,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 #include "tm4c123gh6pm.h"
 #include "enc28j60.h"
@@ -258,10 +259,10 @@ typedef enum _app_state
 
 
 
-#define STATIC   1
-#define UDP_TEST 0
-#define TCP_TEST 1
-
+#define STATIC    0
+#define UDP_TEST  0
+#define TCP_TEST  0
+#define MQTT_TEST 1
 
 int main(void)
 {
@@ -359,7 +360,7 @@ int main(void)
 
 #endif
 
-
+#if TCP_TEST
     /* Test TCP application */
     uint16_t tcp_src_port  = 0;
     uint16_t tcp_dest_port = 0;
@@ -417,7 +418,7 @@ int main(void)
             console_print(my_console,tcp_data);
             console_print(my_console, "\n");
 
-            if(count > 10000)
+            if(count > 100)
             {
                 console_print(my_console,"Connection Closed");
 
@@ -437,7 +438,7 @@ int main(void)
         case APP_WRITE:
 
             console_print(my_console, "Write State \n");
-#if 0
+#if 1
             input_length = 0;
 
             input_length = console_get_string(my_console, MAX_INPUT_SIZE);
@@ -462,6 +463,245 @@ int main(void)
         }
 
     }
+#endif
+
+
+#if MQTT_TEST
+
+
+    /* Test TCP application */
+    uint16_t tcp_src_port  = 0;
+    uint16_t tcp_dest_port = 0;
+
+    tcp_handle_t *test_client;
+
+    int16_t input_length = 0;
+
+    uint8_t destination_ip[4] = {0};
+
+    set_ip_address(destination_ip, "192.168.1.13");
+
+    ether_send_arp_req(ethernet, ethernet->host_ip, destination_ip);
+
+    tcp_dest_port = 1883;
+
+    tcp_src_port  = get_random_port(ethernet, 6534);
+
+    test_client = ether_tcp_create_client(ethernet, (uint8_t*)network_hardware, tcp_src_port, tcp_dest_port, destination_ip);
+
+    ether_tcp_connect(ethernet, (uint8_t*)network_hardware, test_client);
+
+    tcp_control(test_client, TCP_READ_NONBLOCK);
+
+
+    mqtt_client_t publisher;
+
+    /* Socket API related variable initializations */
+    char   message[200]     = {0};
+    char   read_buffer[150] = {0};
+
+    /* Client State machine related variable initializations */
+    size_t  message_length      = 0;
+    int8_t  message_status      = 0;
+    uint8_t loop_state          = 0;
+    uint8_t mqtt_message_state  = 0;
+
+    /* MQTT message buffers */
+    char *my_client_name   = "Sender|1990-adityamall";
+    char user_name[]       = "device1.sensor";
+    char pass_word[]       = "4321";
+    char publish_topic[]   = "device1/temp";
+    char publish_message[20] = "hello ";
+    char copy_publish_message[20] = {0};
+
+    uint16_t count = 0;
+
+    char count_buff[4] = {0};
+
+    /* State machine initializations */
+    loop_state = FSM_RUN;
+
+    /* Update state to connect to send connect message */
+    mqtt_message_state = mqtt_connect_state;
+
+    while(loop_state)
+    {
+        switch(mqtt_message_state)
+        {
+
+        case mqtt_idle_state:
+
+
+
+            break;
+
+
+        case mqtt_read_state:
+
+            console_print(my_console, "READ \n");
+
+            memset(read_buffer, 0, sizeof(read_buffer));
+
+            while(ether_tcp_read_data(ethernet, (uint8_t*)network_hardware, test_client, read_buffer, 150) < 0);
+
+            publisher.message = (void*)read_buffer;
+
+            /* get MQTT message type and update state */
+            mqtt_message_state = get_mqtt_message_type(&publisher);
+            if(!mqtt_message_state)
+            {
+                mqtt_message_state = mqtt_disconnect_state;
+
+            }
+
+            break;
+
+
+        case mqtt_connect_state:
+
+            console_print(my_console, "CONNECT \n");
+
+            /* Test connect message */
+            memset(message, '\0', sizeof(message));
+
+            publisher.connect_msg = (void*)message;
+
+            /* Setup User name password (optional) */
+            mqtt_client_username_passwd(&publisher, user_name, pass_word);
+
+            /* Set connect options */
+            mqtt_connect_options(&publisher, MQTT_CLEAN_SESSION, MQTT_MESSAGE_NO_RETAIN, MQTT_QOS_FIRE_FORGET);
+
+            /* Setup MQTT CONNECT Message  */
+            message_length = mqtt_connect(&publisher, my_client_name, 6000);
+
+            /* Send connect message */
+            ether_tcp_send_data(ethernet, (uint8_t*)network_hardware, test_client, (char*)publisher.connect_msg, message_length);
+
+            /* Update state */
+            mqtt_message_state = mqtt_read_state;
+
+
+            break;
+
+
+        case mqtt_connack_state:
+
+            console_print(my_console, "CONNACK \n");
+
+            /* Check return code of CONNACK message */
+            publisher.connack_msg = (void *)read_buffer;
+
+            mqtt_message_state = get_connack_status(&publisher);
+
+            break;
+
+
+
+        case mqtt_publish_state:
+
+            console_print(my_console, "PUBLISH \n");
+
+            /* Fill MQTT PUBLISH message structure */
+            memset(message, '\0', sizeof(message));
+
+            publisher.publish_msg = (void *)message;
+
+            /*Configure publish options */
+            mqtt_publish_options(&publisher, MQTT_MESSAGE_NO_RETAIN, MQTT_QOS_FIRE_FORGET);
+
+#if 0
+            input_length = console_get_string(my_console, MAX_INPUT_SIZE);
+
+            if(strcmp(serial_buffer,"exit") == 0 )
+            {
+                mqtt_message_state = mqtt_disconnect_state;
+                break;
+            }
+
+            if(input_length)
+            {
+                /* Configure publish message */
+                message_length = mqtt_publish(&publisher, "device1/temp", serial_buffer);
+
+                /* Send publish message */
+                ether_tcp_send_data(ethernet, (uint8_t*)network_hardware, test_client, (char*)publisher.publish_msg, message_length);
+            }
+#else
+
+            count++;
+
+            ltoa(count, count_buff);
+
+            console_print(my_console, count_buff);
+            console_print(my_console, "\n");
+
+            strncpy(copy_publish_message, publish_message, strlen(publish_message));
+
+            strncat(copy_publish_message, count_buff, strlen(count_buff));
+
+            /* Configure publish message */
+            message_length = mqtt_publish(&publisher, publish_topic, copy_publish_message);
+
+            /* Send publish message */
+            ether_tcp_send_data(ethernet, (uint8_t*)network_hardware, test_client, (char*)publisher.publish_msg, message_length);
+
+            memset(copy_publish_message, NULL, strlen(copy_publish_message));
+            memset(count_buff, NULL, strlen(count_buff));
+
+            if(count >= 10000)
+            {
+                mqtt_message_state = mqtt_disconnect_state;
+                break;
+            }
+
+#endif
+
+            mqtt_message_state = mqtt_publish_state;
+
+            break;
+
+
+        case mqtt_disconnect_state:
+
+            console_print(my_console, "DISCONNECT \n");
+
+            /* Fill DISCONNECT structure */
+            memset(message,'\0',sizeof(message));
+
+            publisher.disconnect_msg = (void*)message;
+
+            message_length = mqtt_disconnect(&publisher);
+
+            /* Send Disconnect Message */
+            ether_tcp_send_data(ethernet, (uint8_t*)network_hardware, test_client, (char*)publisher.disconnect_msg, message_length);
+
+            /* Update State */
+            mqtt_message_state = mqtt_exit_state;
+
+            break;
+
+
+        case mqtt_exit_state:
+
+            /* Close the client */
+            ether_tcp_close(ethernet, (uint8_t*)network_hardware, test_client);
+
+            /* Suspend while loop */
+            loop_state = FSM_SUSPEND;
+
+
+            break;
+
+        default:
+
+            break;
+
+        }
+
+    }
+
+#endif
 
 
     /* State machine */

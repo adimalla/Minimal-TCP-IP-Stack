@@ -66,7 +66,6 @@
 #define IP_TTL_VALUE      64      /*!< Time to Live value                       */
 #define IP_HEADER_SIZE    20      /*!< IP header size                           */
 
-
 /* IP version and header length fields */
 typedef struct _ip_ver_size
 {
