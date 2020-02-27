@@ -716,25 +716,25 @@ static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet, uint8_t *netw
             if(ether_get_data(ethernet, network_data, ETHER_MTU_SIZE) && client->client_flags.connect_established == 1)
             {
 
-                /* Handle ARP requests */
-                if(get_ether_protocol_type(ethernet) == ETHER_ARP)
-                {
-
-                    ether_handle_arp_resp_req(ethernet);
-
-                }
+//                /* Handle ARP requests */
+//                if(get_ether_protocol_type(ethernet) == ETHER_ARP)
+//                {
+//
+//                    ether_handle_arp_resp_req(ethernet);
+//
+//                }
                 /* handle transport layer protocol type packets */
-                else if(get_ether_protocol_type(ethernet) == ETHER_IPV4 && (get_ip_communication_type(ethernet) == 1))
+                if(get_ether_protocol_type(ethernet) == ETHER_IPV4 && (get_ip_communication_type(ethernet) == 1))
                 {
-                    /* Handle ICMP packets */
-                    if(get_ip_protocol_type(ethernet) == IP_ICMP)
-                    {
-
-                        ether_send_icmp_reply(ethernet);
-
-                    }
+//                    /* Handle ICMP packets */
+//                    if(get_ip_protocol_type(ethernet) == IP_ICMP)
+//                    {
+//
+//                        ether_send_icmp_reply(ethernet);
+//
+//                    }
                     /* Handle TCP packets */
-                    else if(get_ip_protocol_type(ethernet) == IP_TCP)
+                    if(get_ip_protocol_type(ethernet) == IP_TCP)
                     {
 
                         /* Read ACK from the TCP server */
@@ -816,10 +816,9 @@ static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet, uint8_t *netw
                 } /* ETHER is IP packet condition */
             }
 
-            //memset(network_data, 0, sizeof(ETHER_MTU_SIZE));
-
         }/* while loop */
 
+        memset(network_data, 0, sizeof(ETHER_MTU_SIZE));
     }
 
     return func_retval;
@@ -1102,25 +1101,12 @@ int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
             if(ether_get_data(ethernet, network_data, ETHER_MTU_SIZE))
             {
 
-                /* Handle ARP requests */
-                if(get_ether_protocol_type(ethernet) == ETHER_ARP)
-                {
-
-                    ether_handle_arp_resp_req(ethernet);
-
-                }
                 /* handle transport layer protocol type packets */
-                else if(get_ether_protocol_type(ethernet) == ETHER_IPV4 && (get_ip_communication_type(ethernet) == 1))
+                if(get_ether_protocol_type(ethernet) == ETHER_IPV4 && (get_ip_communication_type(ethernet) == 1))
                 {
-                    /* Handle ICMP packets */
-                    if(get_ip_protocol_type(ethernet) == IP_ICMP)
-                    {
 
-                        ether_send_icmp_reply(ethernet);
-
-                    }
                     /* Handle TCP packets */
-                    else if(get_ip_protocol_type(ethernet) == IP_TCP)
+                    if(get_ip_protocol_type(ethernet) == IP_TCP)
                     {
 
                         /* Read ACK from the TCP server */
@@ -1208,7 +1194,25 @@ int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
 
                     } /* IP is TCP condition */
 
+                    /* Handle ICMP packets */
+                    else if(get_ip_protocol_type(ethernet) == IP_ICMP)
+                    {
+
+                        ether_send_icmp_reply(ethernet);
+
+                    }
+
                 } /* ETHER is IP packet condition */
+
+                /* Handle ARP requests */
+                else if(get_ether_protocol_type(ethernet) == ETHER_ARP)
+                {
+
+                    ether_handle_arp_resp_req(ethernet);
+
+                }
+
+
             }
 
         }while(tcp_read_loop);/* while loop */
@@ -1295,10 +1299,10 @@ int32_t ether_tcp_read_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
 uint8_t ether_tcp_close(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client)
 {
 
-    uint8_t func_retval = 0;
-
+    uint8_t func_retval   = 0;
+    uint8_t tcp_read_loop = 0;
     tcp_ctl_flags_t ack_type;
-    uint8_t tcp_read_loop = 1;
+
 
     if(ethernet->ether_obj == NULL || client == NULL)
     {
@@ -1306,6 +1310,8 @@ uint8_t ether_tcp_close(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_
     }
     else
     {
+
+        tcp_read_loop = 1;
 
         while(tcp_read_loop)
         {
