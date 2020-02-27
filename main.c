@@ -411,7 +411,7 @@ int main(void)
 
             console_print(my_console, "Read State \n");
 
-            while(ether_tcp_read_data(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 50) < 0);
+            ether_tcp_read_data(ethernet, (uint8_t*)network_hardware, test_client, tcp_data, 50);
 
             app_state = APP_WRITE;
 
@@ -422,10 +422,13 @@ int main(void)
                 count = 0;
             }
 
-            console_print(my_console,tcp_data);
-            console_print(my_console, "\n");
+            if(tcp_retval > 0)
+            {
+                console_print(my_console,tcp_data);
+                console_print(my_console, "\n");
+            }
 
-            if(test_client->client_flags.server_close == 1)
+            if(test_client->client_flags.connect_established == 0)
             {
                 loop = 0;
             }
@@ -436,7 +439,7 @@ int main(void)
         case APP_WRITE:
 
             console_print(my_console, "Write State \n");
-#if 0
+#if 1
             input_length = 0;
 
             input_length = console_get_string(my_console, MAX_INPUT_SIZE);

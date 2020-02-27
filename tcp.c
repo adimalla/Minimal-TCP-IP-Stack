@@ -690,7 +690,7 @@ static int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t sourc
 static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client,
                             char *application_data, uint16_t data_length)
 {
-    int32_t func_retval = 0;
+    int32_t func_retval = NET_FUNC_NO_RDWR;
 
     uint8_t tcp_read_loop = 0;
 
@@ -701,7 +701,7 @@ static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet, uint8_t *netw
 
     if(ethernet->ether_obj == NULL || client == NULL || data_length > UINT16_MAX || data_length > ETHER_MTU_SIZE)
     {
-        func_retval = 0;
+        func_retval = NET_TCP_READ_ERROR;
     }
     else
     {
@@ -810,7 +810,6 @@ static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet, uint8_t *netw
 
                         }
 
-                        break;
 
                     } /* IP is TCP condition */
 
@@ -1068,7 +1067,7 @@ int8_t tcp_control(tcp_handle_t *client, tcp_read_state_t app_state)
 int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client, char *application_data,
                               uint16_t data_length)
 {
-    int32_t func_retval = 0;
+    int32_t func_retval = NET_FUNC_NO_RDWR;
 
     tcp_ctl_flags_t ack_type;
 
@@ -1076,13 +1075,14 @@ int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
 
     uint8_t tcp_read_loop = 0;
 
+
     if(ethernet->ether_obj == NULL || client == NULL || data_length > UINT16_MAX || data_length > ETHER_MTU_SIZE)
     {
         func_retval = NET_TCP_SEND_ERROR;
     }
-    else if(client->client_flags.server_close == 1)
+    else if(client->client_flags.connect_established == 0)
     {
-        func_retval = NET_CONNEC_TERMINATED;
+        func_retval = 0;
     }
     else
     {
@@ -1095,6 +1095,7 @@ int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
 
             func_retval = 1;
         }
+
 
         tcp_read_loop = 1;
 
@@ -1168,14 +1169,16 @@ int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
                             /* Increment the sequence number and pass it as acknowledgment number*/
                             client->sequence_number += 1;
 
+                            /* Send FIN ACK */
                             ether_send_tcp_ack(ethernet, client->source_port, client->destination_port, client->acknowledgement_number,
                                                client->sequence_number, client->server_ip, TCP_FIN_ACK);
 
                             client->client_flags.server_close = 1;
                             client->client_flags.connect_established = 0;
 
-                            tcp_read_loop =  0;
-                            func_retval   = NET_CONNEC_TERMINATED;
+                            func_retval =  0;
+
+                            /* Read ACK in next iteration */
 
                             break;
 
@@ -1192,8 +1195,7 @@ int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
                             client->client_flags.server_close = 1;
                             client->client_flags.connect_established = 0;
 
-                            tcp_read_loop =  0;
-                            func_retval   =  NET_CONNEC_TERMINATED;
+                            func_retval   =  0;
 
                             break;
 
@@ -1205,8 +1207,6 @@ int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
                             break;
 
                         }
-
-                        break;
 
                     } /* IP is TCP condition */
 
@@ -1236,12 +1236,16 @@ int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
  ************************************************************************/
 int32_t ether_tcp_read_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client, char *tcp_data, uint16_t data_length)
 {
-    int32_t func_retval      = 0;
+    int32_t func_retval      = NET_FUNC_NO_RDWR;
     uint16_t tcp_data_length = 0;
 
     if(ethernet->ether_obj == NULL || client == NULL || data_length > UINT16_MAX || data_length > ETHER_MTU_SIZE)
     {
         func_retval = NET_TCP_READ_ERROR;
+    }
+    else if(client->client_flags.connect_established == 0)
+    {
+        func_retval = 0;
     }
     else
     {
