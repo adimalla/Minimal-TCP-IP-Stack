@@ -1337,8 +1337,18 @@ uint8_t ether_tcp_close(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_
                     client->client_flags.connect_established = 0;
 
                     tcp_read_loop = 0;
+                    func_retval   = 1;
 
                     memset(client, 0, sizeof(tcp_handle_t));
+                }
+                else if(ack_type == TCP_ACK)
+                {
+                    if(client->client_flags.connect_established == 0)
+                    {
+                        tcp_read_loop = 0;
+                        func_retval   = 1;
+                    }
+
                 }
 
             }
