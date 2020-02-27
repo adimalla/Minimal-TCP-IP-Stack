@@ -259,7 +259,7 @@ typedef enum _app_state
 
 
 
-#define STATIC    1
+#define STATIC    0
 #define UDP_TEST  0
 #define TCP_TEST  0
 #define MQTT_TEST 1
@@ -418,7 +418,7 @@ int main(void)
             console_print(my_console,tcp_data);
             console_print(my_console, "\n");
 
-            if(count > 10000)
+            if(count > 100)
             {
                 console_print(my_console,"Connection Closed");
 
@@ -438,7 +438,7 @@ int main(void)
         case APP_WRITE:
 
             console_print(my_console, "Write State \n");
-#if 0
+#if 1
             input_length = 0;
 
             input_length = console_get_string(my_console, MAX_INPUT_SIZE);
@@ -510,6 +510,9 @@ int main(void)
     char *my_client_name   = "Sender|1990-adityamall";
     char user_name[]       = "device1.sensor";
     char pass_word[]       = "4321";
+    char publish_topic[]   = "device1/temp";
+    char publish_message[20] = "hello ";
+    char copy_publish_message[20] = {0};
 
     uint16_t count = 0;
 
@@ -607,7 +610,7 @@ int main(void)
             /*Configure publish options */
             mqtt_publish_options(&publisher, MQTT_MESSAGE_NO_RETAIN, MQTT_QOS_FIRE_FORGET);
 
-#if 1
+#if 0
             input_length = console_get_string(my_console, MAX_INPUT_SIZE);
 
             if(strcmp(serial_buffer,"exit") == 0 )
@@ -626,26 +629,31 @@ int main(void)
             }
 #else
 
-
-            /* Configure publish message */
-            message_length = mqtt_publish(&publisher, "device1/temp", "hello");
-
-            /* Send publish message */
-            ether_tcp_send_data(ethernet, (uint8_t*)network_hardware, test_client, (char*)publisher.publish_msg, message_length);
-
             count++;
-
-            if(count >= 10)
-            {
-                mqtt_message_state = mqtt_disconnect_state;
-                break;
-            }
 
             ltoa(count, count_buff);
 
             console_print(my_console, count_buff);
             console_print(my_console, "\n");
 
+            strncpy(copy_publish_message, publish_message, strlen(publish_message));
+
+            strncat(copy_publish_message, count_buff, strlen(count_buff));
+
+            /* Configure publish message */
+            message_length = mqtt_publish(&publisher, publish_topic, copy_publish_message);
+
+            /* Send publish message */
+            ether_tcp_send_data(ethernet, (uint8_t*)network_hardware, test_client, (char*)publisher.publish_msg, message_length);
+
+            memset(copy_publish_message, NULL, strlen(copy_publish_message));
+            memset(count_buff, NULL, strlen(count_buff));
+
+            if(count >= 10000)
+            {
+                mqtt_message_state = mqtt_disconnect_state;
+                break;
+            }
 
 #endif
 
