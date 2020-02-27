@@ -1324,7 +1324,7 @@ uint8_t ether_tcp_close(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_
                     client->sequence_number += 1;
 
                     ether_send_tcp_ack(ethernet, client->source_port, client->destination_port, client->acknowledgement_number,
-                                       client->sequence_number, ethernet->gateway_ip, TCP_ACK);
+                                       client->sequence_number, client->server_ip, TCP_ACK);
 
 
                     client->client_flags.server_close        = 1;
@@ -1342,7 +1342,7 @@ uint8_t ether_tcp_close(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_
             {
                 /* Send PSH ACK packet to the server (SEQ and ACK numbers swapped) */
                 ether_send_tcp_ack(ethernet, client->source_port, client->destination_port, client->acknowledgement_number,
-                                   client->sequence_number, ethernet->gateway_ip, TCP_FIN_ACK);
+                                   client->sequence_number, client->server_ip, TCP_FIN_ACK);
 
                 client->client_flags.client_close        = 1;
                 client->client_flags.connect_established = 0;
