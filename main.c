@@ -359,7 +359,7 @@ int main(void)
 
 #endif
 
-
+#if TCP_TEST
     /* Test TCP application */
     uint16_t tcp_src_port  = 0;
     uint16_t tcp_dest_port = 0;
@@ -462,6 +462,8 @@ int main(void)
         }
 
     }
+#endif
+
 
 
     /* State machine */
