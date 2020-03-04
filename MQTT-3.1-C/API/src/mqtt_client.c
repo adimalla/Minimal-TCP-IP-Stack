@@ -79,11 +79,7 @@ typedef enum function_return_codes
 	FUNC_OPTS_ERROR       = -1,  /*!< */
 	FUNC_OPTS_SUCCESS     = 1,   /*!< */
 	MAIN_MAIN_FUNC_ERROR  = 0,   /*!< */
-	MAIN_FUNC_ERROR       = 0,    /*!< */
-
-	CONNECT_USR_PSSWD_ERROR = -1,
-	CONNECT_OPTS_ERROR      = -2,
-	PUBLISH_OPTS_ERROR      = -3,
+	MAIN_FUNC_ERROR       = 0    /*!< */
 
 }return_codes_t;
 
@@ -140,21 +136,18 @@ int8_t mqtt_client_username_passwd(mqtt_client_t *client, char *user_name, char 
 	uint8_t password_length  = 0;
 	int8_t  func_retval      = 0;
 
+	user_name_length = strlen(user_name);
+	password_length = strlen(password);
 
 	/* check if user name is not null */
 	if( client == NULL || user_name == NULL  || password == NULL)
 	{
-		func_retval = CONNECT_USR_PSSWD_ERROR;
+		func_retval = FUNC_OPTS_ERROR;
 	}
-
-	/* calculate length */
-	user_name_length = strlen(user_name);
-	password_length = strlen(password);
-
 	/* check if user name and password doesn't exceed defined length, if yes return 0 */
-	if( user_name_length > USER_NAME_LENGTH || password_length > PASSWORD_LENGTH)
+	else if( user_name_length > USER_NAME_LENGTH || password_length > PASSWORD_LENGTH)
 	{
-		return CONNECT_USR_PSSWD_ERROR;
+		return FUNC_OPTS_ERROR;
 	}
 	else
 	{
@@ -174,7 +167,6 @@ int8_t mqtt_client_username_passwd(mqtt_client_t *client, char *user_name, char 
 }
 
 
-
 /* TODO Correct will topic error in connect message */
 /*
  * @brief  Configures mqtt connect options. (qos and retain don't have any effect on control packets currently)
@@ -182,7 +174,7 @@ int8_t mqtt_client_username_passwd(mqtt_client_t *client, char *user_name, char 
  * @param  session     : configure session type
  * @param  message_qos : configure quality of service
  * @param  retain      : configure mention retention at broker.
- * @retval int8_t      : qos value = Success, -2 = Error
+ * @retval int8_t      : qos value = Success, -1 = Error
  */
 int8_t mqtt_connect_options(mqtt_client_t *client, uint8_t session, uint8_t retain, mqtt_qos_t message_qos)
 {
@@ -191,7 +183,7 @@ int8_t mqtt_connect_options(mqtt_client_t *client, uint8_t session, uint8_t reta
 	/* Check for correct values of session, retain and qos(quality of service) */
 	if(session > MQTT_CLEAN_SESSION || retain > MQTT_MESSAGE_RETAIN || message_qos > MQTT_QOS_RESERVED || client == NULL)
 	{
-		func_retval = CONNECT_OPTS_ERROR;
+		func_retval = FUNC_OPTS_ERROR;
 	}
 	else
 	{
@@ -239,7 +231,7 @@ size_t mqtt_connect(mqtt_client_t *client, char *client_name, int16_t keep_alive
 	/* TODO Implement error checks in mqtt connect */
 	if(keep_alive_time < 0 || client_name == NULL || client == NULL)
 	{
-		func_retval = (size_t)MAIN_FUNC_ERROR;
+		func_retval = (size_t)MAIN_MAIN_FUNC_ERROR;
 	}
 	else
 	{
@@ -360,30 +352,26 @@ uint8_t get_connack_status(mqtt_client_t *client)
  * @param  *client        : pointer to mqtt client structure (mqtt_client_t).
  * @param  message_retain : Enable retain for message retention at broker
  * @param  message_qos    : Quality of service value (1:At-least once, 2:Exactly once)
- * @retval int8_t         : qos value = Success, -3 = Error
+ * @retval int8_t         : qos value = Success, -1 = Error
  */
 int8_t mqtt_publish_options(mqtt_client_t *client, uint8_t message_retain, mqtt_qos_t message_qos)
 {
-	int8_t func_retval = 0;
-
-	/* Check for correct values of session, retain and qos(quality of service) */
-	if(message_retain > MQTT_MESSAGE_RETAIN || message_qos > MQTT_QOS_RESERVED || client == NULL)
+	if(message_retain)
 	{
-		func_retval = PUBLISH_OPTS_ERROR;
+		client->publish_msg->fixed_header.retain_flag = ENABLE;
+	}
+
+	/* Check if Quality of service value (qos) is less than reserved value (val:3) */
+	if(message_qos < MQTT_QOS_RESERVED)
+	{
+		client->publish_msg->fixed_header.qos_level = message_qos;
 	}
 	else
 	{
-		if(message_retain)
-		{
-			client->publish_msg->fixed_header.retain_flag = ENABLE;
-		}
-
-		client->publish_msg->fixed_header.qos_level = message_qos;
-
-		func_retval = message_qos;
+		return FUNC_OPTS_ERROR;
 	}
 
-	return func_retval;
+	return message_qos;
 }
 
 

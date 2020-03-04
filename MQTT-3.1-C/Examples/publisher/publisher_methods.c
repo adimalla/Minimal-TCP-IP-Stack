@@ -131,7 +131,6 @@ int mqtt_broker_connect(int *fd, int port, char *server_address)
 		}
 		else
 		{
-			/* Set as non blocking socket */
 			fcntl(*fd, F_SETFL, O_NONBLOCK);
 
 			func_retval = FUNC_CODE_SUCCESS;
@@ -149,8 +148,8 @@ int mqtt_broker_connect(int *fd, int port, char *server_address)
 static void versionInfo(void)
 {
 	printf("\n");
-	printf("MQTT Publisher Application Version : %0.1f \n", APP_VERSION);
-	printf("MQTT API Version                   : %0.1f \n", MQTT_API_VERSION);
+	printf("MQTT Publisher Application Version : %lf \n", APP_VERSION);
+	printf("MQTT API Version                   : %lf \n", MQTT_API_VERSION);
 	printf("MQTT Protocol Version              : %d \n", MQTT_PROTOCOL_VERSION);
 	printf("\n");
 }
@@ -166,7 +165,7 @@ static int help_info(char **argv)
 
 	fileName = malloc(sizeof(char) * fileNameLen - 2);
 
-	/* Remove './' from front of the file name, (Doesn't work in Debug/Run configs) */
+	/* Remove './' from front if the file name (Doesn't work in Debug/Run configs) */
 	strcpy(fileName, (argv[0] + 2));
 
 	printf("\n");

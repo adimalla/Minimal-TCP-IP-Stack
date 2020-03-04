@@ -314,18 +314,6 @@ int8_t mqtt_client_username_passwd(mqtt_client_t *client, char *user_name, char 
 
 
 /*
- * @brief  Configures mqtt connect options. (qos and retain don't have any effect on control packets currently)
- * @param  *client     : pointer to mqtt client structure (mqtt_client_t).
- * @param  session     : configure session type
- * @param  message_qos : configure quality of service
- * @param  retain      : configure mention retention at broker.
- * @retval int8_t      : qos value = Success, -2 = Error
- */
-int8_t mqtt_connect_options(mqtt_client_t *client, uint8_t session, uint8_t retain, mqtt_qos_t message_qos);
-
-
-
-/*
  * @brief  Configures mqtt CONNECT message structure.
  * @param  *client         : pointer to mqtt client structure (mqtt_client_t).
  * @param  client_name     : Name of the mqtt client given by user.
@@ -333,6 +321,18 @@ int8_t mqtt_connect_options(mqtt_client_t *client, uint8_t session, uint8_t reta
  * @retval size_t          : Length of connect message.
  */
 size_t mqtt_connect(mqtt_client_t *client, char *client_name, int16_t keep_alive_time);
+
+
+
+/*
+ * @brief  Configures mqtt connect options. (qos and retain don't have any effect on control packets currently)
+ * @param  *client     : pointer to mqtt client structure (mqtt_client_t).
+ * @param  session     : configure session type
+ * @param  message_qos : configure quality of service
+ * @param  retain      : configure mention retention at broker.
+ * @retval int8_t      : 1 = Success, -1 = Error
+ */
+int8_t mqtt_connect_options(mqtt_client_t *client, uint8_t session, uint8_t retain, mqtt_qos_t message_qos);
 
 
 
@@ -359,7 +359,7 @@ uint8_t get_connack_status(mqtt_client_t *client);
  * @param  *client        : pointer to mqtt client structure (mqtt_client_t).
  * @param  message_retain : Enable retain for message retention at broker
  * @param  message_qos    : Quality of service value (1:At-least once, 2:Exactly once)
- * @retval int8_t         : qos value = Success, -3 = Error
+ * @retval int8_t         : qos value = Success, -1 = Error
  */
 int8_t mqtt_publish_options(mqtt_client_t *client, uint8_t message_retain, mqtt_qos_t message_qos);
 
