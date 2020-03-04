@@ -260,6 +260,7 @@ typedef enum _app_state
 
 
 #define STATIC    0
+#define ICMP_TEST 1
 #define UDP_TEST  0
 #define TCP_TEST  0
 #define MQTT_TEST 1
@@ -270,30 +271,29 @@ int main(void)
     enc28j60_frame_t  *network_hardware;
     ethernet_handle_t *ethernet;
 
-    uint8_t data[ETHER_MTU_SIZE] = {0};
-
-    network_hardware = (void*)data;
-
-    /* For UDP packets */
-    char udp_data[APP_BUFF_SIZE] = {0};
-
     uint8_t loop   = 0;
     int16_t retval = 0;
+
+    /* Network Data Buffer */
+    uint8_t data[ETHER_MTU_SIZE] = {0};
+    /* UDP packet Buffer */
+    char udp_data[APP_BUFF_SIZE] = {0};
+
+    cl_term_t *my_console;
+    char serial_buffer[MAX_INPUT_SIZE] = {0};
+
+    /* Point Network data */
+    network_hardware = (void*)data;
 
     /* init controller */
     initHw();
 
     init_adc();
 
-
-    /* Console definitions */
-    cl_term_t         *my_console;
-    char    serial_buffer[MAX_INPUT_SIZE] = {0};
-
+    /* Console Configurations */
     my_console = console_open(&myUartOperations, 115200, serial_buffer, CONSOLE_STATIC);
 
     console_print(my_console, CONSOLE_CLEAR_SCREEN);
-
 
     /* Link network operation functions */
     ether_operations_t ether_ops =
@@ -308,7 +308,7 @@ int main(void)
     /* Create Ethernet handle */
     ethernet = create_ethernet_handle(&network_hardware->data, "02:03:04:50:60:48", "192.168.1.199", &ether_ops);
 
-    // flash phy leds
+    /* flash PHY LEDS */
     etherWritePhy(PHLCON, 0x0880);
     RED_LED = 1;
     waitMicrosecond(500000);
@@ -328,7 +328,10 @@ int main(void)
 
 #endif
 
-    /* Test ARP packets */
+
+#if ICMP_TEST
+
+    /* Test ICM, ARP packets */
     uint8_t sequence_no = 1;
 
     ether_send_arp_req(ethernet, ethernet->host_ip, ethernet->gateway_ip);
@@ -347,6 +350,7 @@ int main(void)
     /* Test ICMP packets */
     ether_send_icmp_req(ethernet, ICMP_ECHOREQUEST, ethernet->gateway_ip, &sequence_no, \
                         ethernet->arp_table[0].mac_address, ethernet->host_mac);
+#endif
 
 
 #if UDP_TEST
@@ -359,6 +363,7 @@ int main(void)
         ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "Hello again", 11);
 
 #endif
+
 
 #if TCP_TEST
     /* Test TCP application */
@@ -468,7 +473,6 @@ int main(void)
 
 #if MQTT_TEST
 
-
     /* Test TCP application */
     uint16_t tcp_src_port  = 0;
     uint16_t tcp_dest_port = 0;
@@ -532,9 +536,7 @@ int main(void)
         case mqtt_idle_state:
 
 
-
             break;
-
 
         case mqtt_read_state:
 
@@ -581,7 +583,6 @@ int main(void)
             /* Update state */
             mqtt_message_state = mqtt_read_state;
 
-
             break;
 
 
@@ -595,7 +596,6 @@ int main(void)
             mqtt_message_state = get_connack_status(&publisher);
 
             break;
-
 
 
         case mqtt_publish_state:
