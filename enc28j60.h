@@ -16,7 +16,7 @@
 #include "network_utilities.h"
 #include "ipv4.h"
 
-#define IOT_COURSE_TEST 1
+#define IOT_COURSE_TEST 0
 
 
 //-----------------------------------------------------------------------------

@@ -696,7 +696,7 @@ int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data, dhc
             dhcp_type = ether_dhcp_read(ethernet, (uint8_t*)network_data, your_ip, dhcp_transac_id, dhcp_options);
 
             /* Handle DHCP offer */
-            if(dhcp_type == DHCP_OFFER && ethernet->status.mode_dhcp_init == 1)
+            if(dhcp_type == DHCP_OFFER && ethernet->status.mode_dhcp_init == 1 &&  dhcp_request_flag == 0)
             {
                 /* Get server_ip, SUBNET mask, lease time from DHCP offer options */
                 offer_options = (void*)dhcp_options;

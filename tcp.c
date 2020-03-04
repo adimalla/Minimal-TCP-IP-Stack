@@ -48,12 +48,11 @@
 
 #include "ipv4.h"
 #include "arp.h"
-
+#include "icmp.h"
 #include "network_utilities.h"
 
 #include "tcp.h"
 
-#include "icmp.h"
 
 
 /******************************************************************************/
@@ -62,8 +61,10 @@
 /*                                                                            */
 /******************************************************************************/
 
+#define ARP_ICMP_READ_HANDLE  1
 
-#define TCP_FRAME_SIZE 20
+
+#define TCP_FRAME_SIZE    20
 #define TCP_SYN_OPTS_SIZE 12
 
 /**/
@@ -264,7 +265,8 @@ static uint8_t ether_is_tcp(ethernet_handle_t *ethernet, uint8_t *network_data, 
 
     int16_t comm_type = 0;
 
-    if(ethernet->ether_obj == NULL || network_data == NULL || network_data_length == 0 || network_data_length > UINT16_MAX)
+    if(ethernet->ether_obj == NULL || network_data == NULL || \
+            network_data_length == 0 || network_data_length > UINT16_MAX)
     {
         func_retval = 0;
     }
@@ -277,7 +279,8 @@ static uint8_t ether_is_tcp(ethernet_handle_t *ethernet, uint8_t *network_data, 
         do
         {
             /* Get network data and check if protocol is IPV4 */
-            if(ether_get_data(ethernet, network_data, network_data_length) && (get_ether_protocol_type(ethernet) == ETHER_IPV4))
+            if(ether_get_data(ethernet, network_data, network_data_length) && \
+                    (get_ether_protocol_type(ethernet) == ETHER_IPV4))
             {
                 /* Checks if UNICAST, validates checksum */
                 comm_type = get_ip_communication_type(ethernet);
@@ -705,7 +708,6 @@ static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet, uint8_t *netw
     }
     else
     {
-
         tcp_read_loop = 1;
 
         while(tcp_read_loop)
@@ -716,23 +718,10 @@ static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet, uint8_t *netw
             if(ether_get_data(ethernet, network_data, ETHER_MTU_SIZE) && client->client_flags.connect_established == 1)
             {
 
-//                /* Handle ARP requests */
-//                if(get_ether_protocol_type(ethernet) == ETHER_ARP)
-//                {
-//
-//                    ether_handle_arp_resp_req(ethernet);
-//
-//                }
                 /* handle transport layer protocol type packets */
                 if(get_ether_protocol_type(ethernet) == ETHER_IPV4 && (get_ip_communication_type(ethernet) == 1))
                 {
-//                    /* Handle ICMP packets */
-//                    if(get_ip_protocol_type(ethernet) == IP_ICMP)
-//                    {
-//
-//                        ether_send_icmp_reply(ethernet);
-//
-//                    }
+
                     /* Handle TCP packets */
                     if(get_ip_protocol_type(ethernet) == IP_TCP)
                     {
@@ -813,7 +802,27 @@ static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet, uint8_t *netw
 
                     } /* IP is TCP condition */
 
+#if ARP_ICMP_READ_HANDLE
+                    /* Handle ICMP packets */
+                    else if(get_ip_protocol_type(ethernet) == IP_ICMP)
+                    {
+
+                        ether_send_icmp_reply(ethernet);
+
+                    }
+#endif
+
                 } /* ETHER is IP packet condition */
+
+#if ARP_ICMP_READ_HANDLE
+                /* Handle ARP requests */
+                else if(get_ether_protocol_type(ethernet) == ETHER_ARP)
+                {
+
+                    ether_handle_arp_resp_req(ethernet);
+
+                }
+#endif
             }
 
         }/* while loop */

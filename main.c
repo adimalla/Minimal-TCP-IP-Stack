@@ -479,7 +479,7 @@ int main(void)
 
     uint8_t destination_ip[4] = {0};
 
-    set_ip_address(destination_ip, "192.168.1.13");
+    set_ip_address(destination_ip, "192.168.1.196");
 
     ether_send_arp_req(ethernet, ethernet->host_ip, destination_ip);
 
@@ -514,7 +514,7 @@ int main(void)
     char publish_message[20] = "hello ";
     char copy_publish_message[20] = {0};
 
-    uint16_t count = 0;
+    uint32_t count = 0;
 
     char count_buff[4] = {0};
 
@@ -649,7 +649,7 @@ int main(void)
             memset(copy_publish_message, NULL, strlen(copy_publish_message));
             memset(count_buff, NULL, strlen(count_buff));
 
-            if(count >= 10000)
+            if(count >= 10)
             {
                 mqtt_message_state = mqtt_disconnect_state;
                 break;
