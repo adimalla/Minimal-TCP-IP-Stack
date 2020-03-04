@@ -45,6 +45,17 @@
  */
 
 
+/*
+ ******************************************************************************
+ *
+ * Repository Information :-
+ *
+ * Clone "clterm" Repo from     : https://github.com/adimalla/clTerm
+ * Clone "MQTT-3.1-C" Repo from : https://github.com/adimalla/MQTT-3.1-C
+ *
+ ******************************************************************************
+ */
+
 
 /*
  * Standard header and API header files
@@ -100,8 +111,6 @@ typedef enum _app_state
     USER_INPUT = 3,
 
 }app_state_t;
-
-
 
 
 
