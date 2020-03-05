@@ -89,10 +89,12 @@ typedef enum _dhcp_state_values
  * @brief   Function Send DHCP Discover
  * @param   *ethernet       : reference to the Ethernet handle
  * @param   transaction_id  : random transaction ID
+ *
  * @param   seconds_elapsed : number of seconds elapsed
  * @retval  uint8_t         : Error = -1, Success = 0
  **************************************************************/
-int8_t ether_dhcp_send_discover(ethernet_handle_t *ethernet, uint32_t transaction_id, uint16_t seconds_elapsed);
+int8_t ether_dhcp_send_discover(ethernet_handle_t *ethernet, uint32_t transaction_id, uint8_t *mac_address,
+                                uint16_t seconds_elapsed);
 
 
 
@@ -144,13 +146,15 @@ int8_t ether_dhcp_send_request(ethernet_handle_t *ethernet, uint32_t transaction
 
 
 /*************************************************************
- * @brief   Function Enable DHCP mode
+ * @brief   Function to get IP though DHCP state machine
  * @param   *ethernet     : reference to the Ethernet handle
  * @param   *network_data : network data from PHY
+ *
  * @param   dhcp_state    : DHCP state machine states
  * @retval  uint8_t       : Error = NA, Success = NA
  *************************************************************/
-int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data, dhcp_states dhcp_state);
+int8_t ether_get_dhcp_ip(ethernet_handle_t *ethernet, uint8_t *network_data, uint8_t *mac_address,
+                         dhcp_states dhcp_state);
 
 
 
