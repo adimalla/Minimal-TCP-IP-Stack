@@ -157,12 +157,13 @@ typedef struct _tcp_syn_options
 
 
 
-/*******************************************************
+/*********************************************************
  * @brief  Static function to calculate TCP checksum
- * @param  *ip     : Reference to IP frame structure
- * @param  *udp    : Reference to TCP frame structure
+ * @param  *ip         : Reference to IP frame structure
+ * @param  *tcp        : Reference to TCP frame structure
+ * @param  data_length : TCP data/payload length
  * @retval uint8_t : Error = 0, Success = TCP checksum
- ******************************************************/
+ *********************************************************/
 static uint16_t get_tcp_checksum(net_ip_t *ip, net_tcp_t *tcp, uint16_t data_length)
 {
     uint16_t func_retval     = 0;
@@ -359,7 +360,7 @@ static int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_po
 
         syn_option->mss.option_kind = TCP_MAX_SEGMENT_SIZE;
         syn_option->mss.length      = 4;
-        syn_option->mss.value       = ntohs(ETHER_MTU_SIZE);
+        syn_option->mss.value       = ntohs(1280);
 
         syn_option->sack.option_kind = TCP_SACK_PERMITTED;
         syn_option->sack.length      = 2;
@@ -377,7 +378,7 @@ static int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_po
         fill_ip_frame(ip, &ethernet->ip_identifier, destination_ip, ethernet->host_ip, IP_TCP, TCP_FRAME_SIZE + TCP_SYN_OPTS_SIZE);
 
         /*Get TCP checksum */
-        tcp->checksum = get_tcp_checksum(ip, tcp, 12);
+        tcp->checksum = get_tcp_checksum(ip, tcp, TCP_SYN_OPTS_SIZE);
 
         /* Get MAC address from ARP table */
         ether_arp_resolve_address(ethernet, destination_mac, destination_ip);

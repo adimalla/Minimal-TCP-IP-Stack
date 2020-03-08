@@ -372,7 +372,7 @@ int main(void)
 #else
 
     /* test DHCP */
-    ether_dhcp_enable(ethernet, (uint8_t*)network_hardware, DHCP_INIT_STATE);
+    ether_get_dhcp_ip(ethernet, (uint8_t*)network_hardware, ethernet->host_mac, DHCP_INIT_STATE);
 
 #endif
 
