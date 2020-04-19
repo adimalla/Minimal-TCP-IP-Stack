@@ -279,10 +279,12 @@ typedef enum _dhcp_option_types
  * @brief   Function Send DHCP Discover
  * @param   *ethernet       : reference to the Ethernet handle
  * @param   transaction_id  : random transaction ID
+ *
  * @param   seconds_elapsed : number of seconds elapsed
  * @retval  uint8_t         : Error = -1, Success = 0
  ***************************************************************/
-int8_t ether_dhcp_send_discover(ethernet_handle_t *ethernet, uint32_t transaction_id, uint16_t seconds_elapsed)
+int8_t ether_dhcp_send_discover(ethernet_handle_t *ethernet, uint32_t transaction_id, uint8_t *mac_address,
+                                uint16_t seconds_elapsed)
 {
 
     int8_t func_retval = 0;
@@ -319,7 +321,7 @@ int8_t ether_dhcp_send_discover(ethernet_handle_t *ethernet, uint32_t transactio
         /* gateway IP address  = 0  */
 
         /* client hardware address */
-        strncpy((char*)dhcp_discover->client_hw_addr, (char*)ethernet->host_mac, ETHER_MAC_SIZE);
+        memcpy((char*)dhcp_discover->client_hw_addr, (char*)ethernet->host_mac, ETHER_MAC_SIZE);
 
         /* Client hardware address padding = 0 */
         /* Client Server host name         = 0 */
@@ -352,7 +354,7 @@ int8_t ether_dhcp_send_discover(ethernet_handle_t *ethernet, uint32_t transactio
         discover_opts->client_identifier.length        = 7;
         discover_opts->client_identifier.hw_type       = 1;
 
-        strncpy((char*)discover_opts->client_identifier.client_mac, (char*)ethernet->host_mac, ETHER_MAC_SIZE);
+        memcpy((char*)discover_opts->client_identifier.client_mac, (char*)ethernet->host_mac, ETHER_MAC_SIZE);
 
         /* option end */
         discover_opts->options_end = DHCP_OPTION_END;
@@ -363,11 +365,11 @@ int8_t ether_dhcp_send_discover(ethernet_handle_t *ethernet, uint32_t transactio
         dhcp_client.identifier  = 1;
         dhcp_client.source_port = DHCP_SOURCE_PORT;
 
-        strncpy((char*)dhcp_client.source_mac, (char*)ethernet->host_mac, ETHER_MAC_SIZE);
+        memcpy((char*)dhcp_client.source_mac, (char*)mac_address, ETHER_MAC_SIZE);
 
         /* Configure destination address */
-        strncpy((char*)destination_ip, (char*)ethernet->broadcast_ip, ETHER_IPV4_SIZE);
-        strncpy((char*)destination_mac, (char*)ethernet->broadcast_mac, ETHER_MAC_SIZE);
+        memcpy((char*)destination_ip, (char*)ethernet->broadcast_ip, ETHER_IPV4_SIZE);
+        memcpy((char*)destination_mac, (char*)ethernet->broadcast_mac, ETHER_MAC_SIZE);
 
 
         /* Send DHCP packet as UPD message */
@@ -642,13 +644,15 @@ int8_t ether_dhcp_send_request(ethernet_handle_t *ethernet, uint32_t transaction
 
 
 /*************************************************************
- * @brief   Function Enable DHCP mode
+ * @brief   Function to get IP though DHCP state machine
  * @param   *ethernet     : reference to the Ethernet handle
  * @param   *network_data : network data from PHY
+ *
  * @param   dhcp_state    : DHCP state machine states
  * @retval  uint8_t       : Error = NA, Success = NA
  *************************************************************/
-int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data, dhcp_states dhcp_state)
+int8_t ether_get_dhcp_ip(ethernet_handle_t *ethernet, uint8_t *network_data, uint8_t *mac_address,
+                         dhcp_states dhcp_state)
 {
 
     dhcp_offer_opts_t *offer_options;
@@ -684,7 +688,7 @@ int8_t ether_dhcp_enable(ethernet_handle_t *ethernet, uint8_t *network_data, dhc
 
         case DHCP_SELECTING_STATE:
 
-            ether_dhcp_send_discover(ethernet, dhcp_transac_id, 0);
+            ether_dhcp_send_discover(ethernet, dhcp_transac_id, mac_address, 0);
 
             dhcp_state = DHCP_READ_STATE;
 

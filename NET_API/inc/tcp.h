@@ -40,21 +40,15 @@
  */
 
 
-
-
 #ifndef TCP_H_
 #define TCP_H_
 
 
-
-
 /*
- * Standard header and api header files
+ * Standard header and API header files
  */
 #include <stdint.h>
-
 #include "ethernet.h"
-
 
 
 /******************************************************************************/
@@ -62,8 +56,6 @@
 /*                      Data Structures and Defines                           */
 /*                                                                            */
 /******************************************************************************/
-
-
 
 /* TCP ACK flags */
 typedef enum _tcp_control_flags
@@ -136,8 +128,11 @@ typedef struct _tcp_handle
  * @param  *server_ip       : Server IP
  * @retval int8_t           : Error = 0, Success = TCP client object
  ********************************************************************/
-tcp_handle_t* ether_tcp_create_client(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t source_port,
-                                      uint16_t destination_port, uint8_t *server_ip);
+tcp_handle_t* ether_tcp_create_client(ethernet_handle_t *ethernet,
+                                      uint8_t           *network_data,
+                                      uint16_t           source_port,
+                                      uint16_t           destination_port,
+                                      uint8_t           *server_ip);
 
 
 
@@ -150,7 +145,10 @@ tcp_handle_t* ether_tcp_create_client(ethernet_handle_t *ethernet, uint8_t *netw
  * @param  *server_ip       : Server IP
  * @retval int8_t           : Error = 0, Success = 1
  *****************************************************************/
-uint8_t tcp_init_client(tcp_handle_t *client, uint16_t source_port, uint16_t destination_port, uint8_t *server_ip);
+uint8_t tcp_init_client(tcp_handle_t *client,
+                        uint16_t      source_port,
+                        uint16_t      destination_port,
+                        uint8_t      *server_ip);
 
 
 
@@ -190,8 +188,11 @@ int8_t tcp_control(tcp_handle_t *client, tcp_read_state_t app_state);
  *                             Success =  1
  *                                       -14(Connection closed)
  ***************************************************************/
-int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client, char *application_data,
-                             uint16_t data_length);
+int32_t ether_tcp_send_data(ethernet_handle_t *ethernet,
+                            uint8_t           *network_data,
+                            tcp_handle_t      *client,
+                            char              *application_data,
+                            uint16_t           data_length);
 
 
 
@@ -207,8 +208,11 @@ int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
  * @retval uint16_t          : Error = 0, Success = number of bytes read
  *                                              1 = ACK received
  ************************************************************************/
-int32_t ether_tcp_read_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client, char *tcp_data, uint16_t data_length);
-
+int32_t ether_tcp_read_data(ethernet_handle_t *ethernet,
+                            uint8_t           *network_data,
+                            tcp_handle_t      *client,
+                            char              *tcp_data,
+                            uint16_t           data_length);
 
 
 

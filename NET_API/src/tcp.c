@@ -137,10 +137,10 @@ typedef struct tcp_window_scaling
 typedef struct _tcp_syn_options
 {
     tcp_mss_t       mss;           /*!< */
-    tcp_sack_t      sack;          /*!< */
+//    tcp_sack_t      sack;          /*!< */
     tcp_nop_t       nop;           /*!< */
-    tcp_nop_t       nop1;          /*!< */
-    tcp_nop_t       nop2;          /*!< */
+//    tcp_nop_t       nop1;          /*!< */
+//    tcp_nop_t       nop2;          /*!< */
     tcp_win_scale_t window_scale;  /*!< */
 
 }tcp_syn_opts_t;
@@ -157,12 +157,13 @@ typedef struct _tcp_syn_options
 
 
 
-/*******************************************************
+/*********************************************************
  * @brief  Static function to calculate TCP checksum
- * @param  *ip     : Reference to IP frame structure
- * @param  *udp    : Reference to TCP frame structure
+ * @param  *ip         : Reference to IP frame structure
+ * @param  *tcp        : Reference to TCP frame structure
+ * @param  data_length : TCP data/payload length
  * @retval uint8_t : Error = 0, Success = TCP checksum
- ******************************************************/
+ *********************************************************/
 static uint16_t get_tcp_checksum(net_ip_t *ip, net_tcp_t *tcp, uint16_t data_length)
 {
     uint16_t func_retval     = 0;
@@ -316,8 +317,12 @@ static uint8_t ether_is_tcp(ethernet_handle_t *ethernet, uint8_t *network_data, 
  * @param  *destination_ip  : Destination server IP
  * @retval uint8_t          : Error = 0, Success = 1
  **********************************************************/
-static int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
-                                 uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip)
+static int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet,
+                                 uint16_t           source_port,
+                                 uint16_t           destination_port,
+                                 uint32_t           sequence_number,
+                                 uint32_t           ack_number,
+                                 uint8_t           *destination_ip)
 {
 
     int8_t func_retval = 0;
@@ -359,14 +364,14 @@ static int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_po
 
         syn_option->mss.option_kind = TCP_MAX_SEGMENT_SIZE;
         syn_option->mss.length      = 4;
-        syn_option->mss.value       = ntohs(ETHER_MTU_SIZE);
+        syn_option->mss.value       = ntohs(1460);
 
-        syn_option->sack.option_kind = TCP_SACK_PERMITTED;
-        syn_option->sack.length      = 2;
+//        syn_option->sack.option_kind = TCP_SACK_PERMITTED;
+//        syn_option->sack.length      = 2;
 
         syn_option->nop.option_kind  = TCP_NO_OPERATION;
-        syn_option->nop1.option_kind = TCP_NO_OPERATION;
-        syn_option->nop2.option_kind = TCP_NO_OPERATION;
+//        syn_option->nop1.option_kind = TCP_NO_OPERATION;
+//        syn_option->nop2.option_kind = TCP_NO_OPERATION;
 
         syn_option->window_scale.option_kind = TCP_WINDOW_SCALING;
         syn_option->window_scale.length      = 3;
@@ -377,7 +382,7 @@ static int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_po
         fill_ip_frame(ip, &ethernet->ip_identifier, destination_ip, ethernet->host_ip, IP_TCP, TCP_FRAME_SIZE + TCP_SYN_OPTS_SIZE);
 
         /*Get TCP checksum */
-        tcp->checksum = get_tcp_checksum(ip, tcp, 12);
+        tcp->checksum = get_tcp_checksum(ip, tcp, TCP_SYN_OPTS_SIZE);
 
         /* Get MAC address from ARP table */
         ether_arp_resolve_address(ethernet, destination_mac, destination_ip);
@@ -409,8 +414,12 @@ static int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_po
  * @param  *sever_ip        : Destination server IP
  * @retval uint8_t          : Error = 0, Success = TCP ACK number
  *****************************************************************/
-static tcp_ctl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  uint32_t *sequence_number, uint32_t *ack_number,
-                                                uint16_t server_src_port, uint16_t client_src_port, uint8_t *sever_ip)
+static tcp_ctl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,
+                                                uint32_t          *sequence_number,
+                                                uint32_t          *ack_number,
+                                                uint16_t           server_src_port,
+                                                uint16_t           client_src_port,
+                                                uint8_t           *sever_ip)
 {
 
     tcp_ctl_flags_t func_retval = (tcp_ctl_flags_t)0;
@@ -456,7 +465,6 @@ static tcp_ctl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  ui
 
 
 
-
 /**********************************************************
  * @brief  Function for sending TCP ACK packet
  *         sequence number and ACK number are swapped,
@@ -470,8 +478,13 @@ static tcp_ctl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  ui
  * @param  ack_type         : TCP ACK value
  * @retval int8_t           : Error = 0, Success = 1
  **********************************************************/
-static int8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
-                                 uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip, tcp_ctl_flags_t ack_type)
+static int8_t ether_send_tcp_ack(ethernet_handle_t *ethernet,
+                                 uint16_t           source_port,
+                                 uint16_t           destination_port,
+                                 uint32_t           sequence_number,
+                                 uint32_t           ack_number,
+                                 uint8_t           *destination_ip,
+                                 tcp_ctl_flags_t    ack_type)
 {
 
     int8_t func_retval = 0;
@@ -493,7 +506,6 @@ static int8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_po
 
         tcp = (void*)( (uint8_t*)ip + IP_HEADER_SIZE );
 
-
         /* Fill TCP frame */
         tcp->source_port      = htons(source_port);
         tcp->destination_port = htons(destination_port);
@@ -508,22 +520,17 @@ static int8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_po
         tcp->window           = ntohs(1);
         tcp->urgent_pointer   = 0;
 
-
         /* Fill IP frame before TCP checksum calculation */
         fill_ip_frame(ip, &ethernet->ip_identifier, destination_ip, ethernet->host_ip, IP_TCP, TCP_FRAME_SIZE);
-
 
         /*Get TCP checksum */
         tcp->checksum = get_tcp_checksum(ip, tcp, 0);
 
-
         /* Get MAC address from ARP table */
         ether_arp_resolve_address(ethernet, destination_mac, destination_ip);
 
-
         /* Fill Ethernet frame */
         fill_ether_frame(ethernet, destination_mac, ethernet->host_mac, ETHER_IPV4);
-
 
         /*Send TCP data */
         ether_send_data(ethernet,(uint8_t*)ethernet->ether_obj, ETHER_FRAME_SIZE + htons(ip->total_length));
@@ -583,8 +590,6 @@ static uint16_t ether_get_tcp_psh_ack(ethernet_handle_t *ethernet, char *tcp_dat
 
 
 
-
-
 /****************************************************************
  * @brief  Function for sending TCP PSH ACK packet (data packet)
  *         sequence number and ACK number are swapped,
@@ -599,22 +604,25 @@ static uint16_t ether_get_tcp_psh_ack(ethernet_handle_t *ethernet, char *tcp_dat
  * @param  data_length      : TCP data length
  * @retval int8_t           : Error = 0, Success = 1
  ****************************************************************/
-static int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
-                                     uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip,
-                                     char *tcp_data, uint16_t data_length)
+static int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet,
+                                     uint16_t           source_port,
+                                     uint16_t           destination_port,
+                                     uint32_t           sequence_number,
+                                     uint32_t           ack_number,
+                                     uint8_t           *destination_ip,
+                                     char              *tcp_data,
+                                     uint16_t           data_length)
 {
+
     int8_t func_retval = 0;
+    uint16_t index     = 0;
 
     net_ip_t  *ip;
     net_tcp_t *tcp;
-
-    uint8_t *data_copy;
-
-    uint16_t index = 0;
+    uint8_t   *data_copy;
 
     /* Ethernet Frame related variables */
     uint8_t  destination_mac[ETHER_MAC_SIZE] = {0};
-
 
     if(ethernet->ether_obj == NULL || destination_ip == NULL || data_length > ETHER_MTU_SIZE || data_length > UINT16_MAX)
     {
@@ -625,7 +633,6 @@ static int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t sourc
         ip  = (void*)&ethernet->ether_obj->data;
 
         tcp = (void*)( (uint8_t*)ip + IP_HEADER_SIZE );
-
 
         /* Fill TCP frame */
         tcp->source_port      = htons(source_port);
@@ -644,12 +651,10 @@ static int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t sourc
         /* Copy TCP data */
         data_copy = &tcp->data;
 
-
         for(index = 0; index < data_length; index++)
         {
             data_copy[index] = (uint8_t)(tcp_data[index]);
         }
-
 
         /* fill IP frame before TCP checksum calculation */
         fill_ip_frame(ip, &ethernet->ip_identifier, destination_ip, ethernet->host_ip, IP_TCP, TCP_FRAME_SIZE + data_length);
@@ -657,14 +662,11 @@ static int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t sourc
         /*Get TCP checksum */
         tcp->checksum = get_tcp_checksum(ip, tcp, data_length);
 
-
         /* Get MAC address from ARP table */
         ether_arp_resolve_address(ethernet, destination_mac, destination_ip);
 
-
         /* Fill Ethernet frame */
         fill_ether_frame(ethernet, destination_mac, ethernet->host_mac, ETHER_IPV4);
-
 
         /*Send TCP data */
         ether_send_data(ethernet,(uint8_t*)ethernet->ether_obj, ETHER_FRAME_SIZE + htons(ip->total_length));
@@ -677,9 +679,6 @@ static int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t sourc
 }
 
 
-
-
-
 /************************************************************************
  * @brief  helper function for reading TCP data
  * @param  *ethernet         : Reference to the Ethernet Handle
@@ -690,17 +689,18 @@ static int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t sourc
  * @retval uint16_t          : Error = 0, Success = number of bytes read
  *                                              1 = ACK received
  ************************************************************************/
-static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client,
-                                      char *application_data, uint16_t data_length)
+static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet,
+                                      uint8_t           *network_data,
+                                      tcp_handle_t      *client,
+                                      char              *application_data,
+                                      uint16_t           data_length)
 {
-    int32_t func_retval = NET_FUNC_NO_RDWR;
 
-    uint8_t tcp_read_loop = 0;
-
-    tcp_ctl_flags_t ack_type;
-
+    int32_t func_retval      = NET_FUNC_NO_RDWR;
+    uint8_t tcp_read_loop    = 0;
     uint16_t tcp_data_length = 0;
 
+    tcp_ctl_flags_t ack_type;
 
     if(ethernet->ether_obj == NULL || client == NULL || data_length > UINT16_MAX || data_length > ETHER_MTU_SIZE)
     {
@@ -799,28 +799,22 @@ static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet, uint8_t *netw
 
                         }
 
-
                     } /* IP is TCP condition */
 
 #if ARP_ICMP_READ_HANDLE
                     /* Handle ICMP packets */
                     else if(get_ip_protocol_type(ethernet) == IP_ICMP)
                     {
-
                         ether_send_icmp_reply(ethernet);
-
                     }
 #endif
-
                 } /* ETHER is IP packet condition */
 
 #if ARP_ICMP_READ_HANDLE
                 /* Handle ARP requests */
                 else if(get_ether_protocol_type(ethernet) == ETHER_ARP)
                 {
-
                     ether_handle_arp_resp_req(ethernet);
-
                 }
 #endif
             }
@@ -834,16 +828,11 @@ static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet, uint8_t *netw
 }
 
 
-
-
-
 /******************************************************************************/
 /*                                                                            */
 /*                               TCP Functions                                */
 /*                                                                            */
 /******************************************************************************/
-
-
 
 
 /********************************************************************
@@ -853,8 +842,11 @@ static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet, uint8_t *netw
  * @param  *server_ip       : Server IP
  * @retval int8_t           : Error = 0, Success = TCP client object
  ********************************************************************/
-tcp_handle_t* ether_tcp_create_client(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t source_port,
-                                      uint16_t destination_port, uint8_t *server_ip)
+tcp_handle_t* ether_tcp_create_client(ethernet_handle_t *ethernet,
+                                      uint8_t           *network_data,
+                                      uint16_t           source_port,
+                                      uint16_t           destination_port,
+                                      uint8_t           *server_ip)
 {
 
     static tcp_handle_t tcp_client;
@@ -899,7 +891,10 @@ tcp_handle_t* ether_tcp_create_client(ethernet_handle_t *ethernet, uint8_t *netw
  * @param  *server_ip       : Server IP
  * @retval int8_t           : Error = 0, Success = 1
  *****************************************************************/
-uint8_t tcp_init_client(tcp_handle_t *client, uint16_t source_port, uint16_t destination_port, uint8_t *server_ip)
+uint8_t tcp_init_client(tcp_handle_t *client,
+                        uint16_t      source_port,
+                        uint16_t      destination_port,
+                        uint8_t      *server_ip)
 {
 
     uint8_t func_retval = 0;
@@ -910,7 +905,6 @@ uint8_t tcp_init_client(tcp_handle_t *client, uint16_t source_port, uint16_t des
     }
     else
     {
-
         client->source_port      = source_port;
         client->destination_port = destination_port;
 
@@ -923,9 +917,9 @@ uint8_t tcp_init_client(tcp_handle_t *client, uint16_t source_port, uint16_t des
         memcpy(client->server_ip, server_ip, ETHER_IPV4_SIZE);
 
     }
+
     return func_retval;
 }
-
 
 
 
@@ -952,7 +946,6 @@ int8_t ether_tcp_connect(ethernet_handle_t *ethernet, uint8_t *network_data ,tcp
     }
     else
     {
-
         /* Send TCP SYN packet */
         ether_send_tcp_syn(ethernet, client->source_port, client->destination_port, client->sequence_number,
                            client->acknowledgement_number, client->server_ip);
@@ -1016,7 +1009,6 @@ int8_t ether_tcp_connect(ethernet_handle_t *ethernet, uint8_t *network_data ,tcp
 
                 default:
 
-
                     break;
 
                 }
@@ -1070,9 +1062,13 @@ int8_t tcp_control(tcp_handle_t *client, tcp_read_state_t app_state)
  *                             Success =  1
  *                                       -14(Connection closed)
  ***************************************************************/
-int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client, char *application_data,
-                            uint16_t data_length)
+int32_t ether_tcp_send_data(ethernet_handle_t *ethernet,
+                            uint8_t           *network_data,
+                            tcp_handle_t      *client,
+                            char              *application_data,
+                            uint16_t           data_length)
 {
+
     int32_t func_retval = NET_FUNC_NO_RDWR;
 
     tcp_ctl_flags_t ack_type;
@@ -1092,7 +1088,6 @@ int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
     }
     else
     {
-
         if(client->client_flags.connect_established == 1)
         {
             /* Send PSH ACK packet to the server (SEQ and ACK numbers swapped) */
@@ -1101,7 +1096,6 @@ int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
 
             func_retval = 1;
         }
-
 
         tcp_read_loop = 1;
 
@@ -1206,9 +1200,7 @@ int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
                     /* Handle ICMP packets */
                     else if(get_ip_protocol_type(ethernet) == IP_ICMP)
                     {
-
                         ether_send_icmp_reply(ethernet);
-
                     }
 
                 } /* ETHER is IP packet condition */
@@ -1216,11 +1208,8 @@ int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
                 /* Handle ARP requests */
                 else if(get_ether_protocol_type(ethernet) == ETHER_ARP)
                 {
-
                     ether_handle_arp_resp_req(ethernet);
-
                 }
-
 
             }
 
@@ -1245,8 +1234,13 @@ int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
  * @retval uint16_t          : Error = 0, Success = number of bytes read
  *                                              1 = ACK received
  ************************************************************************/
-int32_t ether_tcp_read_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client, char *tcp_data, uint16_t data_length)
+int32_t ether_tcp_read_data(ethernet_handle_t *ethernet,
+                            uint8_t           *network_data,
+                            tcp_handle_t      *client,
+                            char              *tcp_data,
+                            uint16_t           data_length)
 {
+
     int32_t func_retval      = NET_FUNC_NO_RDWR;
     uint16_t tcp_data_length = 0;
 
@@ -1263,7 +1257,6 @@ int32_t ether_tcp_read_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
 
         if(ethernet->status.net_app_data_rdy == 1)
         {
-
             /* Check if user data buffer length size is not greater than network application data size */
             if(data_length > ethernet->net_app_data_length)
                 data_length = ethernet->net_app_data_length;
@@ -1319,7 +1312,6 @@ uint8_t ether_tcp_close(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_
     }
     else
     {
-
         tcp_read_loop = 1;
 
         while(tcp_read_loop)
