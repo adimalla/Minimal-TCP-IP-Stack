@@ -522,19 +522,15 @@ int main(void)
     /* Test MQTT application */
     uint16_t tcp_src_port  = 0;
     uint16_t tcp_dest_port = 0;
+    int16_t input_length   = 0;
 
     tcp_handle_t *test_client;
-
-    int16_t input_length = 0;
 
     uint8_t destination_ip[4] = {0};
 
     set_ip_address(destination_ip, "192.168.1.196");
 
-    ether_send_arp_req(ethernet, ethernet->host_ip, destination_ip);
-
     tcp_dest_port = 1883;
-
     tcp_src_port  = get_random_port(ethernet, 6534);
 
     test_client = ether_tcp_create_client(ethernet, (uint8_t*)network_hardware, tcp_src_port, tcp_dest_port, destination_ip);
@@ -736,8 +732,8 @@ int main(void)
             /* Suspend while loop */
             loop_state = FSM_SUSPEND;
 
-
             break;
+
 
         default:
 
