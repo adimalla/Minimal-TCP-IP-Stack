@@ -29,20 +29,6 @@
 
 uint8_t nextPacketLsb = 0x00;
 uint8_t nextPacketMsb = 0x00;
-uint8_t sequenceId = 1;
-uint32_t sum;
-uint8_t ipv4Address[4];
-
-// ------------------------------------------------------------------------------
-//  Structures
-// ------------------------------------------------------------------------------
-
-// This M4F is little endian (TI hardwired)
-// Network byte order is big endian
-// Must interpret uint16_t in reverse order
-
-
-
 
 
 
