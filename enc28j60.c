@@ -1,5 +1,7 @@
 // ENC28J60 Driver
-// Jason Losh
+// Author: Jason Losh
+// Modifications: Aditya Mall
+// The University of Texas at Arlington
 
 //-----------------------------------------------------------------------------
 // Hardware Target
