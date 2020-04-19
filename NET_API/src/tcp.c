@@ -137,10 +137,10 @@ typedef struct tcp_window_scaling
 typedef struct _tcp_syn_options
 {
     tcp_mss_t       mss;           /*!< */
-    tcp_sack_t      sack;          /*!< */
+//    tcp_sack_t      sack;          /*!< */
     tcp_nop_t       nop;           /*!< */
-    tcp_nop_t       nop1;          /*!< */
-    tcp_nop_t       nop2;          /*!< */
+//    tcp_nop_t       nop1;          /*!< */
+//    tcp_nop_t       nop2;          /*!< */
     tcp_win_scale_t window_scale;  /*!< */
 
 }tcp_syn_opts_t;
@@ -317,8 +317,12 @@ static uint8_t ether_is_tcp(ethernet_handle_t *ethernet, uint8_t *network_data, 
  * @param  *destination_ip  : Destination server IP
  * @retval uint8_t          : Error = 0, Success = 1
  **********************************************************/
-static int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
-                                 uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip)
+static int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet,
+                                 uint16_t           source_port,
+                                 uint16_t           destination_port,
+                                 uint32_t           sequence_number,
+                                 uint32_t           ack_number,
+                                 uint8_t           *destination_ip)
 {
 
     int8_t func_retval = 0;
@@ -360,14 +364,14 @@ static int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_po
 
         syn_option->mss.option_kind = TCP_MAX_SEGMENT_SIZE;
         syn_option->mss.length      = 4;
-        syn_option->mss.value       = ntohs(1280);
+        syn_option->mss.value       = ntohs(1460);
 
-        syn_option->sack.option_kind = TCP_SACK_PERMITTED;
-        syn_option->sack.length      = 2;
+//        syn_option->sack.option_kind = TCP_SACK_PERMITTED;
+//        syn_option->sack.length      = 2;
 
         syn_option->nop.option_kind  = TCP_NO_OPERATION;
-        syn_option->nop1.option_kind = TCP_NO_OPERATION;
-        syn_option->nop2.option_kind = TCP_NO_OPERATION;
+//        syn_option->nop1.option_kind = TCP_NO_OPERATION;
+//        syn_option->nop2.option_kind = TCP_NO_OPERATION;
 
         syn_option->window_scale.option_kind = TCP_WINDOW_SCALING;
         syn_option->window_scale.length      = 3;
@@ -410,8 +414,12 @@ static int8_t ether_send_tcp_syn(ethernet_handle_t *ethernet, uint16_t source_po
  * @param  *sever_ip        : Destination server IP
  * @retval uint8_t          : Error = 0, Success = TCP ACK number
  *****************************************************************/
-static tcp_ctl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  uint32_t *sequence_number, uint32_t *ack_number,
-                                                uint16_t server_src_port, uint16_t client_src_port, uint8_t *sever_ip)
+static tcp_ctl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,
+                                                uint32_t          *sequence_number,
+                                                uint32_t          *ack_number,
+                                                uint16_t           server_src_port,
+                                                uint16_t           client_src_port,
+                                                uint8_t           *sever_ip)
 {
 
     tcp_ctl_flags_t func_retval = (tcp_ctl_flags_t)0;
@@ -470,8 +478,13 @@ static tcp_ctl_flags_t ether_get_tcp_server_ack(ethernet_handle_t *ethernet,  ui
  * @param  ack_type         : TCP ACK value
  * @retval int8_t           : Error = 0, Success = 1
  **********************************************************/
-static int8_t ether_send_tcp_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
-                                 uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip, tcp_ctl_flags_t ack_type)
+static int8_t ether_send_tcp_ack(ethernet_handle_t *ethernet,
+                                 uint16_t           source_port,
+                                 uint16_t           destination_port,
+                                 uint32_t           sequence_number,
+                                 uint32_t           ack_number,
+                                 uint8_t           *destination_ip,
+                                 tcp_ctl_flags_t    ack_type)
 {
 
     int8_t func_retval = 0;
@@ -591,10 +604,16 @@ static uint16_t ether_get_tcp_psh_ack(ethernet_handle_t *ethernet, char *tcp_dat
  * @param  data_length      : TCP data length
  * @retval int8_t           : Error = 0, Success = 1
  ****************************************************************/
-static int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t source_port, uint16_t destination_port,
-                                     uint32_t sequence_number, uint32_t ack_number, uint8_t *destination_ip,
-                                     char *tcp_data, uint16_t data_length)
+static int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet,
+                                     uint16_t           source_port,
+                                     uint16_t           destination_port,
+                                     uint32_t           sequence_number,
+                                     uint32_t           ack_number,
+                                     uint8_t           *destination_ip,
+                                     char              *tcp_data,
+                                     uint16_t           data_length)
 {
+
     int8_t func_retval = 0;
     uint16_t index     = 0;
 
@@ -670,9 +689,13 @@ static int8_t ether_send_tcp_psh_ack(ethernet_handle_t *ethernet, uint16_t sourc
  * @retval uint16_t          : Error = 0, Success = number of bytes read
  *                                              1 = ACK received
  ************************************************************************/
-static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client,
-                                      char *application_data, uint16_t data_length)
+static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet,
+                                      uint8_t           *network_data,
+                                      tcp_handle_t      *client,
+                                      char              *application_data,
+                                      uint16_t           data_length)
 {
+
     int32_t func_retval      = NET_FUNC_NO_RDWR;
     uint8_t tcp_read_loop    = 0;
     uint16_t tcp_data_length = 0;
@@ -823,8 +846,11 @@ static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet, uint8_t *netw
  * @param  *server_ip       : Server IP
  * @retval int8_t           : Error = 0, Success = TCP client object
  ********************************************************************/
-tcp_handle_t* ether_tcp_create_client(ethernet_handle_t *ethernet, uint8_t *network_data, uint16_t source_port,
-                                      uint16_t destination_port, uint8_t *server_ip)
+tcp_handle_t* ether_tcp_create_client(ethernet_handle_t *ethernet,
+                                      uint8_t           *network_data,
+                                      uint16_t           source_port,
+                                      uint16_t           destination_port,
+                                      uint8_t           *server_ip)
 {
 
     static tcp_handle_t tcp_client;
@@ -895,7 +921,6 @@ uint8_t tcp_init_client(tcp_handle_t *client, uint16_t source_port, uint16_t des
 
     return func_retval;
 }
-
 
 
 
@@ -1038,9 +1063,13 @@ int8_t tcp_control(tcp_handle_t *client, tcp_read_state_t app_state)
  *                             Success =  1
  *                                       -14(Connection closed)
  ***************************************************************/
-int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client, char *application_data,
-                            uint16_t data_length)
+int32_t ether_tcp_send_data(ethernet_handle_t *ethernet,
+                            uint8_t           *network_data,
+                            tcp_handle_t      *client,
+                            char              *application_data,
+                            uint16_t           data_length)
 {
+
     int32_t func_retval = NET_FUNC_NO_RDWR;
 
     tcp_ctl_flags_t ack_type;
@@ -1210,8 +1239,13 @@ int32_t ether_tcp_send_data(ethernet_handle_t *ethernet, uint8_t *network_data, 
  * @retval uint16_t          : Error = 0, Success = number of bytes read
  *                                              1 = ACK received
  ************************************************************************/
-int32_t ether_tcp_read_data(ethernet_handle_t *ethernet, uint8_t *network_data, tcp_handle_t *client, char *tcp_data, uint16_t data_length)
+int32_t ether_tcp_read_data(ethernet_handle_t *ethernet,
+                            uint8_t           *network_data,
+                            tcp_handle_t      *client,
+                            char              *tcp_data,
+                            uint16_t           data_length)
 {
+
     int32_t func_retval      = NET_FUNC_NO_RDWR;
     uint16_t tcp_data_length = 0;
 
