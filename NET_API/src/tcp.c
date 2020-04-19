@@ -805,9 +805,7 @@ static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet,
                     /* Handle ICMP packets */
                     else if(get_ip_protocol_type(ethernet) == IP_ICMP)
                     {
-
                         ether_send_icmp_reply(ethernet);
-
                     }
 #endif
                 } /* ETHER is IP packet condition */
@@ -816,9 +814,7 @@ static int32_t ether_tcp_read_data_hf(ethernet_handle_t *ethernet,
                 /* Handle ARP requests */
                 else if(get_ether_protocol_type(ethernet) == ETHER_ARP)
                 {
-
                     ether_handle_arp_resp_req(ethernet);
-
                 }
 #endif
             }
@@ -1204,9 +1200,7 @@ int32_t ether_tcp_send_data(ethernet_handle_t *ethernet,
                     /* Handle ICMP packets */
                     else if(get_ip_protocol_type(ethernet) == IP_ICMP)
                     {
-
                         ether_send_icmp_reply(ethernet);
-
                     }
 
                 } /* ETHER is IP packet condition */
@@ -1214,9 +1208,7 @@ int32_t ether_tcp_send_data(ethernet_handle_t *ethernet,
                 /* Handle ARP requests */
                 else if(get_ether_protocol_type(ethernet) == ETHER_ARP)
                 {
-
                     ether_handle_arp_resp_req(ethernet);
-
                 }
 
             }

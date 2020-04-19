@@ -217,7 +217,6 @@ int32_t ether_tcp_read_data(ethernet_handle_t *ethernet,
 
 
 
-
 /***************************************************************
  * @brief  Function for close socket
  * @param  *ethernet         : Reference to the Ethernet Handle
