@@ -11,7 +11,7 @@
  *
  *       Hardware configuration :-
  *                               ENC28J60 Ethernet controller
- *                               MOSI (SSI2Tx) on PB7controller
+ *                               MOSI (SSI2Tx) on PB7
  *                               MISO (SSI2Rx) on PB6
  *                               SCLK (SSI2Clk) on PB4
  *                               ~CS connected to PB1
@@ -185,6 +185,7 @@ void initHw()
     SSI2_CPSR_R = 40;                               // set bit rate to 1 MHz (if SR=0 in CR0)
     SSI2_CR0_R  = SSI_CR0_FRF_MOTO | SSI_CR0_DSS_8; // set SR=0, mode 0 (SPH=0, SPO=0), 8-bit
     SSI2_CR1_R |= SSI_CR1_SSE;                      // turn on SSI2
+
 #endif
 
 }
