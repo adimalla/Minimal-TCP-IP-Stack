@@ -895,7 +895,10 @@ tcp_handle_t* ether_tcp_create_client(ethernet_handle_t *ethernet,
  * @param  *server_ip       : Server IP
  * @retval int8_t           : Error = 0, Success = 1
  *****************************************************************/
-uint8_t tcp_init_client(tcp_handle_t *client, uint16_t source_port, uint16_t destination_port, uint8_t *server_ip)
+uint8_t tcp_init_client(tcp_handle_t *client,
+                        uint16_t      source_port,
+                        uint16_t      destination_port,
+                        uint8_t      *server_ip)
 {
 
     uint8_t func_retval = 0;
