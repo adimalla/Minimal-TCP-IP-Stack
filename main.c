@@ -2,7 +2,7 @@
  ******************************************************************************
  * @file    main.c
  * @author  Aditya Mall,
- * @brief   TCP protocol header file
+ * @brief   Network API test app file
  *
  *  Info
  *       Target Platform        : EK-TM4C123GXL w/ ENC28J60
@@ -174,8 +174,8 @@ void initHw()
     GPIO_PORTB_DR2R_R  |= 0x90;                     // set drive strength to 2mA
     GPIO_PORTB_AFSEL_R |= 0xD0;                     // select alternative functions for MOSI, MISO, SCLK pins
     GPIO_PORTB_PCTL_R   = GPIO_PCTL_PB7_SSI2TX | \
-                          GPIO_PCTL_PB6_SSI2RX | \
-                          GPIO_PCTL_PB4_SSI2CLK;    // map alt fns to SSI2
+            GPIO_PCTL_PB6_SSI2RX | \
+            GPIO_PCTL_PB4_SSI2CLK;    // map alt fns to SSI2
     GPIO_PORTB_DEN_R   |= 0xD0;                     // enable digital operation on TX, RX, CLK pins
 
     // Configure the SSI2 as a SPI master, mode 3, 8bit operation, 1 MHz bit rate
@@ -520,29 +520,15 @@ int main(void)
 #if MQTT_TEST
 
     /* Test MQTT application */
-    uint16_t tcp_src_port  = 0;
-    uint16_t tcp_dest_port = 0;
-    int16_t input_length   = 0;
+    uint16_t tcp_src_port      = 0;
+    uint16_t tcp_dest_port     = 0;
+    int16_t  input_length      = 0;
+    uint8_t  destination_ip[4] = {0};
 
-    tcp_handle_t *test_client;
+    tcp_handle_t  *test_client;
+    mqtt_client_t  publisher;
 
-    uint8_t destination_ip[4] = {0};
-
-    set_ip_address(destination_ip, "192.168.1.196");
-
-    tcp_dest_port = 1883;
-    tcp_src_port  = get_random_port(ethernet, 6534);
-
-    test_client = ether_tcp_create_client(ethernet, (uint8_t*)network_hardware, tcp_src_port, tcp_dest_port, destination_ip);
-
-    ether_tcp_connect(ethernet, (uint8_t*)network_hardware, test_client);
-
-    tcp_control(test_client, TCP_READ_NONBLOCK);
-
-
-    mqtt_client_t publisher;
-
-    /* Socket API related variable initializations */
+    /* Network API related variable initializations */
     char   message[200]     = {0};
     char   read_buffer[150] = {0};
 
@@ -553,18 +539,33 @@ int main(void)
     uint8_t mqtt_message_state  = 0;
 
     /* MQTT message buffers */
-    char *my_client_name   = "Sender|1990-adityamall";
-    char user_name[]       = "device1.sensor";
-    char pass_word[]       = "4321";
-    char publish_topic[]   = "device1/temp";
-    char publish_message[20] = "hello ";
+    char *my_client_name          = "Sender|1990-adityamall";
+    char user_name[]              = "device1.sensor";
+    char pass_word[]              = "4321";
+    char publish_topic[]          = "device1/temp";
+    char publish_message[20]      = "hello ";
     char copy_publish_message[20] = {0};
 
-    uint32_t count = 0;
+    uint32_t count         = 0;
+    char     count_buff[4] = {0};
 
-    char count_buff[4] = {0};
+    /* Configure/Connect to MQTT broker */
+    set_ip_address(destination_ip, "192.168.1.196");
 
-    /* State machine initializations */
+    tcp_dest_port = 1883;
+    tcp_src_port  = get_random_port(ethernet, 6534);
+
+    /* Create TCP object/socket */
+    test_client = ether_tcp_create_client(ethernet, (uint8_t*)network_hardware, tcp_src_port, tcp_dest_port, destination_ip);
+
+    /*Connect to MQTT broker */
+    ether_tcp_connect(ethernet, (uint8_t*)network_hardware, test_client);
+
+    /* Configure TCP Network IO control */
+    tcp_control(test_client, TCP_READ_NONBLOCK);
+
+
+    /* MQTT State machine initializations */
     loop_state = FSM_RUN;
 
     /* Update state to connect to send connect message */
@@ -595,7 +596,6 @@ int main(void)
             if(!mqtt_message_state)
             {
                 mqtt_message_state = mqtt_disconnect_state;
-
             }
 
             break;
