@@ -638,6 +638,9 @@ int main(void)
 
             mqtt_message_state = get_connack_status(&publisher);
 
+            if(!mqtt_message_state)
+                mqtt_message_state = mqtt_publish_state;
+
             break;
 
 
@@ -665,7 +668,7 @@ int main(void)
             if(input_length)
             {
                 /* Configure publish message */
-                message_length = mqtt_publish(&publisher, "device1/temp", serial_buffer);
+                message_length = mqtt_publish(&publisher, "device1/temp", serial_buffer, input_length);
 
                 /* Send publish message */
                 ether_tcp_send_data(ethernet, (uint8_t*)network_hardware, test_client, (char*)publisher.publish_msg, message_length);
@@ -683,8 +686,10 @@ int main(void)
 
             strncat(copy_publish_message, count_buff, strlen(count_buff));
 
+            input_length = strlen(copy_publish_message);
+
             /* Configure publish message */
-            message_length = mqtt_publish(&publisher, publish_topic, copy_publish_message);
+            message_length = mqtt_publish(&publisher, publish_topic, copy_publish_message, input_length);
 
             /* Send publish message */
             ether_tcp_send_data(ethernet, (uint8_t*)network_hardware, test_client, (char*)publisher.publish_msg, message_length);
