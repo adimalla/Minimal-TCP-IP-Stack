@@ -89,7 +89,7 @@
 /******************************************************************************/
 
 
-#define STATIC    0
+#define STATIC    1
 #define ICMP_TEST 1
 #define UDP_TEST  0
 #define TCP_TEST  0
@@ -334,8 +334,6 @@ int main(void)
 
     /* Network Data Buffer */
     uint8_t data[ETHER_MTU_SIZE] = {0};
-    /* UDP packet Buffer */
-    char udp_data[APP_BUFF_SIZE] = {0};
 
     cl_term_t *my_console;
     char serial_buffer[MAX_INPUT_SIZE] = {0};
@@ -521,7 +519,7 @@ int main(void)
 
 #if MQTT_TEST
 
-    /* Test TCP application */
+    /* Test MQTT application */
     uint16_t tcp_src_port  = 0;
     uint16_t tcp_dest_port = 0;
 
@@ -750,119 +748,6 @@ int main(void)
     }
 
 #endif
-
-
-    /* State machine */
-    loop = 1;
-
-    while(loop)
-    {
-
-        if (ether_get_data(ethernet, (uint8_t*)network_hardware, ETHER_MTU_SIZE))
-        {
-            if (etherIsOverflow())
-            {
-                RED_LED = 1;
-                waitMicrosecond(50000);
-                RED_LED = 0;
-            }
-
-            switch(get_ether_protocol_type(ethernet))
-            {
-
-            case ETHER_ARP:
-
-                retval = ether_handle_arp_resp_req(ethernet);
-
-                if(retval == 0)
-                {
-                    RED_LED   = 1;
-                    GREEN_LED = 1;
-                    waitMicrosecond(50000);
-                    RED_LED   = 0;
-                    GREEN_LED = 0;
-                }
-
-                break;
-
-            case ETHER_IPV4:
-
-                /* Checks if UNICAST, validates checksum */
-                retval = get_ip_communication_type(ethernet);
-
-                if(retval == 1)
-                {
-
-                    /* Get transport layer protocol type */
-                    switch(get_ip_protocol_type(ethernet))
-                    {
-
-                    case IP_ICMP:
-
-                        /* Handle ICMP packets */
-                        retval = ether_send_icmp_reply(ethernet);
-
-                        if(retval == 0)
-                        {
-                            RED_LED  = 1;
-                            BLUE_LED = 1;
-                            waitMicrosecond(50000);
-                            RED_LED  = 0;
-                            BLUE_LED = 0;
-                        }
-
-                        break;
-
-                    case IP_UDP:
-
-                        /* Handle UDP packets */
-                        if (ether_get_udp_data(ethernet, (uint8_t*)udp_data, APP_BUFF_SIZE))
-                        {
-                            BLUE_LED = 1;
-                            waitMicrosecond(50000);
-                            BLUE_LED = 0;
-#if 1
-                            /* test only */
-                            if(strncmp(udp_data, "on", 2) == 0)
-                            {
-                                ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "switched on", 11);
-                            }
-                            if(strncmp(udp_data, "off", 2) == 0)
-                            {
-                                ether_send_udp(ethernet, ethernet->gateway_ip, 8080, "switched off", 12);
-                            }
-#endif
-                        }
-
-                        break;
-
-
-                    case IP_TCP:
-
-                        break;
-
-
-                    default:
-
-                        break;
-
-                    }
-
-                }
-
-                break;
-
-
-            default:
-
-                break;
-
-            }
-
-            memset(data, 0, sizeof(data));
-        }
-
-    }
 
     return 0;
 
