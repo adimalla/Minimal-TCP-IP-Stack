@@ -747,6 +747,10 @@ int main(void)
 
     }
 
+    /* Hold loop */
+    loop = 1;
+    while(loop);
+
 #endif
 
     return 0;
